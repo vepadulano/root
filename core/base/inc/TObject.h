@@ -34,7 +34,7 @@ class TMethod;
 class TTimer;
 
 
-class TObject {
+class TObject final {
 
 private:
    UInt_t         fUniqueID;   ///< object unique identifier
