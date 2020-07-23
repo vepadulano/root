@@ -266,7 +266,7 @@ Int_t TH2Poly::AddBin(TObject *poly)
 
 Int_t TH2Poly::AddBin(Int_t n, const Double_t *x, const Double_t *y)
 {
-   TGraph *g = new TGraph(n, x, y);
+   auto *g = new TGraph(n, x, y);
    Int_t bin = AddBin(g);
    return bin;
 }
@@ -279,7 +279,7 @@ Int_t TH2Poly::AddBin(Double_t x1, Double_t y1, Double_t x2, Double_t  y2)
 {
    Double_t x[] = {x1, x1, x2, x2, x1};
    Double_t y[] = {y1, y2, y2, y1, y1};
-   TGraph *g = new TGraph(5, x, y);
+   auto *g = new TGraph(5, x, y);
    Int_t bin = AddBin(g);
    return bin;
 }
@@ -291,7 +291,7 @@ Bool_t TH2Poly::Add(const TH1 *h1, Double_t c1)
 {
    Int_t bin;
 
-   TH2Poly *h1p = (TH2Poly *)h1;
+   auto *h1p = (TH2Poly *)h1;
 
    // Check if number of bins is the same.
    if (h1p->GetNumberOfBins() != GetNumberOfBins()) {
@@ -556,8 +556,8 @@ Int_t TH2Poly::FindBin(Double_t x, Double_t y, Double_t)
    if (overflow != -5) return overflow;
 
    // Finds the cell (x,y) coordinates belong to
-   Int_t n = (Int_t)(floor((x-fXaxis.GetXmin())/fStepX));
-   Int_t m = (Int_t)(floor((y-fYaxis.GetXmin())/fStepY));
+   auto n = (Int_t)(floor((x-fXaxis.GetXmin())/fStepX));
+   auto m = (Int_t)(floor((y-fYaxis.GetXmin())/fStepY));
 
    // Make sure the array indices are correct.
    if (n>=fCellX) n = fCellX-1;
@@ -622,8 +622,8 @@ Int_t TH2Poly::Fill(Double_t x, Double_t y, Double_t w)
    }
 
    // Finds the cell (x,y) coordinates belong to
-   Int_t n = (Int_t)(floor((x-fXaxis.GetXmin())/fStepX));
-   Int_t m = (Int_t)(floor((y-fYaxis.GetXmin())/fStepY));
+   auto n = (Int_t)(floor((x-fXaxis.GetXmin())/fStepX));
+   auto m = (Int_t)(floor((y-fYaxis.GetXmin())/fStepY));
 
    // Make sure the array indices are correct.
    if (n>=fCellX) n = fCellX-1;
@@ -1041,7 +1041,7 @@ Bool_t TH2Poly::IsIntersecting(TH2PolyBin *bin,
    TObject *poly = bin->GetPolygon();
 
    if (poly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)poly;
+      auto *g = (TGraph*)poly;
       gx = g->GetX();
       gy = g->GetY();
       gn = g->GetN();
@@ -1049,7 +1049,7 @@ Bool_t TH2Poly::IsIntersecting(TH2PolyBin *bin,
    }
 
    if (poly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)poly;
+      auto *mg = (TMultiGraph*)poly;
       TList *gl = mg->GetListOfGraphs();
       if (!gl) return inter;
       TGraph *g;
@@ -1301,7 +1301,7 @@ void TH2Poly::SetFloat(Bool_t flag)
 Bool_t TH2Poly::IsInsideBin(Int_t binnr, Double_t x, Double_t y)
 {
    if (!fBins) return false;
-   TH2PolyBin* bin = (TH2PolyBin*)fBins->At(binnr);
+   auto* bin = (TH2PolyBin*)fBins->At(binnr);
    if (!bin) return false;
    return bin->IsInside(x,y);
 }
@@ -1371,13 +1371,13 @@ Double_t TH2PolyBin::GetArea()
 
    if (fArea == 0) {
       if (fPoly->IsA() == TGraph::Class()) {
-         TGraph *g = (TGraph*)fPoly;
+         auto *g = (TGraph*)fPoly;
          bn    = g->GetN();
          fArea = g->Integral(0,bn-1);
       }
 
       if (fPoly->IsA() == TMultiGraph::Class()) {
-         TMultiGraph *mg = (TMultiGraph*)fPoly;
+         auto *mg = (TMultiGraph*)fPoly;
          TList *gl = mg->GetListOfGraphs();
          if (!gl) return fArea;
          TGraph *g;
@@ -1403,7 +1403,7 @@ Double_t TH2PolyBin::GetXMax()
    Double_t *bx;
 
    if (fPoly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)fPoly;
+      auto *g = (TGraph*)fPoly;
       bx    = g->GetX();
       bn    = g->GetN();
       fXmax = bx[0];
@@ -1411,7 +1411,7 @@ Double_t TH2PolyBin::GetXMax()
    }
 
    if (fPoly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)fPoly;
+      auto *mg = (TMultiGraph*)fPoly;
       TList *gl = mg->GetListOfGraphs();
       if (!gl) return fXmax;
       TGraph *g;
@@ -1439,7 +1439,7 @@ Double_t TH2PolyBin::GetXMin()
    Double_t *bx;
 
    if (fPoly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)fPoly;
+      auto *g = (TGraph*)fPoly;
       bx    = g->GetX();
       bn    = g->GetN();
       fXmin = bx[0];
@@ -1447,7 +1447,7 @@ Double_t TH2PolyBin::GetXMin()
    }
 
    if (fPoly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)fPoly;
+      auto *mg = (TMultiGraph*)fPoly;
       TList *gl = mg->GetListOfGraphs();
       if (!gl) return fXmin;
       TGraph *g;
@@ -1475,7 +1475,7 @@ Double_t TH2PolyBin::GetYMax()
    Double_t *by;
 
    if (fPoly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)fPoly;
+      auto *g = (TGraph*)fPoly;
       by    = g->GetY();
       bn    = g->GetN();
       fYmax = by[0];
@@ -1483,7 +1483,7 @@ Double_t TH2PolyBin::GetYMax()
    }
 
    if (fPoly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)fPoly;
+      auto *mg = (TMultiGraph*)fPoly;
       TList *gl = mg->GetListOfGraphs();
       if (!gl) return fYmax;
       TGraph *g;
@@ -1511,7 +1511,7 @@ Double_t TH2PolyBin::GetYMin()
    Double_t *by;
 
    if (fPoly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)fPoly;
+      auto *g = (TGraph*)fPoly;
       by    = g->GetY();
       bn    = g->GetN();
       fYmin = by[0];
@@ -1519,7 +1519,7 @@ Double_t TH2PolyBin::GetYMin()
    }
 
    if (fPoly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)fPoly;
+      auto *mg = (TMultiGraph*)fPoly;
       TList *gl = mg->GetListOfGraphs();
       if (!gl) return fYmin;
       TGraph *g;
@@ -1544,12 +1544,12 @@ Bool_t TH2PolyBin::IsInside(Double_t x, Double_t y) const
    Int_t in=0;
 
    if (fPoly->IsA() == TGraph::Class()) {
-      TGraph *g = (TGraph*)fPoly;
+      auto *g = (TGraph*)fPoly;
       in = g->IsInside(x, y);
    }
 
    if (fPoly->IsA() == TMultiGraph::Class()) {
-      TMultiGraph *mg = (TMultiGraph*)fPoly;
+      auto *mg = (TMultiGraph*)fPoly;
       in = mg->IsInside(x, y);
    }
 
