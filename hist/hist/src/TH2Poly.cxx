@@ -10,6 +10,7 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
+#include <algorithm>
 #include "TH2Poly.h"
 #include "TMultiGraph.h"
 #include "TGraph.h"
@@ -176,6 +177,31 @@ TH2Poly::TH2Poly(const char *name,const char *title,
    SetName(name);
    SetTitle(title);
    SetFloat(kFALSE);
+}
+
+TH2Poly::TH2Poly(const TH2Poly &other) : TH2Poly()
+{
+   other.Copy(*this);
+   fCellX = other.fCellX;
+   fCellY = other.fCellY;
+   fNCells = other.fNCells;
+   // fCells = other.fCells; // The `TList` elements of fCells are non-owning
+   fStepX = other.fStepX;
+   fStepY = other.fStepY;
+   std::copy(other.fIsEmpty, other.fIsEmpty + fNCells, fIsEmpty);
+   std::copy(other.fCompletelyInside, other.fCompletelyInside + fNcells, fCompletelyInside);
+   fFloat = other.fFloat;
+   fNewBinAdded = other.fNewBinAdded;
+   fBinContentChanged = other.fBinContentChanged;
+   // std::copy(std::begin(other.fBins), std::end(other.fBins), std::begin(fBins)); ///< List of bins. The list owns the
+   // contained objects
+   if (fBins == nullptr) {
+      fBins = new TList();
+      fBins->SetOwner();
+   }
+   for (const auto &&obj : *fBins) {
+      fBins->Add(new TH2PolyBin(static_cast<const TH2PolyBin &>(*obj)));
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

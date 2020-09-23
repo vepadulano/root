@@ -69,6 +69,7 @@ public:
    TH2Poly();
    TH2Poly(const char *name,const char *title, Double_t xlow, Double_t xup, Double_t ylow, Double_t yup);
    TH2Poly(const char *name,const char *title, Int_t nX, Double_t xlow, Double_t xup,  Int_t nY, Double_t ylow, Double_t yup);
+   TH2Poly(const TH2Poly &);
    ~TH2Poly() override;
 
    virtual TH2PolyBin *CreateBin(TObject *poly);
@@ -148,9 +149,7 @@ protected:
    void         SetBinError(Int_t, Int_t, Double_t) override {}
    void         SetBinError(Int_t, Int_t, Int_t, Double_t) override {}
 
-
-protected:
-    enum {
+   enum {
       kNOverflow = 9  /// Number of overflows bins
    };
    Double_t fOverflow[kNOverflow]; ///< Overflow bins
