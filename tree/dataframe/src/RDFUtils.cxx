@@ -317,8 +317,9 @@ std::vector<std::string> ReplaceDotWithUnderscore(const std::vector<std::string>
    return newColNames;
 }
 
-void InterpreterDeclare(const std::string &code)
+void InterpreterDeclare(const std::string &_code)
 {
+   const auto code = "#pragma cling optimize(3)\n" + _code;
    R__LOG_DEBUG(10, RDFLogChannel()) << "Declaring the following code to cling:\n\n" << code << '\n';
 
    if (!gInterpreter->Declare(code.c_str())) {
@@ -336,7 +337,8 @@ Long64_t InterpreterCalc(const std::string &code, const std::string &context)
    TInterpreter::EErrorCode errorCode(TInterpreter::kNoError); // storage for cling errors
 
    auto callCalc = [&errorCode, &context](const std::string &codeSlice) {
-      gInterpreter->Calc(codeSlice.c_str(), &errorCode);
+      const auto _codeSlice = "#pragma cling optimize(3)\n" + codeSlice;
+      gInterpreter->Calc(_codeSlice.c_str(), &errorCode);
       if (errorCode != TInterpreter::EErrorCode::kNoError) {
          std::string msg = "\nAn error occurred during just-in-time compilation";
          if (!context.empty())
