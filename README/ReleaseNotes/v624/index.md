@@ -82,6 +82,40 @@ See the discussion at [ROOT-11014](https://sft.its.cern.ch/jira/browse/ROOT-1101
 - Just-in-time compilation of string expressions passed to `Filter` and `Define` now generates functions that take fundamental types by const value (rather than by non-const reference as before). This will break code that was assigning to column values in string expressions: this is an intended side effect as we want to prevent non-expert users from performing assignments (=) rather than comparisons (==). Expert users can resort to compiled callables if they absolutely have to assign to column values (not recommended). See [ROOT-11009](https://sft.its.cern.ch/jira/browse/ROOT-11009) for further discussion.
 - RDataFrame action results are now automatically mergeable thanks to the new interface provided by `ROOT::Detail::RDF::RMergeableValue` and derived, introduced in [#5552](https://github.com/root-project/root/pull/5552). A feature originally requested with [ROOT-9869](https://sft.its.cern.ch/jira/browse/ROOT-9869), it helps streamline RDataFrame workflow in a distributed environment. Currently only a subset of RDataFrame actions have their corresponding mergeable class, but in the future it will be possible to extend it to any action through the creation of a new `RMergeableValue` derived class.
 
+### Distributed computing with RDataFrame
+ROOT 6.24 introduces `ROOT.RDF.Experimental.Distributed`, an experimental python package that enhances RDataFrame with distributed computing capabilities. The new package allows distributing RDataFrame applications through one of the supported distributed backends. Currently the [Apache Spark](http://spark.apache.org/) backend is supported, but the logic for distributing RDataFrame analyses over a cluster of nodes is backend-agnostic. Thus, in the future it will be possible to include more backends (e.g. Dask). The backend submodules of this package expose their own `RDataFrame` objects. The only needed change in user code is to substitute `ROOT.RDataFrame` calls with such backend-specific `RDataFrame`s. For example:
+
+```python
+import ROOT
+
+# Point RDataFrame calls to the Spark specific RDataFrame
+RDataFrame = ROOT.RDF.Experimental.Distributed.Spark.RDataFrame
+
+# It still accepts the same constructor arguments as traditional RDataFrame
+df = RDataFrame("mytree","myfile.root")
+
+# Continue the application with the traditional RDataFrame API
+```
+
+The main goal of this package is to support running any RDataFrame application distributedly. Nonetheless, not all RDataFrame operations currently work with this package. The subset that is currently available is:
+- AsNumpy
+- Count
+- Define
+- Fill
+- Filter
+- Graph
+- Histo[1,2,3]D
+- Max
+- Mean
+- Min
+- Profile[1,2,3]D
+- Snapshot
+- Sum
+
+With support for more operations coming in the future.
+
+Any distributed RDataFrame backend inherits the dependencies of the underlying software needed to distribute the applications. In the case of Spark, the python package [pyspark](https://spark.apache.org/docs/latest/api/python/index.html) needs to be installed on the system. This package also has its own set of dependencies, described [here](https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies). For what concerns distributed RDataFrame applications, [Java](https://www.java.com/en/) and [py4j](https://www.py4j.org/) are needed. These are not required dependencies for ROOT, rather they are optional python runtime dependencies for those users who whish to try this new functionality. For those who want to run the distributed RDataFrame tests using pyspark (available in the main ROOT repository and in roottest), a new build option called `test_distrdf_pyspark` has been added. When the option is ON, it enables these tests and triggers a search for the `pyspark` package and its dependencies during ROOT configuration to help understand whether the system will be able to actually run the tests. 
+
 ## Histogram Libraries
 
 
