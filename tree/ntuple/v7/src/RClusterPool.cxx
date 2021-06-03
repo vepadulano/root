@@ -15,6 +15,7 @@
 
 #include <ROOT/RClusterPool.hxx>
 #include <ROOT/RNTupleDescriptor.hxx>
+#include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RPageStorage.hxx>
 
 #include <TError.h>
@@ -30,13 +31,14 @@
 #include <set>
 #include <utility>
 
-bool ROOT::Experimental::Detail::RClusterPool::RInFlightCluster::operator <(const RInFlightCluster &other) const
+#include <fstream> // For the cache lock
+
+bool ROOT::Experimental::Detail::RClusterPool::RInFlightCluster::operator<(const RInFlightCluster &other) const
 {
    if (fClusterKey.fClusterId == other.fClusterKey.fClusterId) {
       if (fClusterKey.fColumnSet.size() == other.fClusterKey.fColumnSet.size()) {
          for (auto itr1 = fClusterKey.fColumnSet.begin(), itr2 = other.fClusterKey.fColumnSet.begin();
-              itr1 != fClusterKey.fColumnSet.end(); ++itr1, ++itr2)
-         {
+              itr1 != fClusterKey.fColumnSet.end(); ++itr1, ++itr2) {
             if (*itr1 == *itr2)
                continue;
             return *itr1 < *itr2;
@@ -50,11 +52,8 @@ bool ROOT::Experimental::Detail::RClusterPool::RInFlightCluster::operator <(cons
 }
 
 ROOT::Experimental::Detail::RClusterPool::RClusterPool(RPageSource &pageSource, unsigned int clusterBunchSize)
-   : fPageSource(pageSource)
-   , fClusterBunchSize(clusterBunchSize)
-   , fPool(2 * clusterBunchSize)
-   , fThreadIo(&RClusterPool::ExecReadClusters, this)
-   , fThreadUnzip(&RClusterPool::ExecUnzipClusters, this)
+   : fPageSource(pageSource), fClusterBunchSize(clusterBunchSize), fPool(2 * clusterBunchSize),
+     fThreadIo(&RClusterPool::ExecReadClusters, this), fThreadUnzip(&RClusterPool::ExecUnzipClusters, this)
 {
    R__ASSERT(clusterBunchSize > 0);
 }
@@ -84,7 +83,7 @@ void ROOT::Experimental::Detail::RClusterPool::ExecUnzipClusters()
       std::vector<RUnzipItem> unzipItems;
       {
          std::unique_lock<std::mutex> lock(fLockUnzipQueue);
-         fCvHasUnzipWork.wait(lock, [&]{ return !fUnzipQueue.empty(); });
+         fCvHasUnzipWork.wait(lock, [&] { return !fUnzipQueue.empty(); });
          while (!fUnzipQueue.empty()) {
             unzipItems.emplace_back(std::move(fUnzipQueue.front()));
             fUnzipQueue.pop();
@@ -111,9 +110,11 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
       std::int64_t bunchId = -1;
       {
          std::unique_lock<std::mutex> lock(fLockWorkQueue);
-         fCvHasReadWork.wait(lock, [&]{ return !fReadQueue.empty(); });
+         fCvHasReadWork.wait(lock, [&] { return !fReadQueue.empty(); });
          while (!fReadQueue.empty()) {
             if (fReadQueue.front().fClusterKey.fClusterId == kInvalidDescriptorId) {
+               if (fPageSink)
+                  fPageSink->CommitDataset(); // commit dataset if cache enabled
                fReadQueue.pop();
                return;
             }
@@ -127,7 +128,60 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
          }
       }
 
+      // At this point, but not before, we can create an RPageSink with the same metadata held by fPageSource
+      // Before this point, fPageSource still doesn't have all the header metadata so it's pointless.
+      if (!fPageSource.GetReadOptions().fCachePath.empty()) {
+         // Very basic check if the file already exists
+         std::ifstream incachelock{"cachelock.txt"};
+         if (incachelock.is_open()) {
+            incachelock.close();
+         } else {
+            if (!fPageSink) {
+               fPageSink = RPageSink::Create(fPageSource.GetNTupleName(), fPageSource.GetReadOptions().fCachePath);
+               auto modelptr = fPageSource.GetDescriptor().GenerateModel()->Clone();
+               fPageSink->Create(*modelptr);
+               // Create a file to flag that we have an active cache
+               std::ofstream outcachelock{"cachelock.txt"};
+               outcachelock.close();
+            }
+         }
+      }
+
       auto clusters = fPageSource.LoadClusters(clusterKeys);
+
+      if (fPageSink) { // We have already checked the user requested a cache and created the PageSink
+
+         auto cacheclusters = [&]() {
+            for (const auto &cluster : clusters) {
+
+               const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(cluster->GetId());
+               const auto clusterentries = clusterDesc.GetNEntries();
+
+               // Traverse columns in cluster
+               for (auto columnId : cluster->GetAvailColumns()) {
+                  const auto &pageRange = clusterDesc.GetPageRange(columnId);
+                  std::uint64_t pageNo = 0;
+
+                  // Traverse pages in column
+                  for (const auto &pi : pageRange.fPageInfos) {
+                     auto ondiskpage =
+                        cluster->GetOnDiskPage(ROOT::Experimental::Detail::ROnDiskPage::Key(columnId, pageNo));
+                     fPageSink->CommitSealedPage(columnId,
+                                                ROOT::Experimental::Detail::RPageStorage::RSealedPage(
+                                                   ondiskpage->GetAddress(), ondiskpage->GetSize(), pi.fNElements));
+                     pageNo++;
+                  }
+               }
+
+               // Remember to commit cluster
+               fEntriesSoFar += clusterentries;
+               fPageSink->CommitCluster(fEntriesSoFar);
+
+            }
+
+         };
+         cacheclusters();
+      }
 
       for (std::size_t i = 0; i < clusters.size(); ++i) {
          // Meanwhile, the user might have requested clusters outside the look-ahead window, so that we don't
@@ -177,7 +231,6 @@ size_t ROOT::Experimental::Detail::RClusterPool::FindFreeSlot() const
    return N;
 }
 
-
 namespace {
 
 /// Helper class for the (cluster, column list) pairs that should be loaded in the background
@@ -193,20 +246,15 @@ public:
    };
 
    static constexpr std::int64_t kFlagRequired = 0x01;
-   static constexpr std::int64_t kFlagLast     = 0x02;
+   static constexpr std::int64_t kFlagLast = 0x02;
 
 private:
    std::map<DescriptorId_t, RInfo> fMap;
 
 public:
-   void Insert(DescriptorId_t clusterId, const RInfo &info)
-   {
-      fMap.emplace(clusterId, info);
-   }
+   void Insert(DescriptorId_t clusterId, const RInfo &info) { fMap.emplace(clusterId, info); }
 
-   bool Contains(DescriptorId_t clusterId) {
-      return fMap.count(clusterId) > 0;
-   }
+   bool Contains(DescriptorId_t clusterId) { return fMap.count(clusterId) > 0; }
 
    std::size_t GetSize() const { return fMap.size(); }
 
@@ -217,7 +265,7 @@ public:
          return;
       ColumnSet_t d;
       std::copy_if(itr->second.fColumnSet.begin(), itr->second.fColumnSet.end(), std::inserter(d, d.end()),
-         [&columns] (DescriptorId_t needle) { return columns.count(needle) == 0; });
+                   [&columns](DescriptorId_t needle) { return columns.count(needle) == 0; });
       if (d.empty()) {
          fMap.erase(itr);
       } else {
@@ -232,8 +280,7 @@ public:
 } // anonymous namespace
 
 ROOT::Experimental::Detail::RCluster *
-ROOT::Experimental::Detail::RClusterPool::GetCluster(
-   DescriptorId_t clusterId, const RCluster::ColumnSet_t &columns)
+ROOT::Experimental::Detail::RClusterPool::GetCluster(DescriptorId_t clusterId, const RCluster::ColumnSet_t &columns)
 {
    const auto &desc = fPageSource.GetDescriptor();
 
@@ -289,7 +336,7 @@ ROOT::Experimental::Detail::RClusterPool::GetCluster(
       // still be reasonably small and the lock is rarely taken (usually once per cluster).
       std::lock_guard<std::mutex> lockGuard(fLockWorkQueue);
 
-      for (auto itr = fInFlightClusters.begin(); itr != fInFlightClusters.end(); ) {
+      for (auto itr = fInFlightClusters.begin(); itr != fInFlightClusters.end();) {
          R__ASSERT(itr->fFuture.valid());
          itr->fIsExpired =
             !provide.Contains(itr->fClusterKey.fClusterId) && (keep.count(itr->fClusterKey.fClusterId) == 0);
@@ -368,10 +415,8 @@ ROOT::Experimental::Detail::RClusterPool::GetCluster(
    return WaitFor(clusterId, columns);
 }
 
-
 ROOT::Experimental::Detail::RCluster *
-ROOT::Experimental::Detail::RClusterPool::WaitFor(
-   DescriptorId_t clusterId, const RCluster::ColumnSet_t &columns)
+ROOT::Experimental::Detail::RClusterPool::WaitFor(DescriptorId_t clusterId, const RCluster::ColumnSet_t &columns)
 {
    while (true) {
       // Fast exit: the cluster happens to be already present in the cache pool

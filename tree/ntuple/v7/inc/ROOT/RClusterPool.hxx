@@ -28,6 +28,8 @@
 #include <set>
 #include <vector>
 
+#include <ROOT/RPageStorage.hxx> // for RPageSink
+
 namespace ROOT {
 namespace Experimental {
 namespace Detail {
@@ -90,6 +92,11 @@ private:
    /// Every cluster pool is responsible for exactly one page source that triggers loading of the clusters
    /// (GetCluster()) and is used for implementing the I/O and cluster memory allocation (PageSource::LoadClusters()).
    RPageSource &fPageSource;
+   /// Each cluster pool might also need to create a PageSink if caching of the RNTuple is enabled
+   std::unique_ptr<RPageSink> fPageSink{nullptr};
+   // Track the number of entries seen so far
+   // Needed in ExecReadClusters the call to fPageSink->CommitCluster that will be done in CacheCluster
+   ClusterSize_t fEntriesSoFar{0};
    /// The number of clusters before the currently active cluster that should stay in the pool if present
    /// Reserved for later use.
    unsigned int fWindowPre = 0;

@@ -18,6 +18,7 @@
 
 #include <Compression.h>
 #include <ROOT/RNTupleUtil.hxx>
+#include <ROOT/RStringView.hxx>
 
 #include <memory>
 
@@ -126,6 +127,7 @@ public:
       kDefault = kOn,
    };
 
+   std::string_view fCachePath{};
 private:
    EClusterCache fClusterCache = EClusterCache::kDefault;
    unsigned int fClusterBunchSize = 1;

@@ -198,6 +198,7 @@ public:
    const ColumnSet_t &GetAvailColumns() const { return fAvailColumns; }
    bool ContainsColumn(DescriptorId_t columnId) const { return fAvailColumns.count(columnId) > 0; }
    size_t GetNOnDiskPages() const { return fOnDiskPages.size(); }
+   const std::unordered_map<ROnDiskPage::Key, ROnDiskPage> &GetOnDiskPages() const { return fOnDiskPages; }
 };
 
 } // namespace Detail
