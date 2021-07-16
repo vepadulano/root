@@ -18,6 +18,7 @@
 
 #include <Compression.h>
 #include <ROOT/RNTupleUtil.hxx>
+#include <ROOT/RStringView.hxx>
 
 namespace ROOT {
 namespace Experimental {
@@ -114,6 +115,7 @@ public:
       kDefault = kOn,
    };
 
+   std::string_view fCachePath{};
 private:
    EClusterCache fClusterCache = EClusterCache::kDefault;
 

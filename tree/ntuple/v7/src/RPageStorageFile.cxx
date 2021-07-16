@@ -227,11 +227,31 @@ ROOT::Experimental::Detail::RPageSourceFile::RPageSourceFile(std::string_view nt
    const RNTupleReadOptions &options)
    : RPageSourceFile(ntupleName, options)
 {
-   fFile = ROOT::Internal::RRawFile::Create(path);
-   R__ASSERT(fFile);
-   fReader = Internal::RMiniFileReader(fFile.get());
-}
+   // User has written a path to a cached file
+   if(!fOptions.fCachePath.empty()){
+      // Very basic check if the file already exists
+      if (FILE *file = fopen(fOptions.fCachePath.data(), "r")) {
+         // If it already exists, use that to read entries
+         fclose(file);
+         std::cout << __FILE__ << "::" << __LINE__ << " - reading from file " << fOptions.fCachePath << "\n";
+         fFile = ROOT::Internal::RRawFile::Create(fOptions.fCachePath);
+         R__ASSERT(fFile);
+         fReader = Internal::RMiniFileReader(fFile.get());
+      } else {
+         // If it doesn't, read from the original RNTuple
+         std::cout << __FILE__ << "::" << __LINE__ << " - reading from file " << path << "\n";
+         fFile = ROOT::Internal::RRawFile::Create(path);
+         R__ASSERT(fFile);
+         fReader = Internal::RMiniFileReader(fFile.get());
+      }
+   } else{ // Proceed as normal
+         std::cout << __FILE__ << "::" << __LINE__ << " - reading from file " << path << "\n";
+         fFile = ROOT::Internal::RRawFile::Create(path);
+         R__ASSERT(fFile);
+         fReader = Internal::RMiniFileReader(fFile.get());
+   }
 
+}
 
 ROOT::Experimental::Detail::RPageSourceFile::~RPageSourceFile() = default;
 

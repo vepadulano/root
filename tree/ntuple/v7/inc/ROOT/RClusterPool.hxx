@@ -94,6 +94,9 @@ private:
    RPageSource &fPageSource;
    /// Each cluster pool might also need to create a PageSink if caching of the RNTuple is enabled
    std::unique_ptr<RPageSink> fPageSink{nullptr};
+   // Track the number of entries seen so far
+   // Needed in ExecReadClusters the call to fPageSink->CommitCluster that will be done in CacheCluster
+   ClusterSize_t fEntriesSoFar{0};
    /// The number of clusters before the currently active cluster that should stay in the pool if present
    unsigned int fWindowPre;
    /// The number of desired clusters in the pool, including the currently active cluster
