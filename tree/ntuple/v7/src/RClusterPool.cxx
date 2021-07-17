@@ -169,12 +169,12 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
          if(fPageSink){ // We have already checked the user requested a cache and created the PageSink
             try{
                // Cache the current cluster
-               auto CacheCluster = [&](DescriptorId_t clusterId){
-                  const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(clusterId);
+               auto CacheCluster = [&](){
+                  const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(item.fClusterId);
                   const auto clusterentries = clusterDesc.GetNEntries();
 
                   // Traverse columns in cluster
-                  for (auto columnId: clusterDesc.GetColumnIds()){
+                  for (auto columnId: item.fColumns){
 
                      const auto &pageRange = clusterDesc.GetPageRange(columnId);
                      std::uint32_t firstElementInPage = 0;
@@ -186,7 +186,10 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
 
                         auto buffer = std::make_unique<unsigned char []>(pi.fLocator.fBytesOnStorage);
                         sealedPage.fBuffer = buffer.get();
-                        fPageSource.LoadSealedPage(columnId, RClusterIndex(clusterId, firstElementInPage), sealedPage);
+                        fPageSource.LoadSealedPage(columnId, RClusterIndex(item.fClusterId, firstElementInPage), sealedPage);
+                        std::cout << __FILE__ << "::" << __LINE__ << " - first element in page " << firstElementInPage << "\n";
+                        std::cout << __FILE__ << "::" << __LINE__ << " - sealed page size: " << sealedPage.fSize << "\n";
+                        std::cout << __FILE__ << "::" << __LINE__ << " - sealed page elements: " << sealedPage.fNElements << "\n";
                         firstElementInPage += pi.fNElements;
 
                         // Commit page
@@ -200,8 +203,8 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
                   fPageSink->CommitCluster(fEntriesSoFar);
 
                };
-               std::cout << __FILE__ << "::" << __LINE__ << " - caching cluster " << cluster->GetId() << "\n";
-               CacheCluster(cluster->GetId());
+               std::cout << __FILE__ << "::" << __LINE__ << " - caching cluster " << item.fClusterId << "\n";
+               CacheCluster();
             } catch(...){
                std::cerr << "Error while caching clusters in RClusterPool::ExecReadClusters.\n";
             }
