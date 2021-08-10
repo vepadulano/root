@@ -159,6 +159,8 @@ class BaseBackend(ABC):
                 action nodes in the computational graph.
             """
             import ROOT
+            ROOT.gROOT.SetBatch(True)
+            ROOT.EnableThreadSafety()
 
             # Activate RDF verbose logging
             verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
@@ -265,6 +267,11 @@ class BaseBackend(ABC):
 
                 # Output of the callable
                 resultptr_list = computation_graph_callable(rdf, current_range.id)
+                # Release the GIL and run the RDF computation graph
+                # WARNING: This assumes resultptr_list[0] is an actual RResultPtr
+                # does not work with e.g. AsNumpy or Snapshot!
+                resultptr_list[0].GetValue.__release_gil__ = True
+                resultptr_list[0].GetValue()
 
                 # Release the GIL and run the RDF computation graph
                 old_rg = resultptr_list[0].GetValue.__release_gil__
