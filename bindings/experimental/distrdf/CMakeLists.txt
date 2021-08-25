@@ -23,6 +23,8 @@ set(py_sources
   DistRDF/Backends/Utils.py
   DistRDF/Backends/Spark/__init__.py
   DistRDF/Backends/Spark/Backend.py
+  DistRDF/Backends/AWS/__init__.py
+  DistRDF/Backends/AWS/Backend.py
 )
 
 # Compile .py files
