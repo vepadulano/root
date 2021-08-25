@@ -290,3 +290,17 @@ class AWS(Base.BaseBackend):
             if len(results) == num_of_lambdas:
                 break
             time.sleep(1)
+
+    def distribute_unique_paths(self, paths):
+        """
+        Spark supports sending files to the executors via the
+        `SparkContext.addFile` method. This method receives in input the path
+        to the file (relative to the path of the current python session). The
+        file is initially added to the Spark driver and then sent to the
+        workers when they are initialized.
+
+        Args:
+            paths (set): A set of paths to files that should be sent to the
+                distributed workers.
+        """
+        pass
