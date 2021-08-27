@@ -1,3 +1,6 @@
+from DistRDF import DataFrame
+from DistRDF import HeadNode
+from DistRDF.Backends import Base
 from __future__ import print_function
 
 import base64
@@ -16,9 +19,6 @@ import cloudpickle as pickle
 
 lambda_await_thread_stop = False
 
-from DistRDF.Backends import Base
-from DistRDF import DataFrame
-from DistRDF import HeadNode
 
 class FlushingLogger:
     def __init__(self):
@@ -44,7 +44,7 @@ class AWS(Base.BaseBackend):
     """
 
     MIN_NPARTITIONS = 2
-    npartitions=32
+    npartitions = 32
 
     def __init__(self, config={}):
         """
@@ -72,7 +72,6 @@ class AWS(Base.BaseBackend):
         npartitions = kwargs.pop("npartitions", self.npartitions)
         headnode = HeadNode.get_headnode(npartitions, *args)
         return DataFrame.RDataFrame(headnode, self)
-
 
     def ProcessAndMerge(self, ranges, mapper, reducer):
         """
