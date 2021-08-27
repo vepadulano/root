@@ -44,13 +44,14 @@ class AWS(Base.BaseBackend):
     """
 
     MIN_NPARTITIONS = 2
+    npartitions=32
 
     def __init__(self, config={}):
         """
         Config for AWS is same as in Dist backend,
         more support will be added in future.
         """
-        super(AWS, self).__init__(config)
+        super(AWS, self).__init__()
         self.logger = FlushingLogger() if logging.root.level >= logging.INFO else logging.getLogger()
         self.npartitions = self._get_partitions()
         self.region = config.get('region') or 'us-east-1'
