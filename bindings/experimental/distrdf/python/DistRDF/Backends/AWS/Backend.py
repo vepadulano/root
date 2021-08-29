@@ -1,7 +1,8 @@
-from DistRDF import DataFrame
-from DistRDF import HeadNode
-from DistRDF.Backends import Base
 from __future__ import print_function
+
+from DistRDF import DataFrame
+from DistRDF.Backends import Base
+from DistRDF import Node
 
 import base64
 import concurrent.futures
@@ -43,7 +44,7 @@ class AWS(Base.BaseBackend):
     for distributed execution.
     """
 
-    MIN_NPARTITIONS = 2
+    MIN_NPARTITIONS = 8
     npartitions = 32
 
     def __init__(self, config={}):
@@ -70,7 +71,7 @@ class AWS(Base.BaseBackend):
         #    `optimize_npartitions` function
         # 3. Set `npartitions` to 2
         npartitions = kwargs.pop("npartitions", self.npartitions)
-        headnode = HeadNode.get_headnode(npartitions, *args)
+        headnode = Node.HeadNode(*args)
         return DataFrame.RDataFrame(headnode, self)
 
     def ProcessAndMerge(self, ranges, mapper, reducer):
@@ -181,14 +182,16 @@ class AWS(Base.BaseBackend):
         local_filename = os.path.join(directory, filename['Key'])
         s3_client.download_file(bucket_name, filename['Key'], local_filename)
 
-        tfile = ROOT.TFile(local_filename, 'OPEN')
-        result = []
+        # tfile = ROOT.TFile(local_filename, 'OPEN')
+        # result = []
 
         # Get all objects from TFile
-        for key in tfile.GetListOfKeys():
-            result.append(key.ReadObj())
-            result[-1].SetDirectory(0)
-        tfile.Close()
+        # for key in tfile.GetListOfKeys():
+        #    result.append(key.ReadObj())
+        #    result[-1].SetDirectory(0)
+        # tfile.Close()
+        with open(local_filename, 'rb') as pickle_file:
+            result = pickle.load(pickle_file)
 
         # Remove temporary root file
         Path(local_filename).unlink()
@@ -220,7 +223,8 @@ class AWS(Base.BaseBackend):
                 successful.
         """
 
-        trials = 3
+        trials = 1
+        # client = boto3.client('lambda', region_name=region, config=Config(connect_timeout=60, read_timeout=900, retries={'max_attempts': 1}))
         client = boto3.client('lambda', region_name=region)
 
         payload = json.dumps({
@@ -234,8 +238,8 @@ class AWS(Base.BaseBackend):
 
         # Maybe here give info about number of invoked lambda for awsmonitor
 
-        while trials >= 0:
-            trials -= 1
+        while trials == 1:
+            trials = 0
             try:
                 response = client.invoke(
                     FunctionName='root_lambda',
