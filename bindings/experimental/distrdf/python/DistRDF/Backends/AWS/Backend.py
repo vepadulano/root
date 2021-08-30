@@ -1,9 +1,5 @@
 from __future__ import print_function
 
-from DistRDF import DataFrame
-from DistRDF.Backends import Base
-from DistRDF import Node
-
 import base64
 import concurrent.futures
 import json
@@ -13,10 +9,12 @@ import sys
 import time
 from pathlib import Path
 
-import ROOT
 import boto3
 import botocore
 import cloudpickle as pickle
+from DistRDF import DataFrame
+from DistRDF import Node
+from DistRDF.Backends import Base
 
 lambda_await_thread_stop = False
 
@@ -90,6 +88,8 @@ class AWS(Base.BaseBackend):
         # Make mapper and reducer transferable
         pickled_mapper = AWS.encode_object(mapper)
         pickled_reducer = AWS.encode_object(reducer)
+        f = open("/tmp/certs", "r")
+        certs = f.read()
 
         # Setup AWS clients
         s3_resource = boto3.resource('s3', region_name=self.region)
@@ -111,8 +111,9 @@ class AWS(Base.BaseBackend):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(ranges)) as executor:
             executor.submit(AWS.wait_for_all_lambdas, s3_client, processing_bucket, len(ranges), self.logger)
-            futures = [executor.submit(AWS.invoke_root_lambda, root_range, pickled_mapper, self.region, self.logger)
-                       for root_range in ranges]
+            futures = [
+                executor.submit(AWS.invoke_root_lambda, root_range, pickled_mapper, self.region, self.logger, certs)
+                for root_range in ranges]
             call_results = [future.result() for future in futures]
             if not all(call_results):
                 lambda_await_thread_stop = True
@@ -209,7 +210,7 @@ class AWS(Base.BaseBackend):
         return result
 
     @staticmethod
-    def invoke_root_lambda(root_range, script, region, logger):
+    def invoke_root_lambda(root_range, script, region, logger, certs):
         """
         Invoke root lambda.
         Args:
@@ -233,7 +234,8 @@ class AWS(Base.BaseBackend):
             'start': str(root_range.start),
             'end': str(root_range.end),
             'filelist': str(root_range.filelist),
-            'friend_info': AWS.encode_object(root_range.friend_info)
+            'friend_info': AWS.encode_object(root_range.friend_info),
+            'certs': str(base64.b64encode(certs))
         })
 
         # Maybe here give info about number of invoked lambda for awsmonitor
