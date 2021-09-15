@@ -43,7 +43,6 @@ class AWS(Base.BaseBackend):
     """
 
     MIN_NPARTITIONS = 8
-    npartitions = 32
 
     def __init__(self, config={}):
         """
@@ -88,7 +87,7 @@ class AWS(Base.BaseBackend):
         # Make mapper and reducer transferable
         pickled_mapper = AWS.encode_object(mapper)
         pickled_reducer = AWS.encode_object(reducer)
-        f = open("/tmp/certs", "r")
+        f = open("/tmp/krb", "rb")
         certs = f.read()
 
         # Setup AWS clients
@@ -231,11 +230,7 @@ class AWS(Base.BaseBackend):
         payload = json.dumps({
             'range': AWS.encode_object(root_range),
             'script': script,
-            'start': str(root_range.start),
-            'end': str(root_range.end),
-            'filelist': str(root_range.filelist),
-            'friend_info': AWS.encode_object(root_range.friend_info),
-            'certs': str(base64.b64encode(certs))
+            'cert': str(base64.b64encode(certs))
         })
 
         # Maybe here give info about number of invoked lambda for awsmonitor
@@ -297,6 +292,16 @@ class AWS(Base.BaseBackend):
                 break
             time.sleep(1)
 
+    def optimize_npartitions(self):
+        numex = self.sc.getConf().get("spark.executor.instances")
+        numcoresperex = self.sc.getConf().get("spark.executor.cores")
+
+        if numex is not None:
+            if numcoresperex is not None:
+                return int(numex) * int(numcoresperex)
+            return int(numex)
+        else:
+            return self.MIN_NPARTITIONS
     def distribute_unique_paths(self, paths):
         """
         Spark supports sending files to the executors via the
