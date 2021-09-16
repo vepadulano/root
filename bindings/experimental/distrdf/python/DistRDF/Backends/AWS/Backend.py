@@ -15,25 +15,10 @@ import cloudpickle as pickle
 from DistRDF import DataFrame
 from DistRDF import Node
 from DistRDF.Backends import Base
+from .flushing_logger import FlushingLogger
+
 
 lambda_await_thread_stop = False
-
-
-class FlushingLogger:
-    def __init__(self):
-        self.logger = logging.getLogger()
-
-    def __getattr__(self, name):
-        method = getattr(self.logger, name)
-        if name in ['info', 'warning', 'debug', 'error', 'critical', ]:
-            def flushed_method(msg, *args, **kwargs):
-                method(msg, *args, **kwargs)
-                for h in self.logger.handlers:
-                    h.flush()
-
-            return flushed_method
-        else:
-            return method
 
 
 class AWS(Base.BaseBackend):
@@ -43,6 +28,7 @@ class AWS(Base.BaseBackend):
     """
 
     MIN_NPARTITIONS = 8
+    npartitions = 32
 
     def __init__(self, config={}):
         """
@@ -53,6 +39,7 @@ class AWS(Base.BaseBackend):
         self.logger = FlushingLogger() if logging.root.level >= logging.INFO else logging.getLogger()
         self.npartitions = self._get_partitions()
         self.region = config.get('region') or 'us-east-1'
+        self.paths = []
 
     def _get_partitions(self):
         return int(self.npartitions or AWS.MIN_NPARTITIONS)
@@ -84,22 +71,22 @@ class AWS(Base.BaseBackend):
             after computation (Map-Reduce).
         """
 
-        # Make mapper and reducer transferable
+        # Make mapper, reducer and headers transferable
         pickled_mapper = AWS.encode_object(mapper)
         pickled_reducer = AWS.encode_object(reducer)
-        f = open("/tmp/krb", "rb")
+        pickled_headers = AWS.encode_object(self.paths)
+        f = open("/tmp/certs", "rb")
         certs = f.read()
 
         # Setup AWS clients
         s3_resource = boto3.resource('s3', region_name=self.region)
         s3_client = boto3.client('s3', region_name=self.region)
-        lambda_client = boto3.client('lambda', region_name=self.region)
         ssm_client = boto3.client('ssm', region_name=self.region)
 
         self.logger.info(f'Before lambdas invoke. Number of lambdas: {len(ranges)}')
 
         processing_bucket = ssm_client.get_parameter(Name='processing_bucket')['Parameter']['Value']
-
+        
         s3_resource.Bucket(processing_bucket).objects.all().delete()
 
         invoke_begin = time.time()
@@ -111,7 +98,7 @@ class AWS(Base.BaseBackend):
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(ranges)) as executor:
             executor.submit(AWS.wait_for_all_lambdas, s3_client, processing_bucket, len(ranges), self.logger)
             futures = [
-                executor.submit(AWS.invoke_root_lambda, root_range, pickled_mapper, self.region, self.logger, certs)
+                executor.submit(AWS.invoke_root_lambda, root_range, pickled_mapper, self.region, self.logger, certs, pickled_headers)
                 for root_range in ranges]
             call_results = [future.result() for future in futures]
             if not all(call_results):
@@ -120,13 +107,10 @@ class AWS(Base.BaseBackend):
         if lambda_await_thread_stop:
             raise Exception(f'Some lambdas failed after multiple retrials')
 
-        self.logger.info('All lambdas have been invoked')
-
         download_begin = time.time()
 
         # Get names of output files, download and reduce them
         filenames = AWS.get_all_objects_from_s3_bucket(s3_client, processing_bucket)
-        self.logger.info(f'Lambdas finished: {len(filenames)}')
 
         tmp_files_directory = '/tmp'
         AWS.remove_all_tmp_root_files(tmp_files_directory)
@@ -169,6 +153,8 @@ class AWS(Base.BaseBackend):
 
         return reduction_result
 
+    
+    
     def distribute_files(self, includes_list):
         pass
 
@@ -209,7 +195,7 @@ class AWS(Base.BaseBackend):
         return result
 
     @staticmethod
-    def invoke_root_lambda(root_range, script, region, logger, certs):
+    def invoke_root_lambda(root_range, script, region, logger, certs, headers):
         """
         Invoke root lambda.
         Args:
@@ -230,7 +216,12 @@ class AWS(Base.BaseBackend):
         payload = json.dumps({
             'range': AWS.encode_object(root_range),
             'script': script,
-            'cert': str(base64.b64encode(certs))
+            'start': str(root_range.start),
+            'end': str(root_range.end),
+            'filelist': str(root_range.filelist),
+            'friend_info': AWS.encode_object(root_range.friend_info),
+            'cert': str(base64.b64encode(certs)),
+            'headers': headers
         })
 
         # Maybe here give info about number of invoked lambda for awsmonitor
@@ -292,16 +283,6 @@ class AWS(Base.BaseBackend):
                 break
             time.sleep(1)
 
-    def optimize_npartitions(self):
-        numex = self.sc.getConf().get("spark.executor.instances")
-        numcoresperex = self.sc.getConf().get("spark.executor.cores")
-
-        if numex is not None:
-            if numcoresperex is not None:
-                return int(numex) * int(numcoresperex)
-            return int(numex)
-        else:
-            return self.MIN_NPARTITIONS
     def distribute_unique_paths(self, paths):
         """
         Spark supports sending files to the executors via the
@@ -315,3 +296,10 @@ class AWS(Base.BaseBackend):
                 distributed workers.
         """
         pass
+
+
+    def add_header(self, path: str):
+        with open(path, 'r') as f:
+            contents = f.read()
+            self.paths.append((path, contents))
+
