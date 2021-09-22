@@ -15,6 +15,8 @@ from collections import namedtuple
 import ROOT
 RunGraphs = ROOT.RDF.RunGraphs
 
+w = ROOT.TStopwatch()
+
 class CppWorkflow(object):
     '''
     Class that encapsulates the generation of the code of an RDataFrame workflow
@@ -410,10 +412,14 @@ class CppWorkflow(object):
             f.write(final_code)
 
         # Now compile and load the code
+        w.Reset()
+        w.Start()
         if not ROOT.gSystem.CompileMacro(cpp_file_name, 'O'):
             raise RuntimeError(
                 'Error compiling the RDataFrame workflow file: {}' \
                 .format(cpp_file_name))
+        w.Stop()
+        print('C++ Compilation ' + str(w.RealTime()))
 
         # Let the cache know there is a new workflow
         CppWorkflow._cached_wfs[code] = this_wf_id
@@ -473,7 +479,11 @@ class CppWorkflow(object):
             # We trigger the event loop here, so make sure we release the GIL
             old_rg = RunGraphs.__release_gil__
             RunGraphs.__release_gil__ = True
+            w.Reset()
+            w.Start()
             RunGraphs(v_results)
+            w.Stop()
+            print('C++ Event Loop ' + str(w.RealTime()))
             RunGraphs.__release_gil__ = old_rg
 
         # Replace the RResultHandle of each Snapshot by its modified output

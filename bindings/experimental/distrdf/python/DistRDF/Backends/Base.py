@@ -23,6 +23,8 @@ from DistRDF.HeadNode import TreeHeadNode
 # Python 2 there is no ABC class
 ABC = ABCMeta("ABC", (object,), {})
 
+w_task = ROOT.TStopwatch()
+w_gv = ROOT.TStopwatch()
 
 class BaseBackend(ABC):
     """
@@ -236,6 +238,9 @@ class BaseBackend(ABC):
                 rdf = ROOT.RDataFrame(nentries).Range(current_range.start, current_range.end)
 
             if optimized:
+                w_task.Reset()
+                w_task.Start()
+
                 # Create the RDF computation graph and execute it on this ranged
                 # dataset. The results of the actions of the graph and their types
                 # are returned
@@ -249,9 +254,25 @@ class BaseBackend(ABC):
                     else res
                     for res, res_type in zip(results, res_types)
                 ]
+
+                w_task.Stop()
+                print('C++ Task ' + str(w_task.RealTime()))
             else:
+                w_task.Reset()
+                w_task.Start()
+
                 # Output of the callable
                 resultptr_list = computation_graph_callable(rdf, current_range.id)
+
+                # Release the GIL and run the RDF computation graph
+                old_rg = resultptr_list[0].GetValue.__release_gil__
+                resultptr_list[0].GetValue.__release_gil__ = True
+                w_gv.Reset()
+                w_gv.Start()
+                resultptr_list[0].GetValue()
+                w_gv.Stop()
+                print('Python Event Loop ' + str(w_gv.RealTime()))
+                resultptr_list[0].GetValue.__release_gil__ = old_rg
 
                 mergeables = [
                     resultptr  # Here resultptr is already the result value
@@ -259,6 +280,9 @@ class BaseBackend(ABC):
                     else ROOT.ROOT.Detail.RDF.GetMergeableValue(resultptr)
                     for resultptr in resultptr_list
                 ]
+
+                w_task.Stop()
+                print('Python Task ' + str(w_task.RealTime()))
 
             return mergeables
 
