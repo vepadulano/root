@@ -161,7 +161,7 @@ class BaseBackend(ABC):
             import ROOT
 
             # Activate RDF verbose logging
-            verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
+            verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
             # We have to decide whether to do this in Dist or in subclasses
             # Utils.declare_headers(worker_includes)  # Declare headers if any
             # Run initialization method to prepare the worker runtime
