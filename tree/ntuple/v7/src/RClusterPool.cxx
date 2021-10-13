@@ -150,7 +150,6 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
 
       // Track the number of entries seen so far
       // Needed in the call to fPageSink->CommitCluster that will be done in CacheCluster
-      ClusterSize_t entriessofar{0};
       for (auto &item : readItems) {
          if (item.fClusterId == kInvalidDescriptorId){
             // Need to commit the cached dataset if present
@@ -168,43 +167,63 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
 
          if(fPageSink){ // We have already checked the user requested a cache and created the PageSink
             try{
-               // Cache the current cluster
-               auto CacheCluster = [&](){
+               auto cachev2 = [&](){
                   const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(item.fClusterId);
                   const auto clusterentries = clusterDesc.GetNEntries();
 
-                  // Traverse columns in cluster
-                  for (auto columnId: item.fColumns){
-
+                  for (auto columnId: cluster->GetAvailColumns()){
                      const auto &pageRange = clusterDesc.GetPageRange(columnId);
-                     std::uint32_t firstElementInPage = 0;
+                     std::uint64_t pageNo = 0;
 
-
-                     RPageStorage::RSealedPage sealedPage;
                      // Traverse pages in column
                      for (const auto &pi : pageRange.fPageInfos) {
-
-                        auto buffer = std::make_unique<unsigned char []>(pi.fLocator.fBytesOnStorage);
-                        sealedPage.fBuffer = buffer.get();
-                        fPageSource.LoadSealedPage(columnId, RClusterIndex(item.fClusterId, firstElementInPage), sealedPage);
-                        std::cout << __FILE__ << "::" << __LINE__ << " - first element in page " << firstElementInPage << "\n";
-                        std::cout << __FILE__ << "::" << __LINE__ << " - sealed page size: " << sealedPage.fSize << "\n";
-                        std::cout << __FILE__ << "::" << __LINE__ << " - sealed page elements: " << sealedPage.fNElements << "\n";
-                        firstElementInPage += pi.fNElements;
-
-                        // Commit page
-                        fPageSink->CommitSealedPage(columnId, sealedPage);
-
+                        auto ondiskpage = cluster->GetOnDiskPage(ROOT::Experimental::Detail::ROnDiskPage::Key(columnId, pageNo));
+                        fPageSink->CommitSealedPage(columnId, ROOT::Experimental::Detail::RPageStorage::RSealedPage(ondiskpage->GetAddress(), ondiskpage->GetSize(), pi.fNElements));
+                        pageNo++;
                      }
-
                   }
+
+                  // Remember to commit cluster
                   fEntriesSoFar += clusterentries;
-
                   fPageSink->CommitCluster(fEntriesSoFar);
-
                };
+               // Cache the current cluster
+               // auto CacheCluster = [&](){
+               //    const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(item.fClusterId);
+               //    const auto clusterentries = clusterDesc.GetNEntries();
+
+               //    // Traverse columns in cluster
+               //    for (auto columnId: item.fColumns){
+
+               //       const auto &pageRange = clusterDesc.GetPageRange(columnId);
+               //       std::uint32_t firstElementInPage = 0;
+
+
+               //       RPageStorage::RSealedPage sealedPage;
+               //       // Traverse pages in column
+               //       for (const auto &pi : pageRange.fPageInfos) {
+
+               //          auto buffer = std::make_unique<unsigned char []>(pi.fLocator.fBytesOnStorage);
+               //          sealedPage.fBuffer = buffer.get();
+               //          fPageSource.LoadSealedPage(columnId, RClusterIndex(item.fClusterId, firstElementInPage), sealedPage);
+               //          std::cout << __FILE__ << "::" << __LINE__ << " - first element in page " << firstElementInPage << "\n";
+               //          std::cout << __FILE__ << "::" << __LINE__ << " - sealed page size: " << sealedPage.fSize << "\n";
+               //          std::cout << __FILE__ << "::" << __LINE__ << " - sealed page elements: " << sealedPage.fNElements << "\n";
+               //          firstElementInPage += pi.fNElements;
+
+               //          // Commit page
+               //          fPageSink->CommitSealedPage(columnId, sealedPage);
+
+               //       }
+
+               //    }
+               //    fEntriesSoFar += clusterentries;
+
+               //    fPageSink->CommitCluster(fEntriesSoFar);
+
+               // };
                std::cout << __FILE__ << "::" << __LINE__ << " - caching cluster " << item.fClusterId << "\n";
-               CacheCluster();
+               cachev2();
             } catch(...){
                std::cerr << "Error while caching clusters in RClusterPool::ExecReadClusters.\n";
             }
