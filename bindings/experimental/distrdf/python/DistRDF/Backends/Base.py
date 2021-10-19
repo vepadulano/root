@@ -23,9 +23,6 @@ from DistRDF.HeadNode import TreeHeadNode
 # Python 2 there is no ABC class
 ABC = ABCMeta("ABC", (object,), {})
 
-w_task = ROOT.TStopwatch()
-w_gv = ROOT.TStopwatch()
-
 class BaseBackend(ABC):
     """
     Base class for RDataFrame distributed backends.
@@ -158,9 +155,18 @@ class BaseBackend(ABC):
                 list: This respresents the list of (mergeable)values of all
                 action nodes in the computational graph.
             """
+            from datetime import datetime
+            import socket
+
+            print(f"DistRDF task [BEGIN DATETIME]: {datetime.now()}")
+            print(f"DistRDF task [BEGIN HOSTNAME]: {socket.gethostname()}")
+
             import ROOT
             ROOT.gROOT.SetBatch(True)
             ROOT.EnableThreadSafety()
+
+            w_task = ROOT.TStopwatch()
+            w_gv = ROOT.TStopwatch()
 
             # Activate RDF verbose logging
             verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
@@ -293,6 +299,9 @@ class BaseBackend(ABC):
                 w_task.Stop()
                 print('Python Task ' + str(w_task.RealTime()))
 
+
+            print(f"DistRDF task [END DATETIME]: {datetime.now()}")
+            print(f"DistRDF task [END HOSTNAME]: {socket.gethostname()}")
             return mergeables
 
         def reducer(mergeables_out, mergeables_in):
