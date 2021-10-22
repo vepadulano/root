@@ -348,7 +348,6 @@ void ROOT::Experimental::Detail::RPageSink::CommitCluster(ROOT::Experimental::NT
 {
    auto locator = CommitClusterImpl(nEntries);
 
-   std::cout << __FILE__ << "::" << __LINE__ << " - nEntries: " << nEntries << ", fPrevClusterNEntries: " << fPrevClusterNEntries << "\n";
    R__ASSERT((nEntries - fPrevClusterNEntries) < ClusterSize_t(-1));
    fDescriptorBuilder.AddCluster(fLastClusterId, RNTupleVersion(), fPrevClusterNEntries,
                                  ClusterSize_t(nEntries - fPrevClusterNEntries));

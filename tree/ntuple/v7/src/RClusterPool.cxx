@@ -31,6 +31,8 @@
 #include <set>
 #include <utility>
 
+#include <fstream> // For the cache lock
+
 bool ROOT::Experimental::Detail::RClusterPool::RInFlightCluster::operator <(const RInFlightCluster &other) const
 {
    if (fClusterId == other.fClusterId) {
@@ -124,12 +126,10 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
       // At this point, but not before, we can create an RPageSink with the same metadata held by fPageSource
       // Before this point, fPageSource still doesn't have all the header metadata so it's pointless.
       if (!fPageSource.GetReadOptions().fCachePath.empty()){
- 
-         std::cout << "Requested cache path: '" << fPageSource.GetReadOptions().fCachePath << "'\n";        
          // Very basic check if the file already exists
-         if (FILE *file = fopen(fPageSource.GetReadOptions().fCachePath.data(), "r")) {
-            std::cout << "Found cache.\n";
-            fclose(file);
+         std::ifstream incachelock{"cachelock.txt"};
+         if (incachelock.is_open()) {
+            incachelock.close();
          } else {
             if(!fPageSink){
                std::cout << "Creating cache\n";
@@ -137,7 +137,10 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
                   fPageSink = RPageSink::Create(fPageSource.GetNTupleName(), fPageSource.GetReadOptions().fCachePath);
                   auto modelptr = fPageSource.GetDescriptor().GenerateModel()->Clone();
                   fPageSink->Create(*modelptr);
-               } catch(...) {
+                  // Create a file to flag that we have an active cache
+                  std::ofstream outcachelock{"cachelock.txt"};
+                  outcachelock.close();
+               } catch (...) {
                   std::cerr << "Error while creating RPageSink in RClusterPool::ExecReadClusters.\n";
                }
             }
@@ -187,42 +190,6 @@ void ROOT::Experimental::Detail::RClusterPool::ExecReadClusters()
                   fEntriesSoFar += clusterentries;
                   fPageSink->CommitCluster(fEntriesSoFar);
                };
-               // Cache the current cluster
-               // auto CacheCluster = [&](){
-               //    const auto &clusterDesc = fPageSource.GetDescriptor().GetClusterDescriptor(item.fClusterId);
-               //    const auto clusterentries = clusterDesc.GetNEntries();
-
-               //    // Traverse columns in cluster
-               //    for (auto columnId: item.fColumns){
-
-               //       const auto &pageRange = clusterDesc.GetPageRange(columnId);
-               //       std::uint32_t firstElementInPage = 0;
-
-
-               //       RPageStorage::RSealedPage sealedPage;
-               //       // Traverse pages in column
-               //       for (const auto &pi : pageRange.fPageInfos) {
-
-               //          auto buffer = std::make_unique<unsigned char []>(pi.fLocator.fBytesOnStorage);
-               //          sealedPage.fBuffer = buffer.get();
-               //          fPageSource.LoadSealedPage(columnId, RClusterIndex(item.fClusterId, firstElementInPage), sealedPage);
-               //          std::cout << __FILE__ << "::" << __LINE__ << " - first element in page " << firstElementInPage << "\n";
-               //          std::cout << __FILE__ << "::" << __LINE__ << " - sealed page size: " << sealedPage.fSize << "\n";
-               //          std::cout << __FILE__ << "::" << __LINE__ << " - sealed page elements: " << sealedPage.fNElements << "\n";
-               //          firstElementInPage += pi.fNElements;
-
-               //          // Commit page
-               //          fPageSink->CommitSealedPage(columnId, sealedPage);
-
-               //       }
-
-               //    }
-               //    fEntriesSoFar += clusterentries;
-
-               //    fPageSink->CommitCluster(fEntriesSoFar);
-
-               // };
-               std::cout << __FILE__ << "::" << __LINE__ << " - caching cluster " << item.fClusterId << "\n";
                cachev2();
             } catch(...){
                std::cerr << "Error while caching clusters in RClusterPool::ExecReadClusters.\n";
