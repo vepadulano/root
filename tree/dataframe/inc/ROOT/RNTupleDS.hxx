@@ -19,6 +19,7 @@
 
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RDataSource.hxx>
+#include <ROOT/RNTupleOptions.hxx>
 #include <ROOT/RNTupleUtil.hxx>
 #include <ROOT/RStringView.hxx>
 
@@ -92,7 +93,8 @@ protected:
    Record_t GetColumnReadersImpl(std::string_view name, const std::type_info &) final;
 };
 
-RDataFrame MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName);
+RDataFrame MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName,
+                               const RNTupleReadOptions &opts = RNTupleReadOptions());
 
 } // ns Experimental
 } // ns ROOT

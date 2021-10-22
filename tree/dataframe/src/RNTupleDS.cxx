@@ -342,9 +342,10 @@ void RNTupleDS::SetNSlots(unsigned int nSlots)
 } // namespace Experimental
 } // namespace ROOT
 
-ROOT::RDataFrame ROOT::Experimental::MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName)
+ROOT::RDataFrame ROOT::Experimental::MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName,
+                                                         const RNTupleReadOptions &opts)
 {
-   auto pageSource = ROOT::Experimental::Detail::RPageSource::Create(ntupleName, fileName);
+   auto pageSource = ROOT::Experimental::Detail::RPageSource::Create(ntupleName, fileName, opts);
    ROOT::RDataFrame rdf(std::make_unique<RNTupleDS>(std::move(pageSource)));
    return rdf;
 }
