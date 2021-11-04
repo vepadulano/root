@@ -19,6 +19,7 @@
 
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RDataSource.hxx>
+#include <ROOT/RNTupleMetrics.hxx>
 #include <ROOT/RNTupleOptions.hxx>
 #include <ROOT/RNTupleUtil.hxx>
 #include <ROOT/RStringView.hxx>
@@ -66,9 +67,7 @@ class RNTupleDS final : public ROOT::RDF::RDataSource {
    ///    float eta;
    /// };
    /// AddField will recurse into Jet.pt and Jet.eta and provide the two inner fields as std::vector<float> each.
-   void AddField(const RNTupleDescriptor &desc,
-                 std::string_view colName,
-                 DescriptorId_t fieldId,
+   void AddField(const RNTupleDescriptor &desc, std::string_view colName, DescriptorId_t fieldId,
                  std::vector<DescriptorId_t> skeinIDs);
 
 public:
@@ -93,10 +92,22 @@ protected:
    Record_t GetColumnReadersImpl(std::string_view name, const std::type_info &) final;
 };
 
-RDataFrame MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName,
-                               const RNTupleReadOptions &opts = RNTupleReadOptions());
+struct MetricsWrapper {
+   ROOT::Experimental::Detail::RNTupleMetrics *fMetrics{nullptr};
 
-} // ns Experimental
-} // ns ROOT
+   ROOT::Experimental::Detail::RNTupleMetrics **GetPtr() { return &fMetrics; }
+   ROOT::Experimental::Detail::RNTupleMetrics &GetMetrics()
+   {
+      if (fMetrics)
+         return *fMetrics;
+   }
+};
+
+RDataFrame MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName,
+                               const RNTupleReadOptions &opts = RNTupleReadOptions(),
+                               ROOT::Experimental::Detail::RNTupleMetrics **metrics = nullptr);
+
+} // namespace Experimental
+} // namespace ROOT
 
 #endif

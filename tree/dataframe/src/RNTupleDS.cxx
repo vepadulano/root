@@ -51,7 +51,9 @@ protected:
 public:
    static std::string TypeName() { return "std::size_t"; }
    RRDFCardinalityField()
-      : ROOT::Experimental::Detail::RFieldBase("", TypeName(), ENTupleStructure::kLeaf, false /* isSimple */) {}
+      : ROOT::Experimental::Detail::RFieldBase("", TypeName(), ENTupleStructure::kLeaf, false /* isSimple */)
+   {
+   }
    RRDFCardinalityField(RRDFCardinalityField &&other) = default;
    RRDFCardinalityField &operator=(RRDFCardinalityField &&other) = default;
    ~RRDFCardinalityField() = default;
@@ -243,8 +245,8 @@ void RNTupleDS::AddField(const RNTupleDescriptor &desc, std::string_view colName
    if (cardinalityField) {
       fColumnNames.emplace_back("R_rdf_sizeof_" + std::string(colName));
       fColumnTypes.emplace_back(cardinalityField->GetType());
-      auto cardColReader = std::make_unique<ROOT::Experimental::Internal::RNTupleColumnReader>(
-         std::move(cardinalityField));
+      auto cardColReader =
+         std::make_unique<ROOT::Experimental::Internal::RNTupleColumnReader>(std::move(cardinalityField));
       fColumnReaderPrototypes.emplace_back(std::move(cardColReader));
    }
 
@@ -343,9 +345,13 @@ void RNTupleDS::SetNSlots(unsigned int nSlots)
 } // namespace ROOT
 
 ROOT::RDataFrame ROOT::Experimental::MakeNTupleDataFrame(std::string_view ntupleName, std::string_view fileName,
-                                                         const RNTupleReadOptions &opts)
+                                                         const RNTupleReadOptions &opts,
+                                                         ROOT::Experimental::Detail::RNTupleMetrics **metrics)
 {
    auto pageSource = ROOT::Experimental::Detail::RPageSource::Create(ntupleName, fileName, opts);
+   auto pageMetrics = &pageSource->GetMetrics();
+   pageMetrics->Enable();
+   *metrics = pageMetrics;
    ROOT::RDataFrame rdf(std::make_unique<RNTupleDS>(std::move(pageSource)));
    return rdf;
 }
