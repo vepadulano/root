@@ -156,10 +156,13 @@ class BaseBackend(ABC):
                 action nodes in the computational graph.
             """
             from datetime import datetime
+            import os
             import socket
 
-            print(f"DistRDF task [BEGIN DATETIME]: {datetime.now()}")
-            print(f"DistRDF task [BEGIN HOSTNAME]: {socket.gethostname()}")
+            outfilepath = os.path.join(os.environ["HOME"], "distrdf_timestamps.out")
+            with open(outfilepath, "a+") as f:
+                f.write(f"DistRDF task [BEGIN DATETIME]: {datetime.now()}\n")
+                f.write(f"DistRDF task [BEGIN HOSTNAME]: {socket.gethostname()}\n")
 
             import ROOT
             ROOT.gROOT.SetBatch(True)
@@ -276,17 +279,16 @@ class BaseBackend(ABC):
                 # Release the GIL and run the RDF computation graph
                 # WARNING: This assumes resultptr_list[0] is an actual RResultPtr
                 # does not work with e.g. AsNumpy or Snapshot!
-                resultptr_list[0].GetValue.__release_gil__ = True
-                resultptr_list[0].GetValue()
-
-                # Release the GIL and run the RDF computation graph
                 old_rg = resultptr_list[0].GetValue.__release_gil__
                 resultptr_list[0].GetValue.__release_gil__ = True
+
                 w_gv.Reset()
                 w_gv.Start()
                 resultptr_list[0].GetValue()
                 w_gv.Stop()
-                print('Python Event Loop ' + str(w_gv.RealTime()))
+                with open(outfilepath, "a+") as f:
+                    f.write(f"Python Event Loop {w_gv.RealTime()}\n")
+
                 resultptr_list[0].GetValue.__release_gil__ = old_rg
 
                 mergeables = [
@@ -297,11 +299,12 @@ class BaseBackend(ABC):
                 ]
 
                 w_task.Stop()
-                print('Python Task ' + str(w_task.RealTime()))
+                with open(outfilepath, "a+") as f:
+                    f.write(f"Python Task {w_task.RealTime()}\n")
 
-
-            print(f"DistRDF task [END DATETIME]: {datetime.now()}")
-            print(f"DistRDF task [END HOSTNAME]: {socket.gethostname()}")
+            with open(outfilepath, "a+") as f:
+                f.write(f"DistRDF task [END DATETIME]: {datetime.now()}\n")
+                f.write(f"DistRDF task [END HOSTNAME]: {socket.gethostname()}\n")
             return mergeables
 
         def reducer(mergeables_out, mergeables_in):
