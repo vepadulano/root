@@ -99,10 +99,12 @@ class AWS(Base.BaseBackend):
         pickled_headers = AWSServiceWrapper.encode_object(self.paths)
         processing_bucket = self.aws_service_wrapper.get_ssm_parameter_value('processing_bucket')
 
+        print("self.TOKEN_PATH")
         try:
-            with open(self.TOKEN_PATH, "rb") as f:
-                certs = f.read()
+            f = open(self.TOKEN_PATH, "rb")
+            certs = f.read()
         except FileNotFoundError:
+            print("failed to find cert!")
             certs = b''
 
         invoke_lambda = functools.partial(
