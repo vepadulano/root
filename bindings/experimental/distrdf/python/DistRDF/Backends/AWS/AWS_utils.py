@@ -1,14 +1,15 @@
-import logging
-import json
 import base64
+import json
+import logging
+import os
+import sys
 import time
-import cloudpickle as pickle
+from pathlib import Path
+from typing import Optional
+
 import boto3
 import botocore
-import sys
-import os
-from typing import Optional
-from pathlib import Path
+import cloudpickle as pickle
 
 
 class AWSServiceWrapper:
@@ -75,6 +76,14 @@ class AWSServiceWrapper:
                     raise exception(msg)
 
                 filename = json.loads(payload.get('filename', 'null'))
+                monitoring_result = json.loads(payload.get('body', 'null'))
+                path = os.getcwd()
+                result_dir = path + "/results"
+                if not os.path.exists(result_dir):
+                    os.makedirs(result_dir)
+                f = open(f'{result_dir}/{filename}.json', "a")
+                f.write(monitoring_result)
+                f.close()
 
             except botocore.exceptions.ClientError as error:
                 # AWS site errors
