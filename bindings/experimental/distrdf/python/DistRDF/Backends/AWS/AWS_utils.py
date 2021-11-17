@@ -76,7 +76,8 @@ class AWSServiceWrapper:
                     raise exception(msg)
 
                 filename = json.loads(payload.get('filename', 'null'))
-                monitoring_result = json.loads(payload.get('body', 'null'))
+                monitoring_result = payload.get('body', 'null')
+
                 path = os.getcwd()
                 result_dir = path + "/results"
                 if not os.path.exists(result_dir):
