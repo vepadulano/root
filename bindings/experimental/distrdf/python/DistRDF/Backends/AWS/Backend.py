@@ -2,6 +2,8 @@ import logging
 import functools
 import time
 
+from collections import namedtuple
+
 from DistRDF import DataFrame
 from DistRDF import HeadNode
 from DistRDF.Backends import Base
@@ -11,6 +13,7 @@ from .AWS_utils import AWSServiceWrapper
 from .reducer import Reducer
 from concurrent.futures import ThreadPoolExecutor
 
+AWSBENCH = namedtuple("AWSBENCH", ["npartitions", "mapwalltime", "reducewalltime"])
 
 class AWS(Base.BaseBackend):
     """
@@ -76,16 +79,16 @@ class AWS(Base.BaseBackend):
 
         result = Reducer.tree_reduce(reducer, files)
 
-        bench = (
+        bench = AWSBENCH(
             len(ranges),
-            reduce_begin - invoke_begin,
-            time.time() - reduce_begin
+            round(reduce_begin - invoke_begin, 4),
+            round(time.time() - reduce_begin, 4)
         )
 
         # Clean up intermediate objects after we're done
         self.aws_service_wrapper.clean_s3_bucket(processing_bucket)
 
-        print(bench)
+        print(f"Benchmark report: {bench}")
 
         return result
 
