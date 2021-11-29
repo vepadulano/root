@@ -16,6 +16,6 @@ def RDataFrame(*args, **kwargs):
     """
 
     from DistRDF.Backends.AWS import Backend
-    aws = Backend.AWS()
+    aws = Backend.AWS(region_name=kwargs.get("region_name"))
 
     return aws.make_dataframe(*args, **kwargs)

@@ -24,7 +24,7 @@ class AWS(Base.BaseBackend):
     npartitions = 32
     TOKEN_PATH = '/tmp/certs'
 
-    def __init__(self, config={}):
+    def __init__(self, region_name):
         """
         Config for AWS is same as in Dist backend,
         more support will be added in future.
@@ -32,7 +32,7 @@ class AWS(Base.BaseBackend):
         super(AWS, self).__init__()
         self.logger = FlushingLogger() if logging.root.level >= logging.INFO else logging.getLogger()
         self.npartitions = self._get_partitions()
-        self.region = config.get('region') or 'us-east-1'
+        self.region = region_name if region_name is not None else 'us-east-1'
         self.paths = []
         self.aws_service_wrapper = AWSServiceWrapper(self.region)
 
