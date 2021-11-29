@@ -48,10 +48,6 @@ class AWSServiceWrapper:
         payload = json.dumps({
             'range': self.encode_object(root_range),
             'script': script,
-            'start': str(root_range.start),
-            'end': str(root_range.end),
-            'filelist': str(root_range.filelist),
-            'friend_info': self.encode_object(root_range.friend_info),
             'cert': str(base64.b64encode(certs)),
             'headers': headers
         })
