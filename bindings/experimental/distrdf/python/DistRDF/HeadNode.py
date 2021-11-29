@@ -103,7 +103,7 @@ class EmptySourceHeadNode(Node.Node):
             """
             Builds an RDataFrame instance for a distributed mapper.
             """
-            return ROOT.RDataFrame(nentries).Range(current_range.start, current_range.end)
+            return ROOT.RDataFrame(current_range.end - current_range.start)
 
         return build_rdf_from_range
 
