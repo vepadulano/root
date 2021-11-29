@@ -5,7 +5,7 @@ import functools
 import time
 
 from DistRDF import DataFrame
-from DistRDF import Node
+from DistRDF import HeadNode
 from DistRDF.Backends import Base
 
 from .flushing_logger import FlushingLogger
@@ -49,8 +49,9 @@ class AWS(Base.BaseBackend):
         # 2. An educated guess according to the backend, using the backend's
         #    `optimize_npartitions` function
         # 3. Set `npartitions` to 2
-        headnode = Node.HeadNode(*args)
-        return DataFrame.RDataFrame(headnode, self, **kwargs)
+        npartitions = kwargs.pop("npartitions", self.optimize_npartitions())
+        headnode = HeadNode.get_headnode(npartitions, *args)
+        return DataFrame.RDataFrame(headnode, self)
 
     def ProcessAndMerge(self, ranges, mapper, reducer):
         """
