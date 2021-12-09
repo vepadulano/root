@@ -149,6 +149,21 @@ class BaseBackend(ABC):
                 list: This respresents the list of (mergeable)values of all
                 action nodes in the computational graph.
             """
+            from datetime import datetime
+            import os
+            import socket
+
+            outfilepath = os.path.join(os.environ["HOME"], "distrdf_timestamps.out")
+            with open(outfilepath, "a+") as f:
+                f.write(f"DistRDF task [BEGIN DATETIME]: {datetime.now()}\n")
+                f.write(f"DistRDF task [BEGIN HOSTNAME]: {socket.gethostname()}\n")
+
+            mapperwatch = ROOT.TStopwatch()
+
+            # Activate RDF verbose logging
+            verbosity = ROOT.Experimental.RLogScopedVerbosity(
+                ROOT.ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kInfo)
+
             # Disable graphics functionality in ROOT. It is not needed inside a
             # distributed task
             ROOT.gROOT.SetBatch(True)
@@ -185,9 +200,17 @@ class BaseBackend(ABC):
                 ]
             else:
                 # Output of the callable
+                triggerwatch = ROOT.TStopwatch()
                 resultptr_list = computation_graph_callable(rdf, current_range.id)
+                triggerwatch.Stop()
+                with open(outfilepath, "a+") as f:
+                    f.write(f"Python Event Loop {triggerwatch.RealTime()}\n")
 
                 mergeables = [Utils.get_mergeablevalue(resultptr) for resultptr in resultptr_list]
+
+            mapperwatch.Stop()
+            with open(outfilepath, "a+") as f:
+                f.write(f"Python Task {mapperwatch.RealTime()}\n")
 
             return mergeables
 
