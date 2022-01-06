@@ -1,7 +1,10 @@
 import itertools
 import logging
 
+from bisect import bisect_left, bisect_right
+from dataclasses import dataclass
 from functools import total_ordering
+from math import floor
 
 import ROOT
 
@@ -30,6 +33,7 @@ class EmptySourceRange(object):
         self.id = rangeid
         self.start = start
         self.end = end
+
 
 class TreeRange(object):
     """
@@ -156,10 +160,10 @@ class ChainCluster(object):
     def __eq__(self, other):
         """Defined in compliance with total_ordering decorator"""
         return (self.start == other.start and
-               self.end == other.end and
-               self.offset == other.offset and
-               self.filetuple.filename == other.filetuple.filename and
-               self.filetuple.fileindex == other.filetuple.fileindex)
+                self.end == other.end and
+                self.offset == other.offset and
+                self.filetuple.filename == other.filetuple.filename and
+                self.filetuple.fileindex == other.filetuple.fileindex)
 
 
 def _n_even_chunks(iterable, n_chunks):
@@ -201,6 +205,62 @@ def _n_even_chunks(iterable, n_chunks):
         cur = int(round(i * (itlenght / n_chunks)))
         yield iterable[last:cur]
         last = cur
+
+
+@dataclass
+class TreeRangePerc:
+    id: int
+    treenames: list
+    filenames: list
+    filepercstarts: list
+    filepercends: list
+    friendinfo: ROOT.Internal.TreeUtils.RFriendInfo
+
+
+def get_percentage_ranges(treenames, filenames, npartitions, friendinfo):
+    nfiles = len(filenames)
+    filepercrange = range(nfiles)
+
+    percentage = nfiles / npartitions
+    tasks = []
+
+    filestraversed = 0.
+    for taskid in range(npartitions):
+
+        curpos = filestraversed
+        curpos_fromfloor = curpos-floor(curpos)
+        nextpos = filestraversed + percentage
+        # Avoid issues due to float arithmetics:
+        # If next position is very close to file boundary, make it equal.
+        nextpos = nextpos if nextpos-floor(nextpos) > 1e-9 else floor(nextpos)
+        # Take distance (percentage) between the next position and the file it
+        # belongs to. When the next position is at a file boundary, the
+        # percentage to be taken is 1.
+        nextpos_fromfloor = nextpos-floor(nextpos) if nextpos-floor(nextpos) > 0 else 1.
+
+        curbin = bisect_right(filepercrange, curpos)
+        nextbin = bisect_left(filepercrange, nextpos)
+        spannedfiles = nextbin - curbin + 1
+
+        # Gather tree and file names for this task
+        slicebegin = floor(curpos)
+        sliceend = slicebegin + spannedfiles
+        tasktreenames = treenames[slicebegin:sliceend]
+        taskfilenames = filenames[slicebegin:sliceend]
+
+        # Create percentages to take for each file of this task
+        # If more than one file is taken, the lists need to be extended with
+        # the full files in between the percentage taken from the first and
+        # the last.
+        filepercstarts = [0.] * (spannedfiles - 1)
+        filepercends = [1.] * (spannedfiles - 1)
+        filepercstarts.insert(0, curpos_fromfloor)
+        filepercends.append(nextpos_fromfloor)
+
+        tasks.append(TreeRangePerc(taskid, tasktreenames, taskfilenames, filepercstarts, filepercends, friendinfo))
+        filestraversed = nextpos
+
+    return tasks
 
 
 def get_clusters(treenames, filenames):
@@ -281,7 +341,7 @@ def get_balanced_ranges(nentries, npartitions):
 
     remainder = nentries % npartitions
 
-    rangeid = 0 # Keep track of the current range id
+    rangeid = 0  # Keep track of the current range id
     while i < nentries:
         # Start value of current range
         start = i
@@ -343,9 +403,8 @@ def get_clustered_ranges(clustersinfiles, npartitions, friendinfo):
 
     clustersbypartition = _n_even_chunks(clustersinfiles, npartitions)
 
-
     clustered_ranges = []
-    rangeid = 0 # Keep track of the current range id
+    rangeid = 0  # Keep track of the current range id
     for partition in clustersbypartition:
 
         # One partition looks like:
@@ -441,7 +500,8 @@ def get_clustered_ranges(clustersinfiles, npartitions, friendinfo):
         globalstart = firstclusterinpartition.start
         globalend = lastclusterinpartition.end + lastclusterinpartition.offset - partitionoffset
 
-        clustered_ranges.append(TreeRange(rangeid, globalstart, globalend, localstarts, localends, filelist, treesnentries, treenames, friendinfo))
+        clustered_ranges.append(TreeRange(rangeid, globalstart, globalend, localstarts,
+                                          localends, filelist, treesnentries, treenames, friendinfo))
         rangeid += 1
 
     return clustered_ranges

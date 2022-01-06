@@ -151,5 +151,7 @@ def create_distributed_module(parentmodule):
 
     # Set non-optimized default mode
     distributed.optimized = False
+    # Use clustered ranges
+    distributed.open_files_locally = True
 
     return distributed
