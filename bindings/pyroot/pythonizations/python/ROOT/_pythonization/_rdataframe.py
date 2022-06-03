@@ -175,7 +175,7 @@ df2_transformed = ROOT.MyTransformation(ROOT.RDF.AsRNode(df2))
 
 from . import pythonization
 from ._pyz_utils import MethodTemplateGetter, MethodTemplateWrapper
-
+from .._numbadeclare import _NumbaDeclareDecorator
 
 def RDataFrameAsNumpy(df, columns=None, exclude=None, lazy=False):
     """Read-out the RDataFrame as a collection of numpy arrays.
@@ -389,6 +389,15 @@ class HistoProfileWrapper(MethodTemplateWrapper):
         return res
 
 
+def PythonizedFilter(self, *args):
+    # args[0] is the callable
+    # args[1] is the column
+    decorator = _NumbaDeclareDecorator(["unsigned long"], "bool")
+    jittedcallable = decorator(args[0])
+
+    return self._original_filter["bool(*)(unsigned long long)"](jittedcallable.numba_func, args[1])
+
+
 @pythonization("RInterface<", ns="ROOT::RDF", is_prefix=True)
 def pythonize_rdataframe(klass):
     # Parameters:
@@ -417,3 +426,6 @@ def pythonize_rdataframe(klass):
                                       HistoProfileWrapper,
                                       model_class)
         setattr(klass, method_name, getter)
+
+    klass._original_filter = klass.Filter
+    klass.Filter = PythonizedFilter
