@@ -22,6 +22,7 @@
 #include <typeinfo>
 #include <memory>
 
+#include <iostream>
 
 //- data and local helpers ---------------------------------------------------
 namespace CPyCppyy {
@@ -679,6 +680,11 @@ bool CPyCppyy::CPPMethod::ConvertAndSetArgs(PyObject* args, CallContext* ctxt)
 {
     Py_ssize_t argc = PyTuple_GET_SIZE(args);
     Py_ssize_t argMax = (Py_ssize_t)fConverters.size();
+
+    PyObject* objectsRepresentation = PyObject_Repr(args);
+    const char* s = PyUnicode_AsUTF8(objectsRepresentation);
+    std::cout << "Got " << s << std::endl;
+    Py_DECREF(objectsRepresentation);
 
     if (argMax != argc) {
     // argc must be between min and max number of arguments

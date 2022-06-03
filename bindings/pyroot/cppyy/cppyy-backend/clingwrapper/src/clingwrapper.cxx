@@ -391,7 +391,9 @@ std::string Cppyy::ResolveName(const std::string& cppitem_name)
         cppitem_name.substr(2, std::string::npos) : cppitem_name;
 
 // classes (most common)
+    std::cout << cppitem_name << std::endl;
     tclean = TClassEdit::CleanType(tclean.c_str());
+    std::cout << tclean << std::endl;
     if (tclean.empty() /* unknown, eg. an operator */) return cppitem_name;
 
 // reduce [N] to []
@@ -1567,7 +1569,15 @@ std::string Cppyy::GetMethodArgType(TCppMethod_t method, TCppIndex_t iarg)
     if (method) {
         TFunction* f = m2f(method);
         TMethodArg* arg = (TMethodArg*)f->GetListOfMethodArgs()->At((int)iarg);
-        return arg->GetTypeNormalizedName();
+        std::string tpn = arg->GetTypeNormalizedName();
+        if (tpn.find("RSampleInfo") != std::string::npos){
+            std::string tpn = arg->GetTypeNormalizedName();
+            std::cout << "\n\nFOUND TMETHOD ARG INFO:\n";
+            std::cout << "\t" << arg->GetTypeName() << std::endl;
+            std::cout << "\t" << arg->GetFullTypeName() << std::endl;
+            std::cout << "\t" << arg->GetTypeNormalizedName() << std::endl;
+        } 
+        return arg->GetFullTypeName();
     }
     return "<unknown>";
 }

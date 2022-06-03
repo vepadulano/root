@@ -175,7 +175,7 @@ df2_transformed = ROOT.MyTransformation(ROOT.RDF.AsRNode(df2))
 
 from . import pythonization
 from ._pyz_utils import MethodTemplateGetter, MethodTemplateWrapper
-
+from .._numbadeclare import _NumbaDeclareDecorator
 
 def RDataFrameAsNumpy(df, columns=None, exclude=None, lazy=False):
     """Read-out the RDataFrame as a collection of numpy arrays.
@@ -389,6 +389,30 @@ class HistoProfileWrapper(MethodTemplateWrapper):
         return res
 
 
+# def PythonizedFilter(self, *args):
+#     # args[0] is the callable
+#     # args[1] is the column
+#     decorator = _NumbaDeclareDecorator(["unsigned long"], "bool")
+#     jittedcallable = decorator(args[0])
+
+#     return self._original_filter["bool(*)(unsigned long)"](jittedcallable.numba_func, args[1])
+
+def PythonizedDefinePerSample(self, *args):
+    # args[0] is the new column name
+    # args[1] is the callable with signature T(unsigned int slot, const ROOT::RDF::RSampleInfo &id)
+
+    decorator = _NumbaDeclareDecorator(["unsigned int", "const ROOT::RDF::RSampleInfo &"], "unsigned int")
+    jittedcallable = decorator(args[1])
+
+    print(jittedcallable.numba_func)
+    print(jittedcallable.__cpp_wrapper__)
+    print(jittedcallable.__py_wrapper__)
+
+    # std::function<unsigned int(unsigned int, const ROOT::RDF::RSampleInfo &)>
+    # unsigned int(*)(unsigned int, const ROOT::RDF::RSampleInfo &)
+    return self._original_definepersample["unsigned int(*)(unsigned int, const ROOT::RDF::RSampleInfo &)"](args[0], jittedcallable.numba_func)
+
+
 @pythonization("RInterface<", ns="ROOT::RDF", is_prefix=True)
 def pythonize_rdataframe(klass):
     # Parameters:
@@ -417,3 +441,9 @@ def pythonize_rdataframe(klass):
                                       HistoProfileWrapper,
                                       model_class)
         setattr(klass, method_name, getter)
+
+    # klass._original_filter = klass.Filter
+    # klass.Filter = PythonizedFilter
+
+    klass._original_definepersample = klass.DefinePerSample
+    klass.DefinePerSample = PythonizedDefinePerSample

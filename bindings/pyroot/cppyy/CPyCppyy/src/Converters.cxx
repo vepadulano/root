@@ -31,6 +31,8 @@
 #define UNKNOWN_ARRAY_SIZE   -2
 
 
+#include <iostream>
+
 //- data _____________________________________________________________________
 namespace CPyCppyy {
 
@@ -2354,6 +2356,10 @@ static void* PyFunction_AsCPointer(PyObject* pyobject,
 bool CPyCppyy::FunctionPointerConverter::SetArg(
     PyObject* pyobject, Parameter& para, CallContext* /*ctxt*/)
 {
+    PyObject* objectsRepresentation = PyObject_Repr(pyobject);
+    const char* s = PyUnicode_AsUTF8(objectsRepresentation);
+    std::cout << "Got " << s << std::endl;
+    Py_DECREF(objectsRepresentation);
 // special case: allow nullptr singleton:
     if (gNullPtrObject == pyobject) {
         para.fValue.fVoidp = nullptr;
@@ -2697,6 +2703,7 @@ CPyCppyy::Converter* CPyCppyy::CreateConverter(const std::string& fullType, dims
 //
 // If all fails, void is used, which will generate a run-time warning when used.
 
+
     dim_t size = (dims && dims[0] != -1) ? dims[1] : -1;
 
 // an exactly matching converter is best
@@ -2705,7 +2712,9 @@ CPyCppyy::Converter* CPyCppyy::CreateConverter(const std::string& fullType, dims
         return (h->second)(dims);
 
 // resolve typedefs etc.
+    std::cout << "Got FULLTYPE: " << fullType << std::endl;
     const std::string& resolvedType = Cppyy::ResolveName(fullType);
+    std::cout << "Got RESOLVEDTYPE: " << resolvedType << std::endl;
 
 // a full, qualified matching converter is preferred
     if (resolvedType != fullType) {
@@ -2842,8 +2851,11 @@ CPyCppyy::Converter* CPyCppyy::CreateConverter(const std::string& fullType, dims
         auto pos1 = resolvedType.find('(');
         auto pos2 = resolvedType.find("*)");
         auto pos3 = resolvedType.rfind(')');
+        std::cout << "Passing type " << resolvedType << std::endl;
         result = new FunctionPointerConverter(
             resolvedType.substr(0, pos1), resolvedType.substr(pos2+2, pos3-pos2-1));
+        // result = new FunctionPointerConverter(
+        //      "unsigned int", " unsigned int, const ROOT::RDF::RSampleInfo &");
     }
 
     if (!result && cpd == "&&") {

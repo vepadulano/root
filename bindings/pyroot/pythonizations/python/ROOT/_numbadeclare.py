@@ -39,7 +39,8 @@ def _NumbaDeclareDecorator(input_types, return_type, name=None):
         '''
         Remove ROOT:: and VecOps:: namespaces
         '''
-        return t.replace('ROOT::', '').replace('VecOps::', '')
+        #return t.replace('ROOT::', '').replace('VecOps::', '')
+        return t
 
     input_types = [normalize_typename(t) for t in input_types]
     return_type = normalize_typename(return_type)
@@ -77,6 +78,7 @@ def _NumbaDeclareDecorator(input_types, return_type, name=None):
 
         These are the types we use to jit the Python callable.
         '''
+        print(t)
         typemap = {
                 'float': nb.float32,
                 'double': nb.float64,
@@ -88,6 +90,25 @@ def _NumbaDeclareDecorator(input_types, return_type, name=None):
                 }
         if t in typemap:
             return typemap[t]
+        elif "RSampleInfo" in t:
+            from numba.experimental import jitclass
+            from numba import uint32, uint64, jit, typeof
+            from numba.types import string
+            from numba.typed import List
+            import ROOT
+            spec = [("fID", string), ("fEntryRange", typeof(List.empty_list(uint64)))]
+            @jitclass(spec)
+            class MYCLASS():
+                def __init__(self):
+                    self.fID = ""
+                    self.fEntryRange = [0,0]
+
+                def Contains(self, value):
+                    return value in self.fID
+
+            #jitsi = jitclass(spec)(ROOT.RDF.RSampleInfo)
+
+            return MYCLASS.class_type.instance_type
         raise Exception(
                 'Type {} is not supported for jitting with numba. Valid fundamental types and RVecs thereof are {}'.format(
                     t, list(typemap.keys())))
@@ -141,6 +162,8 @@ def _NumbaDeclareDecorator(input_types, return_type, name=None):
 
         # Jit the given Python callable with numba
         nb_return_type, nb_input_types = get_numba_signature(input_types, return_type)
+        print(nb_return_type)
+        print(nb_input_types)
         try:
             nbjit = nb.jit(nb_return_type(*nb_input_types), nopython=True, inline='always')(func)
         except:
@@ -238,7 +261,15 @@ def pywrapper({SIGNATURE}):
         # Build C++ wrapper for jitting with cling
 
         # Define input signature
-        input_types_ref = ['ROOT::{}&'.format(t) if 'RVec' in t else t for t in input_types]
+        input_types_ref = []
+        for t in input_types:
+            if 'RVec' in t:
+                input_types_ref.append('ROOT::{}&'.format(t))
+            elif 'RSampleInfo' in t:
+                input_types_ref.append('const ROOT::RDF::RSampleInfo&')
+            else:
+                input_types_ref.append(t)
+
         input_signature = ', '.join('{} x_{}'.format(t, i) for i, t in enumerate(input_types_ref))
 
         # Define function pointer types
