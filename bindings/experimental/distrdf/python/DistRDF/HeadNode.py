@@ -506,24 +506,16 @@ class TreeHeadNode(HeadNode):
             The function creates a TChain from the information contained in the
             input range object. If the chain cannot be built, returns None.
             """
-            # Prepare main TChain
-            chain, entries_in_trees = build_chain_from_range(current_range)
-            if chain is None:
-                # The chain could not be built.
+            clustered_range, entries_in_trees = Ranges.get_clustered_range_from_percs(current_range)
+
+            if clustered_range is None:
+                # The task could not be correctly built, don't create the TChain
                 return TaskObjects(None, entries_in_trees)
 
-            # Create RDataFrame object for this task
-            if defaultbranches is not None:
-                rdf = ROOT.RDataFrame(chain, defaultbranches)
-            else:
-                rdf = ROOT.RDataFrame(chain)
+            treeandfilenameglobs = [(treename, filename) for treename, filename in zip(clustered_range.treenames, clustered_range.filenames)]
+            ds = ROOT.RDF.RDatasetSpec(treeandfilenameglobs, (clustered_range.globalstart, clustered_range.globalend))
 
-            # Bind the TChain to the RDataFrame object before returning it. Not
-            # doing so would lead to the TChain being destroyed when leaving
-            # the scope of this function.
-            rdf._chain_lifeline = chain
-
-            return TaskObjects(rdf, entries_in_trees)
+            return TaskObjects(ROOT.RDataFrame(ds), entries_in_trees)
 
         return build_rdf_from_range
 
