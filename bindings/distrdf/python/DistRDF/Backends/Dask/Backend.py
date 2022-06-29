@@ -382,7 +382,11 @@ class DaskBackend(Base.BaseBackend):
         # Set the number of partitions for this dataframe, one of the following:
         # 1. User-supplied `npartitions` optional argument
         npartitions = kwargs.pop("npartitions", None)
-        headnode = HeadNode.get_headnode(self, npartitions, *args)
+        monitor_label: Optional[str] = kwargs.pop("monitor_label", None)
+        if monitor_label is not None and any(token in monitor_label for token in [".csv", ".txt", ".out", ".log"]):
+            raise ValueError(f"Invalid label '{monitor_label}'. Remove any file extension.")
+
+        headnode = HeadNode.get_headnode(self, npartitions, *args, monitor_label=monitor_label)
         return DataFrame.RDataFrame(headnode)
 
     def cleanup_cache(self, exec_id: ExecutionIdentifier) -> None:

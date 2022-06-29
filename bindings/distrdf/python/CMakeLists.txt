@@ -22,6 +22,7 @@ ROOT_PYTHON_PACKAGE(DistRDF
   DistRDF/PythonMergeables.py
   DistRDF/Ranges.py
   DistRDF/Backends/__init__.py
+  DistRDF/Backends/_monitor.py
   DistRDF/Backends/Base.py
   DistRDF/Backends/Utils.py
   DistRDF/Backends/Dask/__init__.py
