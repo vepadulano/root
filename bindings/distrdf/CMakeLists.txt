@@ -27,6 +27,7 @@ set(py_sources
   DistRDF/Backends/Dask/Backend.py
   DistRDF/Backends/Spark/__init__.py
   DistRDF/Backends/Spark/Backend.py
+  DistRDF/Backends/_monitor.py
 )
 
 # Add custom rules to copy the Python sources into the build directory

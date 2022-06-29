@@ -74,7 +74,7 @@ class HeadNode(Node, ABC):
             this head node, starting from zero.
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, monitor_label: Optional[str] = None):
         super().__init__(lambda: self)
 
         self.backend = backend
@@ -111,6 +111,10 @@ class HeadNode(Node, ABC):
         # and the values are the corresponding callback functions 
         # This attribute only gets set in case the LiveVisualize() function is called
         self.drawables_dict: Optional[Dict[int, List[Optional[Callable]]]] = None
+
+        # Label for the filename where the monitoring scripts inside the mapper
+        # function will store information
+        self._monitor_label = monitor_label
 
     def __del__(self):
         """
@@ -244,7 +248,8 @@ class HeadNode(Node, ABC):
                          build_rdf_from_range=self._generate_rdf_creator(),
                          computation_graph_callable=computation_graph_callable,
                          initialization_fn=self.backend.initialization,
-                         code_to_declare=code_to_declare)
+                         code_to_declare=code_to_declare,
+                         monitor_label=self._monitor_label)
 
         # List of action nodes in the same order as values
         local_nodes = self._get_action_nodes()
@@ -266,7 +271,7 @@ class HeadNode(Node, ABC):
             Utils.set_value_on_node(value, node, self.backend)
 
 
-def get_headnode(backend: BaseBackend, npartitions: int, *args) -> HeadNode:
+def get_headnode(backend: BaseBackend, npartitions: int, *args, monitor_label: Optional[str] = None) -> HeadNode:
     """
     A factory for different kinds of head nodes of the RDataFrame computation
     graph, depending on the arguments to the RDataFrame constructor. Parses the
@@ -285,11 +290,11 @@ def get_headnode(backend: BaseBackend, npartitions: int, *args) -> HeadNode:
 
     label = ROOT.Internal.RDF.GetDataSourceLabel(ROOT.RDF.AsRNode(localdf))
     if label == "TTreeDS":
-        return TreeHeadNode(backend, npartitions, localdf, *args)
+        return TreeHeadNode(backend, npartitions, localdf, *args, monitor_label=monitor_label)
     elif label == "RNTupleDS":
-        return RNTupleHeadNode(backend, npartitions, localdf, *args)
+        return RNTupleHeadNode(backend, npartitions, localdf, *args, monitor_label=monitor_label)
     elif label == "EmptyDS":
-        return EmptySourceHeadNode(backend, npartitions, localdf, args[0])
+        return EmptySourceHeadNode(backend, npartitions, localdf, args[0], monitor_label=monitor_label)
     else:
         raise RuntimeError(
             (f"First argument {args[0]} of type {type(args[0])} is not "
@@ -313,7 +318,7 @@ class EmptySourceHeadNode(HeadNode):
             for distributed execution.
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, nentries: int):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, nentries: int, monitor_label: Optional[str] = None):
         """
         Creates a new RDataFrame instance for the given arguments.
 
@@ -323,7 +328,7 @@ class EmptySourceHeadNode(HeadNode):
             npartitions (int): The number of partitions the dataset will be
                 split in for distributed execution.
         """
-        super().__init__(backend, npartitions, localdf)
+        super().__init__(backend, npartitions, localdf, monitor_label=monitor_label)
 
         self.nentries = nentries
 
@@ -411,7 +416,7 @@ class TreeHeadNode(HeadNode):
 
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, *args):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, *args, monitor_label: Optional[str] = None):
         """
         Creates a new RDataFrame instance for the given arguments.
 
@@ -421,7 +426,7 @@ class TreeHeadNode(HeadNode):
             npartitions (int): The number of partitions the dataset will be
                 split in for distributed execution.
         """
-        super().__init__(backend, npartitions, localdf)
+        super().__init__(backend, npartitions, localdf, monitor_label=monitor_label)
 
         self.defaultbranches = None
         # Information about friend trees, if they are present.
@@ -584,9 +589,9 @@ class TreeHeadNode(HeadNode):
         # Keys should be exactly the same
         if files_counts.keys() != entries_in_trees.trees_with_entries.keys():
             raise RuntimeError("The specified input files and the files that were "
-                                "actually processed are not the same:\n"
-                                f"Input files: {list(files_counts.keys())}\n"
-                                f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
+                               "actually processed are not the same:\n"
+                               f"Input files: {list(files_counts.keys())}\n"
+                               f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
 
         # Multiply the entries of each tree by the number of times it was
         # requested by the user
@@ -795,7 +800,7 @@ class RNTupleHeadNode(HeadNode):
     an RNtuple.
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, *args):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], localdf: ROOT.RDataFrame, *args, monitor_label: Optional[str] = None):
         """
         Creates a new RDataFrame instance for the given arguments.
 
@@ -805,7 +810,7 @@ class RNTupleHeadNode(HeadNode):
             npartitions (int): The number of partitions the dataset will be
                 split in for distributed execution.
         """
-        super().__init__(backend, npartitions, localdf)
+        super().__init__(backend, npartitions, localdf, monitor_label=monitor_label)
 
         self.mainntuplename = args[0]
         self.inputfiles = args[1]
