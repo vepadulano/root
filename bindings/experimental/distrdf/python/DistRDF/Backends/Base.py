@@ -9,10 +9,14 @@
 # For the licensing terms see $ROOTSYS/LICENSE.                                #
 # For the list of contributors see $ROOTSYS/README/CREDITS.                    #
 ################################################################################
+import inspect
+import os
+import subprocess
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
+import sys
 from typing import Callable, Iterable, List, Optional, TYPE_CHECKING, Union
 
 import ROOT
@@ -100,6 +104,19 @@ def distrdf_mapper(
     """
     Maps the computation graph to the input logical range of entries.
     """
+
+    ############################################################################
+    # MONITORING
+    from . import _monitor
+
+    monitorfilename = f"_monitor_{current_range.id}.py"
+    with open(monitorfilename, "w") as monitorscript:
+        monitorscript.write(inspect.getsource(_monitor))
+
+    p = subprocess.Popen([f"{sys.executable}", monitorfilename, f"{os.getpid()}", f"{current_range.id}"])
+    # MONITORING
+    ############################################################################
+
     setup_mapper(initialization_fn)
 
     # Build an RDataFrame instance for the current mapper task, based
@@ -109,6 +126,14 @@ def distrdf_mapper(
         mergeables = get_mergeable_values(rdf_plus.rdf, current_range.id, computation_graph_callable, optimized)
     else:
         mergeables = None
+
+    ############################################################################
+    # MONITORING
+    p.terminate()
+    p.wait()
+    os.remove(monitorfilename)
+    # MONITORING
+    ############################################################################
 
     return TaskResult(mergeables, rdf_plus.entries_in_trees)
 
