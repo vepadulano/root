@@ -11,6 +11,7 @@
 ################################################################################
 import inspect
 import os
+import socket
 import subprocess
 
 from abc import ABC, abstractmethod
@@ -100,38 +101,90 @@ def distrdf_mapper(
                                         "TaskObjects"],
         computation_graph_callable: Callable[[ROOT.RDF.RNode, int], List],
         initialization_fn: Callable,
-        optimized: bool) -> TaskResult:
+        optimized: bool,
+        monitor_label: Optional[str] = None) -> TaskResult:
     """
     Maps the computation graph to the input logical range of entries.
     """
+    ############################################################################
+    # MONITORING - GLOBAL MAPPER TIME MEASUREMENTS
+    prefix = monitor_label if monitor_label is not None else "distrdf"
+    outpath = f"{prefix}_runtime_{current_range.id}.csv"
+
+    csvfile = open(outpath, "w")
+
+    header = ["task_id",
+              "hostname",
+              "processed_entries",
+              "runtime_mapper",
+              "runtime_setup",
+              "runtime_rdf_creation",
+              "runtime_event_loop"]
+    csvfile.write(f"{','.join(header)}\n")
+    # MONITORING
+    ############################################################################
 
     ############################################################################
-    # MONITORING
+    # MONITORING - PSUTIL
     from . import _monitor
 
     monitorfilename = f"_monitor_{current_range.id}.py"
     with open(monitorfilename, "w") as monitorscript:
         monitorscript.write(inspect.getsource(_monitor))
 
-    p = subprocess.Popen([f"{sys.executable}", monitorfilename, f"{os.getpid()}", f"{current_range.id}"])
+    cmd = [f"{sys.executable}", monitorfilename, f"{os.getpid()}", f"{current_range.id}"]
+    if monitor_label is not None:
+        cmd += ["--label", monitor_label]
+    p = subprocess.Popen(cmd)
     # MONITORING
     ############################################################################
 
+    mapperwatch = ROOT.TStopwatch()
+
+    setupwatch = ROOT.TStopwatch()
     setup_mapper(initialization_fn)
+    setupwatch.Stop()
+    setupelapsed = setupwatch.RealTime()
 
     # Build an RDataFrame instance for the current mapper task, based
     # on the type of the head node.
+    rdfwatch = ROOT.TStopwatch()
     rdf_plus = build_rdf_from_range(current_range)
+    rdfwatch.Stop()
+    rdfelapsed = rdfwatch.RealTime()
+
+    evwatch = ROOT.TStopwatch()
     if rdf_plus.rdf is not None:
         mergeables = get_mergeable_values(rdf_plus.rdf, current_range.id, computation_graph_callable, optimized)
     else:
         mergeables = None
+    evwatch.Stop()
+    evelapsed = evwatch.RealTime()
+
+    mapperelapsed = mapperwatch.RealTime()
 
     ############################################################################
-    # MONITORING
+    # MONITORING - PSUTIL
     p.terminate()
     p.wait()
     os.remove(monitorfilename)
+    # MONITORING
+    ############################################################################
+
+    ############################################################################
+    # MONITORING - GLOBAL MAPPER TIME MEASUREMENTS
+    processed_entries = rdf_plus.entries_in_trees.processed_entries if rdf_plus.entries_in_trees is not None else None
+    metrics = [
+        current_range.id,
+        socket.gethostname(),
+        processed_entries,
+        mapperelapsed,
+        setupelapsed,
+        rdfelapsed,
+        evelapsed
+    ]
+    csvfile.write(f"{','.join((str(metric) for metric in metrics))}\n")
+    csvfile.close()
     # MONITORING
     ############################################################################
 

@@ -67,7 +67,7 @@ class HeadNode(Node, ABC):
             this head node, starting from zero.
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int]):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], monitor_label: Optional[str] = None):
         super().__init__(lambda: self)
 
         self.backend = backend
@@ -89,6 +89,10 @@ class HeadNode(Node, ABC):
         # If so, this attribute will not be updated when triggering.
         self._npartitions = npartitions
         self._user_specified_npartitions = True if npartitions is not None else False
+
+        # Label for the filename where the monitoring scripts inside the mapper
+        # function will store information
+        self._monitor_label = monitor_label
 
     @property
     def npartitions(self) -> Optional[int]:
@@ -191,7 +195,8 @@ class HeadNode(Node, ABC):
                          build_rdf_from_range=self._generate_rdf_creator(),
                          computation_graph_callable=computation_graph_callable,
                          initialization_fn=self.backend.initialization,
-                         optimized=optimized)
+                         optimized=optimized,
+                         monitor_label=self._monitor_label)
 
         # Execute graph distributedly and return the aggregated results from all
         # tasks
@@ -206,7 +211,7 @@ class HeadNode(Node, ABC):
             Utils.set_value_on_node(value, node, self.backend)
 
 
-def get_headnode(backend: BaseBackend, npartitions: int, *args) -> HeadNode:
+def get_headnode(backend: BaseBackend, npartitions: int, *args, monitor_label: Optional[str] = None) -> HeadNode:
     """
     A factory for different kinds of head nodes of the RDataFrame computation
     graph, depending on the arguments to the RDataFrame constructor. Currently
@@ -230,7 +235,7 @@ def get_headnode(backend: BaseBackend, npartitions: int, *args) -> HeadNode:
         # RDataFrame(std::string_view treename, filenames, defaultBranches = {})
         # RDataFrame(std::string_view treeName, dirPtr, defaultBranches = {})
         # RDataFrame(TTree &tree, const ColumnNames_t &defaultBranches = {})
-        return TreeHeadNode(backend, npartitions, *args)
+        return TreeHeadNode(backend, npartitions, *args, monitor_label=monitor_label)
     else:
         raise RuntimeError(
             ("First argument {} of type {} is not recognised as a supported "
@@ -345,7 +350,7 @@ class TreeHeadNode(HeadNode):
 
     """
 
-    def __init__(self, backend: BaseBackend, npartitions: Optional[int], *args):
+    def __init__(self, backend: BaseBackend, npartitions: Optional[int], *args, monitor_label: Optional[str] = None):
         """
         Creates a new RDataFrame instance for the given arguments.
 
@@ -355,7 +360,7 @@ class TreeHeadNode(HeadNode):
             npartitions (int): The number of partitions the dataset will be
                 split in for distributed execution.
         """
-        super().__init__(backend, npartitions)
+        super().__init__(backend, npartitions, monitor_label=monitor_label)
 
         self.defaultbranches = None
         # Information about friend trees, if they are present.
@@ -503,9 +508,9 @@ class TreeHeadNode(HeadNode):
         # Keys should be exactly the same
         if files_counts.keys() != entries_in_trees.trees_with_entries.keys():
             raise RuntimeError("The specified input files and the files that were "
-                                "actually processed are not the same:\n"
-                                f"Input files: {list(files_counts.keys())}\n"
-                                f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
+                               "actually processed are not the same:\n"
+                               f"Input files: {list(files_counts.keys())}\n"
+                               f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
 
         # Multiply the entries of each tree by the number of times it was
         # requested by the user

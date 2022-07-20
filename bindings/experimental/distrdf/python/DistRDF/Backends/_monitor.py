@@ -11,6 +11,7 @@ from typing import TextIO
 parser = argparse.ArgumentParser()
 parser.add_argument("pid", help="PID of the process to monitor", type=int)
 parser.add_argument("task_id", help="ID of the RDataFrame task to monitor", type=int)
+parser.add_argument("--label", help="A prefix for the output CSV file")
 
 
 def mapper_monitor(pid: int, input_file: TextIO, task_id: int) -> None:
@@ -32,7 +33,10 @@ if __name__ == "__main__":
 
     RUN_DISTRDF_MONITOR: bool = True
 
-    csvfile = open(f"distrdf_monitor_{args.task_id}.csv", "w")
+    prefix = args.label if args.label is not None else "distrdf"
+    outpath = f"{prefix}_monitor_{args.task_id}.csv"
+
+    csvfile = open(outpath, "w")
 
     header = ["task_id",
               "cpu_percent",
