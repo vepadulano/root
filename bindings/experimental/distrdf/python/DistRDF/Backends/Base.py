@@ -139,37 +139,40 @@ def distrdf_mapper(
     # MONITORING
     ############################################################################
 
-    mapperwatch = ROOT.TStopwatch()
+    try:
+        mapperwatch = ROOT.TStopwatch()
 
-    setupwatch = ROOT.TStopwatch()
-    setup_mapper(initialization_fn)
-    setupwatch.Stop()
-    setupelapsed = setupwatch.RealTime()
+        setupwatch = ROOT.TStopwatch()
+        setup_mapper(initialization_fn)
+        setupwatch.Stop()
+        setupelapsed = setupwatch.RealTime()
 
-    # Build an RDataFrame instance for the current mapper task, based
-    # on the type of the head node.
-    rdfwatch = ROOT.TStopwatch()
-    rdf_plus = build_rdf_from_range(current_range)
-    rdfwatch.Stop()
-    rdfelapsed = rdfwatch.RealTime()
+        # Build an RDataFrame instance for the current mapper task, based
+        # on the type of the head node.
+        rdfwatch = ROOT.TStopwatch()
+        rdf_plus = build_rdf_from_range(current_range)
+        rdfwatch.Stop()
+        rdfelapsed = rdfwatch.RealTime()
 
-    evwatch = ROOT.TStopwatch()
-    if rdf_plus.rdf is not None:
-        mergeables = get_mergeable_values(rdf_plus.rdf, current_range.id, computation_graph_callable, optimized)
-    else:
-        mergeables = None
-    evwatch.Stop()
-    evelapsed = evwatch.RealTime()
+        evwatch = ROOT.TStopwatch()
+        if rdf_plus.rdf is not None:
+            mergeables = get_mergeable_values(rdf_plus.rdf, current_range.id, computation_graph_callable, optimized)
+        else:
+            mergeables = None
+        evwatch.Stop()
+        evelapsed = evwatch.RealTime()
 
-    mapperelapsed = mapperwatch.RealTime()
-
-    ############################################################################
-    # MONITORING - PSUTIL
-    p.terminate()
-    p.wait()
-    os.remove(monitorfilename)
-    # MONITORING
-    ############################################################################
+        mapperelapsed = mapperwatch.RealTime()
+    except ROOT.std.exception as e:
+        raise RuntimeError(f"C++ exception thrown:\n\t{type(e).__name__}: {e.what()}")
+    finally:
+        ########################################################################
+        # MONITORING - PSUTIL
+        p.terminate()
+        p.wait()
+        os.remove(monitorfilename)
+        # MONITORING
+        ########################################################################
 
     ############################################################################
     # MONITORING - GLOBAL MAPPER TIME MEASUREMENTS
