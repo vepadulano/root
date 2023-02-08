@@ -41,7 +41,35 @@ class RInterface;
 namespace Internal {
 namespace RDF {
 class GraphCreatorHelper;
+/**
+ * \brief Clones the action connected to an RResultPtr.
+ *
+ * \tparam T The type of the result held by the RResultPtr.
+ * \param inptr The pointer.
+ * \return A new pointer with a cloned action.
+ */
+template <typename T>
+ROOT::RDF::RResultPtr<T> CloneResultPtr(const ROOT::RDF::RResultPtr<T> &inptr)
+{
+   // For now this is an extra copy, best would be calling default constructor.
+   // Main reason (as far as I am aware) is copying metadata of certain
+   // result types, e.g. a for a TH1D we have to create a new histogram with
+   // the same binning and axis limits.
+   std::shared_ptr<T> copiedResult{new T{*inptr.fObjPtr}};
+   return ROOT::RDF::RResultPtr<T>(copiedResult, inptr.fLoopManager,
+                                   inptr.fActionPtr->CloneAction(reinterpret_cast<void *>(&copiedResult)));
 }
+
+using SnapshotPtr_t = ROOT::RDF::RResultPtr<ROOT::RDF::RInterface<ROOT::Detail::RDF::RLoopManager, void>>;
+/**
+ * \brief Overload for cloning an RResultPtr connected to a Snapshot.
+ *
+ * \param inptr The pointer.
+ * \param newNameForSnapshot A new name for the output file of the cloned action.
+ * \return A new pointer with a cloned action.
+ */
+SnapshotPtr_t CloneResultPtr(const SnapshotPtr_t &inptr, const std::string &newNameForSnapshot);
+} // namespace RDF
 } // namespace Internal
 
 namespace Detail {
@@ -118,6 +146,9 @@ class RResultPtr {
 
    friend class RResultHandle;
 
+   friend RResultPtr<T> RDFInternal::CloneResultPtr<T>(const RResultPtr<T> &inptr);
+   friend RDFInternal::SnapshotPtr_t
+   RDFInternal::CloneResultPtr(const RDFInternal::SnapshotPtr_t &inptr, const std::string &newNameForSnapshot);
    /// \cond HIDDEN_SYMBOLS
    template <typename V, bool hasBeginEnd = TTraits::HasBeginAndEnd<V>::value>
    struct RIterationHelper {

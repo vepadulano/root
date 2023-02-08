@@ -121,6 +121,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     src/RLoopManager.cxx
     src/RMetaData.cxx
     src/RRangeBase.cxx
+    src/RResultPtr.cxx
     src/RVariationBase.cxx
     src/RVariationsDescription.cxx
     src/RRootDS.cxx

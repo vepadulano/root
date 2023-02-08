@@ -1647,6 +1647,24 @@ public:
    {
       return [this](unsigned int, const RSampleInfo &) mutable { fBranchAddressesNeedReset = true; };
    }
+
+   SnapshotHelper MakeNew(void *newName)
+   {
+      // Create local vector of booleans for fIsDefine
+      std::vector<bool> localIsDefine = [&] {
+         std::vector<bool> isDef;
+         isDef.reserve(sizeof...(ColTypes));
+         for (std::size_t i = 0u; i < sizeof...(ColTypes); ++i)
+            isDef[i] = fIsDefine[i];
+         return isDef;
+      }();
+
+      // Retrieve name for the new output file
+      std::string finalName{*(const_cast<const std::string *>(reinterpret_cast<std::string *>(newName)))};
+
+      return SnapshotHelper{
+         finalName, fDirName, fTreeName, fInputBranchNames, fOutputBranchNames, fOptions, std::move(localIsDefine)};
+   }
 };
 
 /// Helper object for a multi-thread Snapshot action

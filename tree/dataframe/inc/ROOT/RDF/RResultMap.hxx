@@ -52,6 +52,35 @@ MakeResultMap(std::shared_ptr<T> nominalResult, std::vector<std::shared_ptr<T>> 
    return ROOT::RDF::Experimental::RResultMap<T>(std::move(nominalResult), std::move(variedResults), std::move(keys),
                                                  lm, std::move(nominalAction), std::move(variedAction));
 }
+
+/**
+ * \brief Clones the varied action connected to an RResultMap.
+ *
+ * \tparam T The type of the results held by the map.
+ * \param inmap The map.
+ * \return ROOT::RDF::Experimental::RResultMap<T> A new map with the clone variations.
+ */
+template <typename T>
+ROOT::RDF::Experimental::RResultMap<T> CloneResultMap(const ROOT::RDF::Experimental::RResultMap<T> &inmap)
+{
+   // Nominal type-erased copied result
+   std::shared_ptr<T> copiedResult{inmap.fMap.at("nominal")};
+
+   // Varied type-erased copied results
+   std::vector<std::shared_ptr<T>> variedResults;
+   std::size_t nVariations{inmap.fMap.size() - 1};
+   variedResults.reserve(nVariations);
+   for (auto i = 0u; i < nVariations; ++i)
+      variedResults.emplace_back(new T{*copiedResult});
+   std::vector<void *> typeErasedResults;
+   typeErasedResults.reserve(nVariations);
+   for (auto &res : variedResults)
+      typeErasedResults.emplace_back(&res);
+
+   return ROOT::RDF::Experimental::RResultMap<T>(
+      inmap.fMap, *(inmap.fLoopManager), inmap.fNominalAction->MakeNew(reinterpret_cast<void *>(&copiedResult)),
+      inmap.fVariedAction->MakeNew(reinterpret_cast<void *>(&typeErasedResults)));
+}
 } // namespace RDF
 } // namespace Internal
 
@@ -75,6 +104,7 @@ class RResultMap {
                                          std::shared_ptr<ROOT::Internal::RDF::RActionBase> nominalAction,
                                          std::shared_ptr<ROOT::Internal::RDF::RActionBase> variedAction);
 
+   friend RResultMap ROOT::Internal::RDF::CloneResultMap<T>(const RResultMap<T> &inmap);
    friend std::unique_ptr<ROOT::Detail::RDF::RMergeableVariations<T>>
    ROOT::Detail::RDF::GetMergeableValue<T>(RResultMap<T> &rmap);
 
@@ -93,6 +123,20 @@ class RResultMap {
          auto it = fMap.insert({k, variedResults[i++]});
          R__ASSERT(it.second &&
                    "Failed to insert an element in RResultMap, maybe a duplicated key? This should never happen.");
+      }
+   }
+
+   // Constructor for CloneResultMap. The nominalAction and variedAction are cloned by the free function.
+   RResultMap(const std::unordered_map<std::string, std::shared_ptr<T>> &kvmap,
+              ROOT::Detail::RDF::RLoopManager &lm,
+              std::shared_ptr<ROOT::Internal::RDF::RActionBase> nominalAction,
+              std::shared_ptr<ROOT::Internal::RDF::RActionBase> variedAction)
+       : fLoopManager(&lm), fMap(kvmap),
+         fNominalAction(std::move(nominalAction)), fVariedAction(std::move(variedAction))
+   {
+      fKeys.reserve(fMap.size());
+      for (const auto &kv: fMap){
+         fKeys.push_back(kv.first);
       }
    }
 
