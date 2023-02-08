@@ -186,7 +186,7 @@ def _(resultptr):
     of the dataset and the path to the partial snapshot. We can directly return
     the object, no extra work needed.
     """
-    return resultptr
+    return SnapshotResult(resultptr.treename, resultptr.filenames)
 
 
 @singledispatch
@@ -241,3 +241,34 @@ def _(mergeable: ROOT.Detail.RDF.RMergeableVariationsBase, node, backend):
     the RMergeableVariations class.
     """
     node.value = mergeable
+
+
+@singledispatch
+def clone_action(resultptr):
+    """
+    Clone the action held by an RResultPtr, registering it with its RLoopManager
+    """
+    return ROOT.Internal.RDF.CloneResultPtr(resultptr)
+
+
+@clone_action.register(AsNumpyResult)
+def _(asnumpyres):
+    asnumpyres._result_ptrs = {col: ROOT.Internal.RDF.CloneResultPtr(ptr) for (col, ptr) in asnumpyres._result_ptrs.items()}
+    return asnumpyres
+
+
+def clone_snapshotresult(snap: SnapshotResult, range_id: int):
+    """
+    Clone the action held by an RResultPtr, registering it with its RLoopManager
+    """
+    name_with_old_id = snap.filenames[0].removesuffix(".root")
+    last_underscore = name_with_old_id.rfind("_")
+    basename = name_with_old_id[:last_underscore]
+    path_with_range = f"{basename}_{range_id}.root"
+    resptr = ROOT.Internal.RDF.CloneResultPtr(snap._resultptr, path_with_range)
+    return SnapshotResult(snap.treename, [path_with_range], resptr)
+
+
+def clone_rresultmap(inmap):
+    return ROOT.Internal.RDF.CloneResultMap(inmap)
+

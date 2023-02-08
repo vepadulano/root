@@ -19,6 +19,8 @@ from typing import Any, Dict, List, Tuple, TYPE_CHECKING, Union
 
 import ROOT
 
+from DistRDF import _graph_cache
+from DistRDF.Backends import Utils
 from DistRDF.CppWorkflow import CppWorkflow
 
 from DistRDF.Operation import Action, AsNumpy, InstantAction, Operation, Snapshot, VariationsFor
@@ -51,7 +53,7 @@ def _(operation: Union[Action, InstantAction], promise: Any, results: list) -> N
 
 @append_node_to_results.register
 def _(operation: Snapshot, promise: Any, results: list) -> None:
-    results.append(SnapshotResult(operation.args[0], [operation.args[1]]))
+    results.append(SnapshotResult(operation.args[0], [operation.args[1]], promise))
 
 
 @singledispatch
@@ -190,7 +192,8 @@ def generate_computation_graph(graph: Dict[int, Node], starting_node: ROOT.RDF.R
     return promises
 
 
-def trigger_computation_graph(graph: Dict[int, Node], starting_node: ROOT.RDF.RNode, range_id: int) -> List:
+def trigger_computation_graph(
+    graph: Dict[int, Node], starting_node: ROOT.RDF.RNode, range_id: int, rdf_uuid: int) -> List:
     """
     Trigger the computation graph.
 
@@ -213,8 +216,20 @@ def trigger_computation_graph(graph: Dict[int, Node], starting_node: ROOT.RDF.RN
         list: A list of objects that can be either used as or converted into
             mergeable values.
     """
-    actions = generate_computation_graph(graph, starting_node, range_id)
-
+    if rdf_uuid not in _graph_cache._ACTIONS_REGISTER:
+        actions = generate_computation_graph(graph, starting_node, range_id)
+        # Fill the cache with the future results
+        _graph_cache._ACTIONS_REGISTER[rdf_uuid] = actions
+    else:
+        # Create clones according to different types of actions
+        actions = []
+        for action in _graph_cache._ACTIONS_REGISTER[rdf_uuid]:
+            if isinstance(action, SnapshotResult):
+                actions.append(Utils.clone_snapshotresult(action, range_id))
+            elif "RResultMap" in action.__class__.__name__:
+                actions.append(Utils.clone_rresultmap(action))
+            else:
+                actions.append(Utils.clone_action(action))
     # Trigger computation graph with the GIL released
     rnode = ROOT.RDF.AsRNode(starting_node)
     ROOT.Internal.RDF.TriggerRun.__release_gil__ = True

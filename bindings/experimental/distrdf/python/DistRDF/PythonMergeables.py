@@ -14,9 +14,12 @@ class SnapshotResult(object):
     merge it with other objects of this type.
     """
 
-    def __init__(self, treename: str, filenames: list[str]) -> None:
+    def __init__(self, treename: str, filenames: list[str], resultptr=None) -> None:
         self.treename = treename
         self.filenames = filenames
+        # Transient attribute, discarded before the end of the mapper task so
+        # that we don't incur in serialization of the RResultPtr
+        self._resultptr = resultptr
 
     def Merge(self, other: SnapshotResult) -> None:
         """

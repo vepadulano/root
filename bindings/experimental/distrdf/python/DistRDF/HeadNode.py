@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
+import uuid
 import warnings
 
 from collections import Counter, deque
@@ -17,6 +18,7 @@ from DistRDF.Backends.Base import distrdf_mapper, distrdf_reducer
 from DistRDF.Node import Node
 from DistRDF.Operation import Action, InstantAction, Operation
 from DistRDF.Backends import Utils
+from DistRDF import _graph_cache
 
 if TYPE_CHECKING:
     from DistRDF.Backends.Base import BaseBackend, TaskResult
@@ -89,6 +91,11 @@ class HeadNode(Node, ABC):
         # and so on. Thus, we need a top-down traversal.
         self.graph_nodes: Deque[Node] = deque([self])
 
+        # Uniquely identify each RDataFrame within this application
+        self.rdf_uuid = uuid.uuid4()  # Random UUID
+
+        self.current_execution_identifier = None
+
         # Internal attribute to keep track of the number of partitions. We also
         # check whether it was specified by the user when creating the dataframe.
         # If so, this attribute will not be updated when triggering.
@@ -145,7 +152,10 @@ class HeadNode(Node, ABC):
         # on the right node). We can't serialize the reference to the parent
         # node that each node object has, since that would trigger recursive
         # serialization of the parent(s) of parent(s) nodes.
-        return {node.node_id: node for node in reversed(self.graph_nodes)}
+        graph_dict = {node.node_id: node for node in reversed(self.graph_nodes)}
+        graph_hash = hash(frozenset(graph_dict.items()))
+        self.current_execution_identifier = (self.rdf_uuid, graph_hash)
+        return graph_dict
 
     @abstractmethod
     def _build_ranges(self) -> List[Ranges.DataRange]:
@@ -189,12 +199,14 @@ class HeadNode(Node, ABC):
         # between runs (e.g. changing the number of available cores).
         self.npartitions = self.backend.optimize_npartitions()
 
+        graph_dict = self._generate_graph_dict()
+
         if optimized:
             computation_graph_callable = partial(
-                ComputationGraphGenerator.run_with_cppworkflow, self._generate_graph_dict())
+                ComputationGraphGenerator.run_with_cppworkflow, graph_dict)
         else:
             computation_graph_callable = partial(
-                ComputationGraphGenerator.trigger_computation_graph, self._generate_graph_dict())
+                ComputationGraphGenerator.trigger_computation_graph, graph_dict)
 
         mapper = partial(distrdf_mapper,
                          build_rdf_from_range=self._generate_rdf_creator(),
@@ -296,7 +308,7 @@ class EmptySourceHeadNode(HeadNode):
                    "in the dataframe. Using {1} partition(s)".format(self.npartitions, self.nentries))
             warnings.warn(msg, UserWarning, stacklevel=2)
             self.npartitions = self.nentries
-        return Ranges.get_balanced_ranges(self.nentries, self.npartitions)
+        return Ranges.get_balanced_ranges(self.nentries, self.npartitions, self.current_execution_identifier)
 
     def _generate_rdf_creator(self) -> Callable[[Ranges.DataRange], TaskObjects]:
         """
@@ -311,9 +323,16 @@ class EmptySourceHeadNode(HeadNode):
             """
             Builds an RDataFrame instance for a distributed mapper.
             """
-            rdf = ROOT.RDataFrame(nentries)
-            ROOT.Internal.RDF.ChangeEmptyEntryRange(ROOT.RDF.AsRNode(rdf), (current_range.start, current_range.end))
-            return TaskObjects(rdf, None)
+            if current_range.rdf_uuid not in _graph_cache._RDF_REGISTER:
+                rdf_toprocess = ROOT.RDataFrame(nentries)
+                _graph_cache._RDF_REGISTER[current_range.rdf_uuid] = rdf_toprocess
+            else:
+                rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.rdf_uuid]
+
+            ROOT.Internal.RDF.ChangeEmptyEntryRange(
+                ROOT.RDF.AsRNode(rdf_toprocess), (current_range.start, current_range.end))
+
+            return TaskObjects(rdf_toprocess, None)
 
         return build_rdf_from_range
 
@@ -437,7 +456,7 @@ class TreeHeadNode(HeadNode):
                         "chunks the dataset can be split in. Some tasks could be doing no work. Consider "
                         "setting the 'npartitions' parameter of the RDataFrame constructor to a lower value.")
 
-        return Ranges.get_percentage_ranges(self.subtreenames, self.inputfiles, self.npartitions, self.friendinfo)
+        return Ranges.get_percentage_ranges(self.subtreenames, self.inputfiles, self.npartitions, self.friendinfo, self.current_execution_identifier)
 
     def _generate_rdf_creator(self) -> Callable[[Ranges.DataRange], TaskObjects]:
         """
@@ -491,7 +510,17 @@ class TreeHeadNode(HeadNode):
 
             attach_friend_info_if_present(clustered_range, ds)
 
-            return TaskObjects(ROOT.RDataFrame(ds), entries_in_trees)
+            if current_range.rdf_uuid not in _graph_cache._RDF_REGISTER:
+                rdf_toprocess = ROOT.RDataFrame(ds)
+                # Fill the cache with the new RDataFrame
+                _graph_cache._RDF_REGISTER[current_range.rdf_uuid] = rdf_toprocess
+            else:
+                # Retrieve an already present RDataFrame from the cache
+                rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.rdf_uuid]
+                # Update it to the range of entries for this task
+                ROOT.Internal.RDF.ChangeSpec(ROOT.RDF.AsRNode(rdf_toprocess), ROOT.std.move(ds))
+
+            return TaskObjects(rdf_toprocess, entries_in_trees)
 
         return build_rdf_from_range
 
@@ -515,9 +544,9 @@ class TreeHeadNode(HeadNode):
         # Keys should be exactly the same
         if files_counts.keys() != entries_in_trees.trees_with_entries.keys():
             raise RuntimeError("The specified input files and the files that were "
-                                "actually processed are not the same:\n"
-                                f"Input files: {list(files_counts.keys())}\n"
-                                f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
+                               "actually processed are not the same:\n"
+                               f"Input files: {list(files_counts.keys())}\n"
+                               f"Processed files: {list(entries_in_trees.trees_with_entries.keys())}")
 
         # Multiply the entries of each tree by the number of times it was
         # requested by the user

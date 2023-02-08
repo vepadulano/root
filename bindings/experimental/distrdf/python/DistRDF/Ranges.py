@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 
 from bisect import bisect_left
 from dataclasses import dataclass, field
@@ -14,14 +15,17 @@ import ROOT
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class DataRange:
     """
     A logical range of entries in which a dataset is split. Depending on the
     input data source, this can have different attributes.
     """
-    pass
+    rdf_uuid: uuid.UUID
+    id: int
 
 
+@dataclass
 class EmptySourceRange(DataRange):
     """
     Empty source range of entries
@@ -39,14 +43,11 @@ class EmptySourceRange(DataRange):
     end (int): Ending entry of this range.
     """
 
-    def __init__(self, rangeid, start, end):
-        """set attributes"""
-        self.id = rangeid
-        self.start = start
-        self.end = end
+    start: int
+    end: int
 
 
-def get_balanced_ranges(nentries, npartitions):
+def get_balanced_ranges(nentries, npartitions, rdf_uuid: uuid.UUID):
     """
     Builds range pairs from the given values of the number of entries in
     the dataset and number of partitions required. Each range contains the
@@ -85,7 +86,7 @@ def get_balanced_ranges(nentries, npartitions):
             end = i = end + 1
             remainder -= 1
 
-        ranges.append(EmptySourceRange(rangeid, start, end))
+        ranges.append(EmptySourceRange(rdf_uuid, rangeid, start, end))
         rangeid += 1
 
     return ranges
@@ -119,8 +120,6 @@ class TreeRange(DataRange):
         range. Not None if the user provided a TTree or TChain in the
         distributed RDataFrame constructor.
     """
-
-    id: int
     treenames: List[str]
     filenames: List[str]
     globalstart: int
@@ -134,7 +133,6 @@ class TreeRangePerc(DataRange):
     Range of percentages to be considered for a list of trees. Building block
     for an actual range of entries of a distributed task.
     """
-    id: int
     treenames: List[str]
     filenames: List[str]
     first_file_idx: int
@@ -179,7 +177,8 @@ def get_clusters_and_entries(treename: str, filename: str) -> Tuple[List[int], i
 
 
 def get_percentage_ranges(treenames: List[str], filenames: List[str], npartitions: int,
-                          friendinfo: Optional[ROOT.Internal.TreeUtils.RFriendInfo]) -> List[TreeRangePerc]:
+                          friendinfo: Optional[ROOT.Internal.TreeUtils.RFriendInfo],
+                          rdf_uuid: uuid.UUID) -> List[TreeRangePerc]:
     """
     Create a list of tasks that will process the given trees partitioning them
     by percentages.
@@ -228,8 +227,9 @@ def get_percentage_ranges(treenames: List[str], filenames: List[str], npartition
         # We need to transmit the full list of treenames and filenames to each
         # task, in order to properly align the full dataset considering friends.
         return [
-            TreeRangePerc(rangeid, treenames, filenames, start_sample_idxs[rangeid], end_sample_idxs[rangeid],
-                          first_tree_start_perc_tasks[rangeid], last_tree_end_perc_tasks[rangeid], friendinfo)
+            TreeRangePerc(
+                rdf_uuid, rangeid, treenames, filenames, start_sample_idxs[rangeid], end_sample_idxs[rangeid],
+                first_tree_start_perc_tasks[rangeid], last_tree_end_perc_tasks[rangeid], friendinfo)
             for rangeid in range(npartitions)
         ]
     else:
@@ -245,7 +245,7 @@ def get_percentage_ranges(treenames: List[str], filenames: List[str], npartition
         # equal to the number of files assigned to that task.
         return [
             TreeRangePerc(
-                rangeid, tasktreenames[rangeid], taskfilenames[rangeid], 0, len(taskfilenames[rangeid]),
+                rdf_uuid, rangeid, tasktreenames[rangeid], taskfilenames[rangeid], 0, len(taskfilenames[rangeid]),
                 first_tree_start_perc_tasks[rangeid], last_tree_end_perc_tasks[rangeid], friendinfo
             )
             for rangeid in range(npartitions)
@@ -391,7 +391,7 @@ def get_clustered_range_from_percs(percrange: TreeRangePerc) -> Tuple[Optional[T
 
     entries_in_trees = TaskTreeEntries(globalend - globalstart, trees_with_entries)
 
-    treerange = TreeRange(percrange.id, percrange.treenames, percrange.filenames,
-                            globalstart, globalend, percrange.friendinfo)
+    treerange = TreeRange(percrange.rdf_uuid, percrange.id, percrange.treenames, percrange.filenames,
+                          globalstart, globalend, percrange.friendinfo)
 
     return treerange, entries_in_trees
