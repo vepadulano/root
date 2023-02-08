@@ -424,6 +424,38 @@ RLoopManager::RLoopManager(ROOT::RDF::Experimental::RDatasetSpec &&spec)
    }
 }
 
+void RLoopManager::ChangeSpec(ROOT::RDF::Experimental::RDatasetSpec &&spec)
+{
+   // Change the range of entries to be processed
+   fBeginEntry = spec.GetEntryRangeBegin();
+   fEndEntry = spec.GetEntryRangeEnd();
+
+   // Create the internal main chain
+   fDatasetGroups = spec.MoveOutDatasetGroups();
+   fDatasetGroupMap.clear();
+   auto chain = std::make_shared<TChain>("");
+   for (auto &group : fDatasetGroups) {
+      const auto &trees = group.GetTreeNames();
+      const auto &files = group.GetFileNameGlobs();
+      for (auto i = 0u; i < files.size(); ++i) {
+         const auto fullpath = files[i] + "/" + trees[i]; // TODO: use ?# once #11483 is solved
+         chain->Add(fullpath.c_str());
+         fDatasetGroupMap[fullpath] = &group;
+      }
+   }
+   SetTree(std::move(chain));
+
+   // Create friends from the specification and connect them to the main chain
+   const auto &friendInfo = spec.GetFriendInfo();
+   fFriends = ROOT::Internal::TreeUtils::MakeFriends(friendInfo);
+   const auto nFriends = friendInfo.fFriendNames.size();
+   R__ASSERT(nFriends == fFriends.size() && "Created the wrong number of friends from the available information.");
+   for (std::size_t i = 0ul; i < nFriends; i++) {
+      const auto &thisFriendAlias = friendInfo.fFriendNames[i].second;
+      fTree->AddFriend(fFriends[i].get(), thisFriendAlias.c_str());
+   }
+}
+
 /// Run event loop with no source files, in parallel.
 void RLoopManager::RunEmptySourceMT()
 {
