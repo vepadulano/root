@@ -15,7 +15,9 @@ import logging
 
 from copy import deepcopy
 from functools import singledispatch
+from pprint import pprint
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING, Union
+from threading import Lock
 
 import ROOT
 
@@ -216,16 +218,27 @@ def trigger_computation_graph(
         list: A list of objects that can be either used as or converted into
             mergeable values.
     """
-    if exec_id not in _ACTIONS_REGISTER:
-        # Fill the cache with the future results
-        actions = generate_computation_graph(graph, starting_node, range_id)
-        _ACTIONS_REGISTER[exec_id] = actions
-    else:
-        # Create clones according to different types of actions
-        actions = [
-            Utils.clone_action(action, range_id)
-            for action in _ACTIONS_REGISTER[exec_id]
-        ]
+    with Lock():
+        if exec_id not in _ACTIONS_REGISTER:
+            found_cache = False
+            # Fill the cache with the future results
+            actions = generate_computation_graph(graph, starting_node, range_id)
+            _ACTIONS_REGISTER[exec_id] = actions
+        else:
+            found_cache = True
+            # Create clones according to different types of actions
+            actions = [
+                Utils.clone_action(action, range_id)
+                for action in _ACTIONS_REGISTER[exec_id]
+            ]
+
+    print("\n\n\n")
+    print("#"*30, "ACTIONS_REGISTER", f"{range_id=}", f"{found_cache=}", "#"*30)
+    pprint(_ACTIONS_REGISTER)
+    print(f"{len(_ACTIONS_REGISTER)=}")
+    print(f"{list(_ACTIONS_REGISTER.keys())=}")
+    print("#"*30, "ACTIONS_REGISTER", "#"*30)
+    print("\n\n\n")
 
     # Trigger computation graph with the GIL released
     rnode = ROOT.RDF.AsRNode(starting_node)

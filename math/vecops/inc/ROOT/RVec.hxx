@@ -54,6 +54,8 @@
 #include <vdt/vdtMath.h>
 #endif
 
+#include <iostream>
+#include <unistd.h> // getpid
 
 namespace ROOT {
 

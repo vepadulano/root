@@ -106,6 +106,7 @@ def distrdf_mapper(
     # Wrap code that may be calling into C++ in a try-except block in order
     # to better propagate exceptions.
     try:
+        verbosity = ROOT.Experimental.RLogScopedVerbosity(ROOT.Detail.RDF.RDFLogChannel(), ROOT.Experimental.ELogLevel.kDebug)
         setup_mapper(initialization_fn)
 
         # Build an RDataFrame instance for the current mapper task, based

@@ -50,6 +50,8 @@
 #include <set>
 #include <limits> // For MaxTreeSizeRAII. Revert when #6640 will be solved.
 
+#include <iostream>
+
 using namespace ROOT::Detail::RDF;
 using namespace ROOT::Internal::RDF;
 
@@ -661,8 +663,10 @@ void RLoopManager::RunAndCheckFilters(unsigned int slot, Long64_t entry)
       fNewSampleNotifier.UnsetFlag(slot);
    }
 
-   for (auto *actionPtr : fBookedActions)
+   for (auto *actionPtr : fBookedActions){
+      std::cout << "Entry=" << entry << std::endl;
       actionPtr->Run(slot, entry);
+   }
    for (auto *namedFilterPtr : fBookedNamedFilters)
       namedFilterPtr->CheckFilters(slot, entry);
    for (auto &callback : fCallbacks)

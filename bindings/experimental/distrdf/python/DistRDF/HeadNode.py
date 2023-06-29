@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from functools import partial, singledispatch
 from itertools import zip_longest
 from typing import Callable, Deque, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
-
+from threading import Lock
 import ROOT
 
 from DistRDF import ComputationGraphGenerator, Ranges, _graph_cache
@@ -198,6 +198,7 @@ class HeadNode(Node, ABC):
 
         self.exec_id = _graph_cache.ExecutionIdentifier(self.rdf_uuid, uuid.uuid4())
 
+        print(f"{self.npartitions=}\n{self.exec_id=}\n{hash(self.exec_id)=}\n\n")
         if optimized:
             computation_graph_callable = partial(ComputationGraphGenerator.run_with_cppworkflow, self._generate_graph_dict())
         else:
@@ -219,6 +220,7 @@ class HeadNode(Node, ABC):
         local_nodes = self._get_action_nodes()
         # Set the value of every action node
         for node, value in zip(local_nodes, final_values):
+            print(f"{node=},{value=}")
             Utils.set_value_on_node(value, node, self.backend)
 
     def GetColumnNames(self) -> Iterable[str]:
@@ -318,11 +320,12 @@ class EmptySourceHeadNode(HeadNode):
             """
             Builds an RDataFrame instance for a distributed mapper.
             """
-            if current_range.exec_id not in _graph_cache._RDF_REGISTER:
-                rdf_toprocess = ROOT.RDataFrame(nentries)
-                _graph_cache._RDF_REGISTER[current_range.exec_id] = rdf_toprocess
-            else:
-                rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.exec_id]
+            with Lock():
+                if current_range.exec_id not in _graph_cache._RDF_REGISTER:
+                    rdf_toprocess = ROOT.RDataFrame(nentries)
+                    _graph_cache._RDF_REGISTER[current_range.exec_id] = rdf_toprocess
+                else:
+                    rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.exec_id]
 
             ROOT.Internal.RDF.ChangeEmptyEntryRange(
                 ROOT.RDF.AsRNode(rdf_toprocess), (current_range.start, current_range.end))
@@ -514,15 +517,16 @@ class TreeHeadNode(HeadNode):
 
             attach_friend_info_if_present(clustered_range, ds)
 
-            if current_range.exec_id not in _graph_cache._RDF_REGISTER:
-                rdf_toprocess = ROOT.RDataFrame(ds)
-                # Fill the cache with the new RDataFrame
-                _graph_cache._RDF_REGISTER[current_range.exec_id] = rdf_toprocess
-            else:
-                # Retrieve an already present RDataFrame from the cache
-                rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.exec_id]
-                # Update it to the range of entries for this task
-                ROOT.Internal.RDF.ChangeSpec(ROOT.RDF.AsRNode(rdf_toprocess), ROOT.std.move(ds))
+            with Lock():
+                if current_range.exec_id not in _graph_cache._RDF_REGISTER:
+                    rdf_toprocess = ROOT.RDataFrame(ds)
+                    # Fill the cache with the new RDataFrame
+                    _graph_cache._RDF_REGISTER[current_range.exec_id] = rdf_toprocess
+                else:
+                    # Retrieve an already present RDataFrame from the cache
+                    rdf_toprocess = _graph_cache._RDF_REGISTER[current_range.exec_id]
+                    # Update it to the range of entries for this task
+                    ROOT.Internal.RDF.ChangeSpec(ROOT.RDF.AsRNode(rdf_toprocess), ROOT.std.move(ds))
 
             return TaskObjects(rdf_toprocess, entries_in_trees)
 
