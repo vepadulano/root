@@ -17,6 +17,8 @@ from functools import partial
 from typing import Callable, Iterable, List, Optional, TYPE_CHECKING, Union
 
 import ROOT
+import time
+import random
 
 from DistRDF import Ranges
 from DistRDF.Backends import Utils
@@ -49,14 +51,29 @@ def setup_mapper(initialization_fn: Callable) -> None:
 
 def get_mergeable_values(starting_node: ROOT.RDF.RNode, range_id: int,
                          computation_graph_callable: Callable[[ROOT.RDF.RNode, int], List],
-                         exec_id: ExecutionIdentifier) -> List:
+                         optimized: bool, exec_id: ExecutionIdentifier) -> List:
     """
     Triggers the computation graph and returns a list of mergeable values.
     """
+    if optimized:
+        # Create the RDF computation graph and execute it on this ranged
+        # dataset. The results of the actions of the graph and their types
+        # are returned
+        results, res_types = computation_graph_callable(starting_node, range_id)
 
-    actions = computation_graph_callable(starting_node, range_id, exec_id)
+        # Get RResultPtrs out of the type-erased RResultHandles by
+        # instantiating with the type of the value
+        mergeables = [
+            ROOT.ROOT.Detail.RDF.GetMergeableValue(res.GetResultPtr[res_type]())
+            if isinstance(res, ROOT.RDF.RResultHandle)
+            else res
+            for res, res_type in zip(results, res_types)
+        ]
+    else:
+        # Output of the callable
+        actions = computation_graph_callable(starting_node, range_id, exec_id)
 
-    mergeables = [Utils.get_mergeablevalue(action) for action in actions]
+        mergeables = [Utils.get_mergeablevalue(action) for action in actions]
 
     return mergeables
 
@@ -83,7 +100,8 @@ def distrdf_mapper(
         build_rdf_from_range:  Callable[[Union[Ranges.EmptySourceRange, Ranges.TreeRangePerc]],
                                         TaskObjects],
         computation_graph_callable: Callable[[ROOT.RDF.RNode, int], List],
-        initialization_fn: Callable) -> TaskResult:
+        initialization_fn: Callable,
+        optimized: bool) -> TaskResult:
     """
     Maps the computation graph to the input logical range of entries.
     """
@@ -97,13 +115,17 @@ def distrdf_mapper(
         rdf_plus = build_rdf_from_range(current_range)
         if rdf_plus.rdf is not None:
             mergeables = get_mergeable_values(rdf_plus.rdf, current_range.id, computation_graph_callable,
-                                              current_range.exec_id)
+                                              optimized, current_range.exec_id)
         else:
             mergeables = None
     except ROOT.std.exception as e:
         raise RuntimeError(f"C++ exception thrown:\n\t{type(e).__name__}: {e.what()}")
 
-    return TaskResult(mergeables, rdf_plus.entries_in_trees)
+    ret = TaskResult(mergeables, rdf_plus.entries_in_trees)
+    delay = random.randint(3, 15)
+    time.sleep(delay)
+    print("This worker is done with a delay of: ", delay)
+    return ret
 
 
 def merge_values(mergeables_out: Iterable, mergeables_in: Iterable) -> Iterable:

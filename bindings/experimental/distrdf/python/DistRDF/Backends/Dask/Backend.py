@@ -13,6 +13,13 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, Optional, TYPE_CHECKING
+import time
+import random
+import copy
+import math
+from typing import List
+
+import ROOT
 
 from DistRDF import DataFrame
 from DistRDF import HeadNode
@@ -21,13 +28,26 @@ from DistRDF.Backends import Utils
 
 try:
     import dask
-    from dask.distributed import Client, get_worker, LocalCluster, progress
+    from dask.distributed import Client, get_worker, LocalCluster, progress, as_completed
 except ImportError:
     raise ImportError(("cannot import a Dask component. Refer to the Dask documentation "
                        "for installation instructions."))
 
 if TYPE_CHECKING:
     from dask_jobqueue import JobQueueCluster
+
+
+def live_visualize(histograms: List[ROOT.TH1D]) -> None:
+    """
+    Enables live visualization for the given histograms by setting the
+    live_visualization_enabled flag of the Headnode to True.
+
+    Args:
+        histograms (List[ROOT.TH1D]): The list of histograms to enable live visualization for.
+    """
+    headnode = histograms[0].proxied_node.get_head()
+    headnode.live_visualization_enabled = True
+    headnode.histogram_ids = [histogram.proxied_node.node_id for histogram in histograms]
 
 
 def get_total_cores_generic(client: Client) -> int:
@@ -101,7 +121,8 @@ class DaskBackend(Base.BaseBackend):
         # N is the number of cores on the local machine.
         self.client = (daskclient if daskclient is not None else
                        Client(LocalCluster(n_workers=os.cpu_count(), threads_per_worker=1, processes=True)))
-
+        
+        
     def optimize_npartitions(self) -> int:
         """
         Attempts to compute a clever number of partitions for the current
@@ -111,7 +132,8 @@ class DaskBackend(Base.BaseBackend):
         """
         return get_total_cores(self.client)
 
-    def ProcessAndMerge(self, ranges, mapper, reducer):
+
+    def ProcessAndMerge(self, ranges, mapper, reducer, live_visualization_enabled, histogram_ids, local_nodes):
         """
         Performs map-reduce using Dask framework.
 
@@ -135,6 +157,7 @@ class DaskBackend(Base.BaseBackend):
         # TypeError: cannot pickle '_asyncio.Task' object
         #
         # Which boil down to the self.client object not being serializable
+        #         
         headers = self.headers
         shared_libraries = self.shared_libraries
 
@@ -168,12 +191,84 @@ class DaskBackend(Base.BaseBackend):
             ]
             Utils.declare_shared_libraries(shared_libs_on_ex)
 
-            return mapper(current_range)
+            ret = mapper(current_range)
+
+            return ret
 
         dmapper = dask.delayed(dask_mapper)
         dreducer = dask.delayed(reducer)
 
         mergeables_lists = [dmapper(range) for range in ranges]
+
+        if live_visualization_enabled:
+            print("Live visualization enabled")
+
+            #test_delayed_tasks = [dmapper(range) for range in ranges]
+            test_delayed_tasks = mergeables_lists
+
+            # Convert the list of delayed objects into a list of futures
+            test_future_tasks = self.client.compute(test_delayed_tasks)
+        
+            # Create a new canvas
+            backend_pad = ROOT.TVirtualPad.TContext()
+
+            num_histograms = len(histogram_ids)
+            canvas_rows = math.ceil(math.sqrt(num_histograms))
+            canvas_cols = math.ceil(num_histograms / canvas_rows)
+            canvas_width = 600 * canvas_cols
+            canvas_height = 300 * canvas_rows
+            c = ROOT.TCanvas("distrdf_backend", "distrdf_backend", canvas_width, canvas_height)
+            canvas_divided = False
+
+            # Create a dictionary to store cumulative histograms for each division
+            cumulative_histograms = {}
+            cumulative_sum = 0
+
+            for future in as_completed(test_future_tasks):
+                mergeables = future.result().mergeables
+                if not canvas_divided:
+                    # Divide the canvas into pads based on the number of histograms if not already done
+                    c.Divide(canvas_rows, canvas_cols)
+                    canvas_divided = True
+
+                pad_num = 1
+                for i, mergeable in enumerate(mergeables):
+                    operation = local_nodes[i].operation.name
+                    if operation == "Histo1D" and local_nodes[i].node_id in histogram_ids:
+                        # Return the actual histogram object
+                        h = mergeable.GetValue()  
+
+                        if i not in cumulative_histograms:
+                            cumulative_histograms[i] = h.Clone()
+                        else:
+                            cumulative_histograms[i].Add(h)
+
+                        cumulative_histograms[i].SetFillColor(random.randint(1, 9))
+
+                        # Move to the appropriate pad
+                        pad = c.cd(pad_num)
+                        cumulative_histograms[i].Draw()
+                        
+                        # Update the pad
+                        pad.Update()
+                        pad_num += 1
+                    
+                    # Treatment of other operations
+                    '''
+                    elif operation == "Sum":
+                        cumulative_sum += mergeable.GetValue() 
+                        print("Current Sum = ", cumulative_sum)
+                    elif operation == "Mean":
+                        print("Current Mean = ", mergeable.GetValue())
+                    elif operation == "Max":
+                        print("Current Max = ", mergeable.GetValue())
+                    '''
+
+            time.sleep(3)
+            c.Close()
+        else:
+            print("Live visualization disabled")
+        
 
         while len(mergeables_lists) > 1:
             mergeables_lists.append(
@@ -190,18 +285,20 @@ class DaskBackend(Base.BaseBackend):
         # https://docs.dask.org/en/latest/diagnostics-distributed.html#dask.distributed.progress
         final_results = mergeables_lists.pop().persist()
         progress(final_results)
+        
+        ret = final_results.compute()
 
-        return final_results.compute()
+        return ret
 
     def distribute_unique_paths(self, paths):
         """
-        Dask supports sending files to the workes via the `Client.upload_file`
+        Dask supports sending files to the workers via the `Client.upload_file`
         method. Its stated purpose is to send local Python packages to the
         nodes, but in practice it uploads the file to the path stored in the
         `local_directory` attribute of each worker.
         """
         for filepath in paths:
-            self.client.upload_file(filepath, load=False)
+            self.client.upload_file(filepath)
 
     def make_dataframe(self, *args, **kwargs):
         """

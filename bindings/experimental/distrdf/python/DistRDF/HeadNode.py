@@ -33,7 +33,6 @@ def _append_node_to_actions(operation: Operation, node: Node, actions: List[Node
     """
     pass
 
-
 @_append_node_to_actions.register(Action)
 @_append_node_to_actions.register(InstantAction)
 def _(operation: Union[Action, InstantAction], node: Node, actions: List[Node]) -> None:
@@ -105,6 +104,13 @@ class HeadNode(Node, ABC):
         # Internal RDataFrame object, useful to expose information such as
         # column names.
         self._localdf = localdf
+
+        # Flag indicating whether live visualization is enabled
+        self.live_visualization_enabled: bool = False
+
+        # ID(s) of the histogram(s) to live visualize
+        #self.histogram_id: int = 0
+        self.histogram_ids: List[int] = []
 
     @property
     def npartitions(self) -> Optional[int]:
@@ -187,6 +193,8 @@ class HeadNode(Node, ABC):
         filled with the values that were computed distributedly so that they
         can be accessed in the application like with local RDataFrame.
         """
+        # Check if the workflow must be generated in optimized mode
+        optimized = ROOT.RDF.Experimental.Distributed.optimized
 
         # Updates the number of partitions for this dataframe if the user did
         # not specify one initially. This is done each time the computations are
@@ -196,22 +204,25 @@ class HeadNode(Node, ABC):
 
         self.exec_id = _graph_cache.ExecutionIdentifier(self.rdf_uuid, uuid.uuid4())
 
-
-        computation_graph_callable = partial(ComputationGraphGenerator.trigger_computation_graph, self._generate_graph_dict())
+        if optimized:
+            computation_graph_callable = partial(ComputationGraphGenerator.run_with_cppworkflow, self._generate_graph_dict())
+        else:
+            computation_graph_callable = partial(ComputationGraphGenerator.trigger_computation_graph, self._generate_graph_dict())
 
         mapper = partial(distrdf_mapper,
                          build_rdf_from_range=self._generate_rdf_creator(),
                          computation_graph_callable=computation_graph_callable,
-                         initialization_fn=self.backend.initialization)
+                         initialization_fn=self.backend.initialization,
+                         optimized=optimized)
 
-        # Execute graph distributedly and return the aggregated results from all
-        # tasks
-        returned_values = self.backend.ProcessAndMerge(self._build_ranges(), mapper, distrdf_reducer)
+        # Execute graph distributedly and return the aggregated results from all tasks
+        # List of action nodes in the same order as values
+        local_nodes = self._get_action_nodes()
+        returned_values = self.backend.ProcessAndMerge(self._build_ranges(), mapper, distrdf_reducer, self.live_visualization_enabled, self.histogram_ids, local_nodes)
         # Perform any extra checks that may be needed according to the
         # type of the head node
         final_values = self._handle_returned_values(returned_values)
-        # List of action nodes in the same order as values
-        local_nodes = self._get_action_nodes()
+        
         # Set the value of every action node
         for node, value in zip(local_nodes, final_values):
             Utils.set_value_on_node(value, node, self.backend)
