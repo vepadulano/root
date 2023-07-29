@@ -26,6 +26,9 @@ the Clang C++ compiler, not CINT.
 #include "TClingTypeInfo.h"
 #include "ThreadLocalStorage.h"
 
+#include "TInterpreter.h" // gInterpreterMutex
+#include "TVirtualMutex.h" // R__LOCKGUARD
+
 #include "cling/Interpreter/Interpreter.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
@@ -57,6 +60,8 @@ bool TClingMethodArgInfo::IsValid() const
 
 int TClingMethodArgInfo::Next()
 {
+   // Modifies iterator and invalidates cache, needs locking.
+   R__LOCKGUARD(gInterpreterMutex);
    ++fIdx;
    fNameCache.clear(); // invalidate the cache.
    return IsValid();
@@ -82,7 +87,8 @@ const char *TClingMethodArgInfo::DefaultValue() const
    if (!IsValid()) {
       return nullptr;
    }
-   // Could deserialize / create instantiated decls.
+   // Could deserialize / create instantiated decls, needs locking.
+   R__LOCKGUARD(gInterpreterMutex);
    cling::Interpreter::PushTransactionRAII RAII(fInterp);
    const clang::ParmVarDecl *pvd = GetDecl();
    // Instantiate default arg if needed
@@ -148,6 +154,8 @@ const char *TClingMethodArgInfo::TypeName() const
    if (!IsValid()) {
       return nullptr;
    }
+   // The next calls lock the interpreter mutex. Lock once here instead of twice
+   R__LOCKGUARD(gInterpreterMutex);
    return Type()->Name();
 }
 
