@@ -1704,7 +1704,7 @@ endif(tmva)
 #---Check for PyROOT---------------------------------------------------------------------
 if(pyroot)
 
-  if(NOT PYTHONLIBS_FOUND AND NOT Python3_Development_FOUND)
+  if(NOT Python3_Development.Module_FOUND)
     if(fail-on-missing)
       message(FATAL_ERROR "PyROOT: Python development package not found and pyroot component required"
                           " (python executable: ${PYTHON_EXECUTABLE})")
@@ -1714,7 +1714,7 @@ if(pyroot)
     endif()
   endif()
 
-  if(Python3_Development_FOUND)
+  if(Python3_Development.Module_FOUND)
     if(PYTHON_VERSION_STRING VERSION_LESS 3.8)
       message(FATAL_ERROR "PyROOT: minimum Python version required is 3.8. The current Python version is ${PYTHON_VERSION_STRING}")
     endif()

@@ -319,7 +319,7 @@ elseif(APPLE)
 endif()
 
 # Pyroot requires Python development package; force to OFF if it was not found
-if(NOT Python3_Development_FOUND)
+if(NOT Python3_Development.Module_FOUND)
   set(pyroot_defvalue OFF)
   set(tmva-pymva_defvalue OFF)
 endif()
