@@ -1,0 +1,17 @@
+name: Build Python wheels of ROOT
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: Build wheels on ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.17.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-ubuntu-latest
+          path: ./wheelhouse/*.whl
