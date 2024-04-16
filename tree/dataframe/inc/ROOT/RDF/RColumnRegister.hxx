@@ -48,12 +48,12 @@ class RDefinesWithReaders {
    // (see BookDefineJit). it is never null.
    std::shared_ptr<RDefineBase> fDefine;
    // Column readers per variation (in the map) per slot (in the vector).
-   std::vector<std::unordered_map<std::string, std::unique_ptr<RDefineReader>>> fReadersPerVariation;
+   std::vector<std::unordered_map<std::string_view, std::unique_ptr<RDefineReader>>> fReadersPerVariation;
 
 public:
    RDefinesWithReaders(std::shared_ptr<RDefineBase> define, unsigned int nSlots);
    RDefineBase &GetDefine() const { return *fDefine; }
-   RDefineReader &GetReader(unsigned int slot, const std::string &variationName);
+   RDefineReader &GetReader(unsigned int slot, std::string_view variationName);
 };
 
 class RVariationsWithReaders {
@@ -88,7 +88,7 @@ public:
  */
 class RColumnRegister {
    using ColumnNames_t = std::vector<std::string>;
-   using DefinesMap_t = std::unordered_map<std::string, std::shared_ptr<RDefinesWithReaders>>;
+   using DefinesMap_t = std::unordered_map<std::string_view, std::shared_ptr<RDefinesWithReaders>>;
    /// See fVariations for more information on this type.
    using VariationsMap_t = std::unordered_multimap<std::string, std::shared_ptr<RVariationsWithReaders>>;
 
@@ -96,7 +96,7 @@ class RColumnRegister {
 
    /// Immutable collection of Defines, can be shared among several nodes.
    /// The pointee changes if a new Define node is added to the RColumnRegister.
-   std::shared_ptr<DefinesMap_t> fDefines;
+   std::shared_ptr<const DefinesMap_t> fDefines;
    /// Immutable map of Aliases, can be shared among several nodes.
    std::shared_ptr<const std::unordered_map<std::string, std::string>> fAliases;
    /// Immutable multimap of Variations, can be shared among several nodes.
@@ -104,7 +104,7 @@ class RColumnRegister {
    /// Variations that affect multiple columns are inserted in the map multiple times, once per column,
    /// and conversely each column (i.e. each key) can have several associated variations.
    std::shared_ptr<VariationsMap_t> fVariations;
-   std::shared_ptr<const ColumnNames_t> fColumnNames; ///< Names of Defines and Aliases registered so far.
+   std::shared_ptr<const std::vector<std::string_view>> fColumnNames; ///< Names of Defines and Aliases registered so far.
 
    void AddName(std::string_view name);
 
@@ -120,9 +120,9 @@ public:
 
    ////////////////////////////////////////////////////////////////////////////
    /// \brief Return the list of the names of the defined columns (Defines + Aliases).
-   ColumnNames_t GetNames() const { return *fColumnNames; }
+   std::vector<std::string> GetNames() const;
 
-   ColumnNames_t BuildDefineNames() const;
+   std::vector<std::string_view> BuildDefineNames() const;
 
    RDFDetail::RDefineBase *GetDefine(const std::string &colName) const;
 
@@ -142,7 +142,7 @@ public:
 
    std::vector<std::string> GetVariationDeps(const std::string &column) const;
 
-   std::vector<std::string> GetVariationDeps(const ColumnNames_t &columns) const;
+   std::vector<std::string> GetVariationDeps(const std::vector<std::string> &columns) const;
 
    ROOT::RDF::RVariationsDescription BuildVariationsDescription() const;
 

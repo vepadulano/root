@@ -18,6 +18,32 @@
 #include <cassert>
 #include <set>
 
+namespace {
+class RColumnNamesCache {
+   std::vector<std::string> fNames;
+
+public:
+   void AddName(std::string_view name)
+   {
+      if (std::find(fNames.begin(), fNames.end(), name) == fNames.end()) {
+         fNames.push_back(std::string(name));
+      }
+   }
+   std::string_view GetName(std::string_view name)
+   {
+      auto nameIt = std::find(fNames.begin(), fNames.end(), name);
+      assert(nameIt != fNames.end());
+      return *nameIt;
+   }
+};
+
+RColumnNamesCache &GetColumnNamesCache()
+{
+   static RColumnNamesCache cache;
+   return cache;
+}
+} // namespace
+
 namespace ROOT {
 namespace Internal {
 namespace RDF {
@@ -28,26 +54,29 @@ RDefinesWithReaders::RDefinesWithReaders(std::shared_ptr<RDefineBase> define, un
    assert(fDefine != nullptr);
 }
 
-RDefineReader &RDefinesWithReaders::GetReader(unsigned int slot, const std::string &variationName)
+RDefineReader &RDefinesWithReaders::GetReader(unsigned int slot, std::string_view variationName)
 {
+   auto &namesCache = GetColumnNamesCache();
+   namesCache.AddName(variationName);
+   auto cachedName = namesCache.GetName(variationName);
    auto &defineReaders = fReadersPerVariation[slot];
 
-   auto it = defineReaders.find(variationName);
+   auto it = defineReaders.find(cachedName);
    if (it != defineReaders.end())
       return *it->second;
 
    auto *define = fDefine.get();
-   if (variationName != "nominal")
-      define = &define->GetVariedDefine(variationName);
+   if (cachedName != "nominal")
+      define = &define->GetVariedDefine(std::string(variationName));
 
 #if !defined(__clang__) && __GNUC__ >= 7 && __GNUC_MINOR__ >= 3
-   const auto insertion = defineReaders.insert({variationName, std::make_unique<RDefineReader>(slot, *define)});
+   const auto insertion = defineReaders.insert({cachedName, std::make_unique<RDefineReader>(slot, *define)});
    return *insertion.first->second;
 #else
    // gcc < 7.3 has issues with passing the non-movable std::pair temporary into the insert call
    auto reader = std::make_unique<RDefineReader>(slot, *define);
    auto &ret = *reader;
-   defineReaders[variationName] = std::move(reader);
+   defineReaders[cachedName] = std::move(reader);
    return ret;
 #endif
 }
@@ -88,7 +117,7 @@ RVariationsWithReaders::GetReader(unsigned int slot, const std::string &colName,
 RColumnRegister::RColumnRegister(std::shared_ptr<RDFDetail::RLoopManager> lm)
    : fLoopManager(lm), fDefines(std::make_shared<DefinesMap_t>()),
      fAliases(std::make_shared<std::unordered_map<std::string, std::string>>()),
-     fVariations(std::make_shared<VariationsMap_t>()), fColumnNames(std::make_shared<ColumnNames_t>())
+     fVariations(std::make_shared<VariationsMap_t>()), fColumnNames(std::make_shared<std::vector<std::string_view>>())
 {
 }
 
@@ -106,9 +135,9 @@ RColumnRegister::~RColumnRegister()
 
 ////////////////////////////////////////////////////////////////////////////
 /// \brief Return the list of the names of defined columns (no aliases).
-ColumnNames_t RColumnRegister::BuildDefineNames() const
+std::vector<std::string_view> RColumnRegister::BuildDefineNames() const
 {
-   ColumnNames_t names;
+   std::vector<std::string_view> names;
    names.reserve(fDefines->size());
    for (auto &kv : *fDefines) {
       names.emplace_back(kv.first);
@@ -138,10 +167,12 @@ bool RColumnRegister::IsDefineOrAlias(std::string_view name) const
 void RColumnRegister::AddDefine(std::shared_ptr<RDFDetail::RDefineBase> define)
 {
    auto newDefines = std::make_shared<DefinesMap_t>(*fDefines);
-   const std::string &colName = define->GetName();
+   auto &namesCache = GetColumnNamesCache();
+   const auto &colName = define->GetName();
+   namesCache.AddName(colName);
 
    // this will assign over a pre-existing element in case this AddDefine is due to a Redefine
-   (*newDefines)[colName] = std::make_shared<RDefinesWithReaders>(define, fLoopManager->GetNSlots());
+   (*newDefines)[namesCache.GetName(colName)] = std::make_shared<RDefinesWithReaders>(define, fLoopManager->GetNSlots());
 
    fDefines = std::move(newDefines);
    AddName(colName);
@@ -186,7 +217,7 @@ std::vector<std::string> RColumnRegister::GetVariationDeps(const std::string &co
 ///
 /// This list includes variations applied to the columns as well as variations applied to other
 /// columns on which the value of any of these columns depend (typically via Define expressions).
-std::vector<std::string> RColumnRegister::GetVariationDeps(const ColumnNames_t &columns) const
+std::vector<std::string> RColumnRegister::GetVariationDeps(const std::vector<std::string> &columns) const
 {
    // here we assume that columns do not contain aliases, they must have already been resolved
    std::set<std::string> variationNames;
@@ -246,8 +277,11 @@ void RColumnRegister::AddName(std::string_view name)
    if (std::find(names.begin(), names.end(), name) != names.end())
       return; // must be a Redefine of an existing column. Nothing to do.
 
-   auto newColsNames = std::make_shared<ColumnNames_t>(names);
-   newColsNames->emplace_back(std::string(name));
+   auto &namesCache = GetColumnNamesCache();
+   namesCache.AddName(name);
+
+   auto newColsNames = std::make_shared<std::vector<std::string_view>>(names);
+   newColsNames->emplace_back(namesCache.GetName(name));
    fColumnNames = newColsNames;
 }
 
@@ -320,3 +354,14 @@ RDFDetail::RColumnReaderBase *RColumnRegister::GetReader(unsigned int slot, cons
 } // namespace RDF
 } // namespace Internal
 } // namespace ROOT
+
+std::vector<std::string> ROOT::Internal::RDF::RColumnRegister::GetNames() const
+{
+   std::vector<std::string> ret;
+   ret.reserve(fColumnNames->size());
+   for (const auto &s: *fColumnNames)
+   {
+      ret.push_back(s.data());
+   }
+   return ret;
+}
