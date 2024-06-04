@@ -57,10 +57,6 @@ def execute_graph(node: Node) -> None:
             # the workers is contained in the head node
             node.get_head().execute_graph()
 
-def _update_internal_df_with_transformation(node:Node, operation: Operation) -> None:
-    """Propagate transform operations to the headnode internal RDataFrame"""
-    rdf_operation = getattr(node.get_head()._localdf, operation.name)
-    node.get_head()._localdf = rdf_operation(*operation.args, **operation.kwargs)
 
 def _create_new_node(parent: Node, operation: Operation.Operation) -> Node:
     """Creates a new node and inserts it in the computation graph"""
@@ -272,7 +268,6 @@ class NodeProxy(Proxy):
 @singledispatch
 def get_proxy_for(operation: Operation.Transformation, node: Node) -> NodeProxy:
     """"Returns appropriate proxy for the input node"""
-    _update_internal_df_with_transformation(node, operation)
     return NodeProxy(node)
 
 
