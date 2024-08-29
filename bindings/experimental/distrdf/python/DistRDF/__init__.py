@@ -61,13 +61,14 @@ def DeclareCppCode(code_to_declare: str) -> None:
     
 def DistributeHeaders(paths_to_headers: Iterable[str], df = None):
     """
-    This function allows users to directly load c++ custom headers 
-    onto the workers. 
+    This function allows users to directly load C++ custom headers 
+    onto the workers. The headers are declared locally first.
 
     Args:
-        paths_to_headers (list): list of paths to headers to be distributed
+        paths_to_headers (list): list of paths to headers to be distributed to each worker
         
-        df: dataframe for which the libraries are distributed
+        df (optional): dataframe for which the headers are distributed, if not specified 
+        the headers will be distributed to all the dataframes in the script
 
     """    
     from DistRDF.Backends import Base, Utils
@@ -76,19 +77,8 @@ def DistributeHeaders(paths_to_headers: Iterable[str], df = None):
         Base.BaseBackend.register_headers(paths_to_headers) 
 
     else:
-        headers_to_distribute = set()
-        
-        if isinstance(paths_to_headers, str):
-            headers_to_distribute = (Utils.get_paths_set_from_string(paths_to_headers))
-        else: 
-            for path_to_header in paths_to_headers:
-                sanatized_path_to_header = Utils.get_paths_set_from_string(path_to_header)
-                headers_to_distribute.update(sanatized_path_to_header)
-        
-        Utils.declare_headers(headers_to_distribute)
-        df._headnode.backend.distribute_unique_paths(headers_to_distribute)
+        headers_to_distribute = Utils.register_headers(paths_to_headers)        
         Base.BaseBackend.headers.update(headers_to_distribute)
-
 
 def DistributeFiles(paths_to_files: Iterable[str], df = None):
     """
@@ -98,7 +88,8 @@ def DistributeFiles(paths_to_files: Iterable[str], df = None):
     Args:
         paths_to_files (list): list of paths to files to be distributed
         
-        df: dataframe for which the libraries are distributed
+        df (optional): dataframe for which the files are distributed, if not specified 
+        the files will be distributed to all the dataframes in the script
 
     """
     from DistRDF.Backends import Base, Utils
@@ -107,26 +98,20 @@ def DistributeFiles(paths_to_files: Iterable[str], df = None):
         Base.BaseBackend.register_files(paths_to_files)
     
     else: 
-        files_to_distribute = set()
-        if isinstance(paths_to_files, str):
-            files_to_distribute = (Utils.get_paths_set_from_string(paths_to_files))
-        else: 
-            for path_to_file in paths_to_files:
-                sanatized_path_to_file = Utils.get_paths_set_from_string(path_to_file)
-                files_to_distribute.update(sanatized_path_to_file)
-
+        files_to_distribute = Utils.register_files(paths_to_files)
         df._headnode.backend.distribute_unique_paths(files_to_distribute)    
 
     
-def DistributeSharedLib(paths_to_shared_libraries: Iterable[str], df=None) -> None:
+def DistributeSharedLibs(paths_to_shared_libraries: Iterable[str], df=None) -> None:
     """
     This function allows users to directly load pre-compiled shared libraries 
-    onto the workers. 
+    onto the workers. The shared libraries are loaded locally first. 
 
     Args:
         paths_to_shared_libraries (list): list of paths to shared libraries to be distributed
         
-        df: dataframe for which the libraries are distributed
+        df (optional): dataframe for which the shared libraries are distributed, if not specified 
+        the shared libraries will be distributed to all the dataframes in the script
 
     """
     from DistRDF.Backends import Base, Utils
@@ -135,24 +120,10 @@ def DistributeSharedLib(paths_to_shared_libraries: Iterable[str], df=None) -> No
         Base.BaseBackend.register_shared_lib(paths_to_shared_libraries)
     
     else: 
-        libraries_to_distribute = set()
-        pcms_to_distribute = set()
+        libraries_to_distribute, pcms_to_distribute = Utils.register_shared_libs(paths_to_shared_libraries)
         
-        if isinstance(paths_to_shared_libraries, str):
-            pcms_to_distribute, libraries_to_distribute = (Utils.check_pcm_in_library_path(paths_to_shared_libraries))
-
-        else:
-            for path_string in paths_to_shared_libraries:
-                pcm, libraries = Utils.check_pcm_in_library_path(
-                    path_string
-                )
-                
-                libraries_to_distribute.update(libraries)
-                pcms_to_distribute.update(pcm)  
-        
-        Utils.declare_shared_libraries(libraries_to_distribute)
-        df._headnode.backend.distribute_unique_paths(pcms_to_distribute)
         df._headnode.backend.distribute_unique_paths(libraries_to_distribute)
+        df._headnode.backend.distribute_unique_paths(pcms_to_distribute)
         
         Base.BaseBackend.shared_libraries.update(libraries_to_distribute)
         Base.BaseBackend.pcms.update(pcms_to_distribute)
@@ -247,7 +218,7 @@ def create_distributed_module(parentmodule):
     distributed.LiveVisualize = LiveVisualize
     distributed.DistributeHeaders = DistributeHeaders
     distributed.DistributeFiles = DistributeFiles
-    distributed.DistributeSharedLib = DistributeSharedLib
+    distributed.DistributeSharedLibs = DistributeSharedLibs
     distributed.DeclareCppCode = DeclareCppCode
     
     return distributed

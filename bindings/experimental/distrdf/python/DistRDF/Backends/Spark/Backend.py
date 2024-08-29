@@ -130,14 +130,14 @@ class SparkBackend(Base.BaseBackend):
                 pyspark.SparkFiles.get(ntpath.basename(filepath))
                 for filepath in headers
             ]
-            Utils.declare_headers(headers_on_executor)
+            Utils.distribute_headers(headers_on_executor)
 
             # Get and declare shared libraries on each worker
             shared_libs_on_ex = [
                 pyspark.SparkFiles.get(ntpath.basename(filepath))
                 for filepath in shared_libraries
             ]
-            Utils.declare_shared_libraries(shared_libs_on_ex)
+            Utils.distribute_shared_libraries(shared_libs_on_ex)
             
             files_on_executor = [
                 pyspark.SparkFiles.get(ntpath.basename(filepath))
