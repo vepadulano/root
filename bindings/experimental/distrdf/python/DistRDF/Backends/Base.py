@@ -200,18 +200,16 @@ class BaseBackend(ABC):
         """
         cls.initialization = partial(fun, *args, **kwargs)    
         fun(*args, **kwargs) 
-     
+
     # TODO and check - make sure this works correctly for the multiple separate declares   
     @classmethod
     def register_declaration(cls, declaration): 
         
-        declaration_string = cls.declaration_str + declaration
-        
-        cls.declaration_str += declaration_string
-        code_to_declare_with_guards = "#ifndef CODE\n#define CODE\n{}\n#endif\n".format(declaration_string)
+        cls.declaration_str += declaration
+        code_to_declare_with_guards = "#ifndef CODE\n#define CODE\n{}\n#endif\n".format(cls.declaration_str)
         
         # DEBUG:
-        #print(code_to_declare_with_guards)
+        print(code_to_declare_with_guards)
                 
         def mydeclare(declaration_var): 
             ROOT.gInterpreter.Declare(declaration_var)
@@ -222,42 +220,19 @@ class BaseBackend(ABC):
     @classmethod
     def register_shared_lib(cls, paths_to_shared_libraries):
         
-        libraries_to_distribute = set()
-        pcms_to_distribute = set()
-        
-        if isinstance(paths_to_shared_libraries, str):
-            pcms_to_distribute, libraries_to_distribute = (
-            Utils.check_pcm_in_library_path(paths_to_shared_libraries))
-
-        else:
-            for path_string in paths_to_shared_libraries:
-                pcm, libraries = Utils.check_pcm_in_library_path(
-                    path_string
-                ) 
-                libraries_to_distribute.update(libraries)
-                pcms_to_distribute.update(pcm)  
-            
-        Utils.declare_shared_libraries(libraries_to_distribute)
+        libraries_to_distribute, pcms_to_distribute = Utils.register_shared_libs(paths_to_shared_libraries)
         
         cls.shared_libraries.update(libraries_to_distribute)
         cls.pcms.update(pcms_to_distribute)
     
     @classmethod
     def register_headers(cls, paths_to_headers):
-        headers_to_distribute = set()
         
-        if isinstance(paths_to_headers, str):
-            headers_to_distribute = (Utils.get_paths_set_from_string(paths_to_headers))
-        else: 
-            for path_to_header in paths_to_headers:
-                sanatized_path_to_header = Utils.get_paths_set_from_string(path_to_header)
-                headers_to_distribute.update(sanatized_path_to_header)
-        
-        Utils.declare_headers(headers_to_distribute)
+        headers_to_distribute = Utils.register_headers(paths_to_headers)
         cls.headers.update(headers_to_distribute)
     
     @classmethod 
-    def register_files(cls, files_paths):
+    def register_files(cls, paths_to_files):
         """
         Sends to the workers the generic files needed by the user.
 
@@ -265,16 +240,7 @@ class BaseBackend(ABC):
             files_paths (str, iter): Paths to the files to be sent to the
                 distributed workers.
         """
-        files_to_distribute = set()
-
-        if isinstance(files_paths, str):
-            files_to_distribute.update(
-                Utils.get_paths_set_from_string(files_paths))
-        else:
-            for path_string in files_paths:
-                files_to_distribute.update(
-                    Utils.get_paths_set_from_string(path_string))
-
+        files_to_distribute = Utils.register_files(paths_to_files)
         cls.files.update(files_to_distribute)    
     
     @abstractmethod

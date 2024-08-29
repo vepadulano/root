@@ -150,7 +150,7 @@ class DaskBackend(Base.BaseBackend):
             os.path.join(localdir, os.path.basename(filepath))
             for filepath in headers
         ]
-        Utils.declare_headers(headers_on_executor)
+        Utils.distribute_headers(headers_on_executor)
 
         # Get and declare shared libraries on each worker
         shared_libs_on_ex = [
@@ -158,7 +158,7 @@ class DaskBackend(Base.BaseBackend):
             for filepath in shared_libraries
         ]
                 
-        Utils.declare_shared_libraries(shared_libs_on_ex)
+        Utils.distribute_shared_libraries(shared_libs_on_ex)
 
         return mapper(current_range)
 
