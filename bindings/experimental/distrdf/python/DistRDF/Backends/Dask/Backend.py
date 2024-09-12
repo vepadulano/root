@@ -142,8 +142,6 @@ class DaskBackend(Base.BaseBackend):
         """
         # Retrieve the current worker local directory
         localdir = get_worker().local_directory
-        # print("Local dir: ")
-        # print(localdir)
         
         #Get and declare headers on each worker
         headers_on_executor = [
