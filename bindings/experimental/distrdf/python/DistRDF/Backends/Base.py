@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Callable, Iterable, List, Optional, TYPE_CHECKING, Union
 
+
 import ROOT
 
 from DistRDF import Ranges
@@ -201,21 +202,17 @@ class BaseBackend(ABC):
         cls.initialization = partial(fun, *args, **kwargs)    
         fun(*args, **kwargs) 
 
-    # TODO and check - make sure this works correctly for the multiple separate declares   
     @classmethod
     def register_declaration(cls, declaration): 
         
         cls.declaration_str += declaration
-        code_to_declare_with_guards = "#ifndef CODE\n#define CODE\n{}\n#endif\n".format(cls.declaration_str)
-        
-        # DEBUG:
-        print(code_to_declare_with_guards)
-                
+        code_to_declare = cls.declaration_str
+
         def mydeclare(declaration_var): 
             ROOT.gInterpreter.Declare(declaration_var)
             
-        cls.declaration_func = partial(mydeclare, declaration_var = code_to_declare_with_guards)
-        mydeclare(code_to_declare_with_guards) # for the local declaration 
+        cls.declaration_func = partial(mydeclare, declaration_var = code_to_declare)
+        mydeclare(code_to_declare) # for the local declaration 
     
     @classmethod
     def register_shared_lib(cls, paths_to_shared_libraries):

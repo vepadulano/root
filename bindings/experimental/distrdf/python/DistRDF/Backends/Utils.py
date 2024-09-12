@@ -136,9 +136,6 @@ def check_pcm_in_library_path(shared_library_path: str) -> Tuple[set[str], set[s
         list, list: Two lists, the first with all paths to pcm files, the
             second with all paths to shared libraries.
     """
-    # debug:
-    # print(f"shared_library_path: {shared_library_path}")    
-    # print(f"is input a file: {os.path.isfile(shared_library_path)}")
     
     # issue when we have, for example ROOT.RDF.Experimental.Distributed.DistributeSharedLibs("folder/helpers_h.so") - this is False and should be True 
     # therefore this will not work either and instead we check for the file endings of possible shared libraries 
@@ -146,22 +143,11 @@ def check_pcm_in_library_path(shared_library_path: str) -> Tuple[set[str], set[s
     #     shared_library_dir = os.path.dirname(os.path.abspath(shared_library_path))
     #     #shared_library_dir = os.path.abspath(shared_library_path)
     #     #+ "/"
-    #     print("shared_library_dir_from_file")
-    #     print(shared_library_dir)
     
     shared_library_formats = ['.so', '.dll', '.dylib']
     
     if shared_library_path.endswith(tuple(shared_library_formats)): 
         shared_library_dir = os.path.dirname(os.path.abspath(shared_library_path))
-    
-    # if shared_library_path.endswith(".so"):
-    #     shared_library_dir = os.path.dirname(os.path.abspath(shared_library_path))
-                
-    # elif shared_library_path.endswith(".dll"):
-    #     shared_library_dir = os.path.dirname(os.path.abspath(shared_library_path))
-    
-    # elif shared_library_path.endswith(".dylib"):
-    #     shared_library_dir = os.path.dirname(os.path.abspath(shared_library_path))
     
     else:
         shared_library_dir = os.path.abspath(shared_library_path)
@@ -177,14 +163,6 @@ def check_pcm_in_library_path(shared_library_path: str) -> Tuple[set[str], set[s
     
     if shared_library_path.endswith(tuple(shared_library_formats)): 
         libname_stated = pathlib.PurePosixPath(shared_library_path).stem
-    # if shared_library_path.endswith(".so"):        
-    #     libname_stated = os.path.basename(shared_library_path).split(".so")[0]
-    # elif shared_library_path.endswith(".dll"):
-    #     libname_stated = os.path.basename(shared_library_path).split(".dll")[0]
-    # elif shared_library_path.endswith(".dylib"): 
-    #     libname_stated = os.path.basename(shared_library_path).split(".dylib")[0]
-        
-    #print(f"libname_stated: {libname_stated}")
 
     pcm_paths = {
         filepath        
@@ -197,8 +175,6 @@ def check_pcm_in_library_path(shared_library_path: str) -> Tuple[set[str], set[s
         for filepath in all_paths
         if (filepath.endswith(tuple(shared_library_formats)) and filepath.startswith(os.path.join(shared_library_dir, libname_stated)))
     }
-    
-    #print(f"libraries_paths: {libraries_paths}")
     
     return pcm_paths, libraries_paths
 
