@@ -54,31 +54,23 @@ def DeclareCppCode(code_to_declare: str) -> None:
     Declare the C++ code that has to be processed on each worker. 
     Args:
         codeToDeclare (str): cpp code to be declared on the workers
+        
     """
     from DistRDF.Backends import Base
     Base.BaseBackend.register_declaration(code_to_declare)
 
     
-def DistributeHeaders(paths_to_headers: Iterable[str], df = None):
+def DistributeHeaders(paths_to_headers: Iterable[str]):
     """
     This function allows users to directly load C++ custom headers 
     onto the workers. The headers are declared locally first.
 
     Args:
         paths_to_headers (list): list of paths to headers to be distributed to each worker
-        
-        df (optional): dataframe for which the headers are distributed, if not specified 
-        the headers will be distributed to all the dataframes in the script
 
     """    
-    from DistRDF.Backends import Base, Utils
-    
-    if df is None:
-        Base.BaseBackend.register_headers(paths_to_headers) 
-
-    else:
-        headers_to_distribute = Utils.register_headers(paths_to_headers)        
-        Base.BaseBackend.headers.update(headers_to_distribute)
+    from DistRDF.Backends import Base
+    Base.BaseBackend.register_headers(paths_to_headers) 
 
 def DistributeFiles(paths_to_files: Iterable[str], df = None):
     """
@@ -88,21 +80,12 @@ def DistributeFiles(paths_to_files: Iterable[str], df = None):
     Args:
         paths_to_files (list): list of paths to files to be distributed
         
-        df (optional): dataframe for which the files are distributed, if not specified 
-        the files will be distributed to all the dataframes in the script
-
     """
-    from DistRDF.Backends import Base, Utils
-    
-    if df is None:
-        Base.BaseBackend.register_files(paths_to_files)
-    
-    else: 
-        files_to_distribute = Utils.register_files(paths_to_files)
-        df._headnode.backend.distribute_unique_paths(files_to_distribute)    
+    from DistRDF.Backends import Base
+    Base.BaseBackend.register_files(paths_to_files)
 
     
-def DistributeSharedLibs(paths_to_shared_libraries: Iterable[str], df=None) -> None:
+def DistributeSharedLibs(paths_to_shared_libraries: Iterable[str]) -> None:
     """
     This function allows users to directly load pre-compiled shared libraries 
     onto the workers. The shared libraries are loaded locally first. 
@@ -110,23 +93,9 @@ def DistributeSharedLibs(paths_to_shared_libraries: Iterable[str], df=None) -> N
     Args:
         paths_to_shared_libraries (list): list of paths to shared libraries to be distributed
         
-        df (optional): dataframe for which the shared libraries are distributed, if not specified 
-        the shared libraries will be distributed to all the dataframes in the script
-
     """
-    from DistRDF.Backends import Base, Utils
-
-    if df is None:
-        Base.BaseBackend.register_shared_lib(paths_to_shared_libraries)
-    
-    else: 
-        libraries_to_distribute, pcms_to_distribute = Utils.register_shared_libs(paths_to_shared_libraries)
-        
-        df._headnode.backend.distribute_unique_paths(libraries_to_distribute)
-        df._headnode.backend.distribute_unique_paths(pcms_to_distribute)
-        
-        Base.BaseBackend.shared_libraries.update(libraries_to_distribute)
-        Base.BaseBackend.pcms.update(pcms_to_distribute)
+    from DistRDF.Backends import Base
+    Base.BaseBackend.register_shared_lib(paths_to_shared_libraries)
 
 def RunGraphs(proxies: Iterable) -> int:
     """

@@ -894,9 +894,9 @@ LiveVisualize(plot_callback_dict, write_to_tfile)
 
 Distributed RDF provides an interface for the users who want to inject the C++ code (via header files, shared libraries or declare the code directly)
 into their distributed RDF application, or their application needs to use information from external files which should be distributed 
-to the workers (for example, a JSON or txt file with necessary parameters information). 
+to the workers (for example, a JSON or a txt file with necessary parameters information). 
 
-The examples below show the usage of these interface functions, firstly,  how this is done in a local PyROOT based 
+The examples below show the usage of these interface functions: firstly, how this is done in a local PyROOT based 
 RDF application and secondly, how it is done distributedly.
 
 #### Include and distribute header files.
@@ -923,17 +923,6 @@ ROOT.RDF.Experimental.Distributed.DistributeSharedLibs("my_library.so")
 df.Define(...)
 ~~~
 
-By default the header (or multiple headers) and shared library (or multiple shared libraries) will be available 
-to all dataframes in the application. If it makes more sense to distribute a given header/shared library to a specific dataframe, 
-the second (optional) argument pointing to the specific 
-dataframe can be added:
-
-~~~{.py}
-# Distribute multiple shared libraries to a specific dataframe in the script 
-ROOT.RDF.Experimental.Distributed.DistributeSharedLibs(["my_library.so", "my_other_library.so"], my_df)
-df.Define(...)
-~~~
-
 #### Declare and distribute the cpp code
 
 The cpp code is always available to all dataframes. 
@@ -949,9 +938,6 @@ df.Define(...)
 ~~~
 
 #### Distribute additional files (other than headers or shared libraries). 
-
-As in case of headers and shared libraries, the second optional argument can be added to specify to which dataframe the files should be availble, 
-by default they are available to all dataframes. 
 
 ~~~{.py}
 # Local RDataFrame script is not applicable here as local RDF application can simply access the external files it needs. 
