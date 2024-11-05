@@ -46,11 +46,9 @@ def setup_mapper(initialization_fn: Callable, code_to_declare: str) -> None:
 
     # Run initialization method to prepare the worker runtime
     # environment
-    initialization_fn()
-    
+    initialization_fn()    
     # Declare all user code in one call
     ROOT.gInterpreter.Declare(code_to_declare)
-
 
 def get_mergeable_values(starting_node: ROOT.RDF.RNode, range_id: int,
                          computation_graph_callable: Callable[[ROOT.RDF.RNode, int], List],
@@ -235,7 +233,7 @@ class BaseBackend(ABC):
     def register_files(cls, paths_to_files):
         """
         Sends to the workers the generic files needed by the user.
-
+        
         Args:
             files_paths (str, iter): Paths to the files to be sent to the
                 distributed workers.

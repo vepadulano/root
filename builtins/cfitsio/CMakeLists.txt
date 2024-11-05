@@ -13,7 +13,7 @@ if(NOT WIN32)
   set(CFITSIO_C_FLAGS -fPIC)
 endif()
 
-if(WIN32)
+if(WIN32 AND NOT CMAKE_GENERATOR MATCHES Ninja)
   if(winrtdebug)
     set(CFITSIO_BUILD_COMMAND_FLAGS "--config Debug")
   else()
@@ -41,6 +41,7 @@ ExternalProject_Add(
                 ${CMAKE_CURRENT_SOURCE_DIR}/cfitsio-no-find-zlib.diff
                 ${CMAKE_CURRENT_SOURCE_DIR}/no-fortran-wrapper.diff
   BUILD_COMMAND ${CMAKE_COMMAND} --build . ${CFITSIO_BUILD_COMMAND_FLAGS}
+  INSTALL_COMMAND ${CMAKE_COMMAND} --build . ${CFITSIO_BUILD_COMMAND_FLAGS} --target install
   LOG_DOWNLOAD 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1 LOG_OUTPUT_ON_FAILURE 1
   BUILD_BYPRODUCTS ${CFITSIO_LIBRARIES}
   TIMEOUT 600

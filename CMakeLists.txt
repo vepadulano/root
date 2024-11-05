@@ -4,16 +4,13 @@
 # For the licensing terms see $ROOTSYS/LICENSE.
 # For the list of contributors see $ROOTSYS/README/CREDITS.
 
-if(APPLE)
-  cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
-else()
-  cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
-endif()
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 if(WIN32)
   # Set CMP0091 (MSVC runtime library flags are selected by an abstraction) to OLD
   # to keep the old way of selecting the runtime library with the -MD/-MDd compiler flag
   cmake_policy(SET CMP0091 OLD)
+  set(CMAKE_SKIP_TEST_ALL_DEPENDENCY TRUE)
 endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT ALLOW_IN_SOURCE)
@@ -80,26 +77,6 @@ include(cmake/modules/SetROOTVersion.cmake)
 
 message(STATUS "Building ROOT version ${ROOT_FULL_VERSION}")
 
-#---Try to download a file to check internet connection-----------------------------------------
-message(STATUS "Checking internet connectivity")
-file(DOWNLOAD https://root.cern/files/cmake_connectivity_test.txt ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt
-  TIMEOUT 10 STATUS DOWNLOAD_STATUS
-)
-# Get the status code from the download status
-list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
-# Check if download was successful.
-if(${STATUS_CODE} EQUAL 0)
-  # Succcess
-  message(STATUS "Checking internet connectivity - found")
-  # Now let's delete the file
-  file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt)
-  set(NO_CONNECTION FALSE)
-else()
-  # Error
-  message(STATUS "Checking internet connectivity - failed: will not automatically download external dependencies")
-  set(NO_CONNECTION TRUE)
-endif()
-
 #---Where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked-------------
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -112,15 +89,6 @@ include(RootBuildOptions)
 include(RootMacros)
 include(CheckAssembler)
 include(CheckIntrinsics)
-
-if(clad AND NO_CONNECTION)
-  if(fail-on-missing)
-    message(FATAL_ERROR "No internet connection. Please check your connection, or either disable the 'clad' option or the 'fail-on-missing' to automatically disable options requiring internet access")
-  else()
-    message(STATUS "No internet connection, disabling the 'clad' option")
-    set(clad OFF CACHE BOOL "Disabled because there is no internet connection" FORCE)
-  endif()
-endif()
 
 # relatedrepo_GetClosestMatch(REPO_NAME <repo> ORIGIN_PREFIX <originp> UPSTREAM_PREFIX <upstreamp>
 #                             FETCHURL_VARIABLE <output_url> FETCHREF_VARIABLE <output_ref>)
@@ -282,7 +250,9 @@ if(asan)
     message(WARNING "Address sanitizer builds only tested with gcc and Clang")
   endif()
 
-  set(ASAN_EXTRA_LD_PRELOAD "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}ROOTSanitizerConfig${CMAKE_SHARED_LIBRARY_SUFFIX}:${ASAN_RUNTIME_LIBRARY}")
+  if(NOT MSVC)
+    set(ASAN_EXTRA_LD_PRELOAD "${CMAKE_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}ROOTSanitizerConfig${CMAKE_SHARED_LIBRARY_SUFFIX}:${ASAN_RUNTIME_LIBRARY}")
+  endif()
 
   foreach(item IN LISTS ASAN_EXTRA_CXX_FLAGS)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${item}>)
@@ -374,51 +344,9 @@ add_custom_target(gitinfotxt
 )
 install(FILES ${CMAKE_BINARY_DIR}/etc/gitinfo.txt DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
 
-#---CXX MODULES-----------------------------------------------------------------------------------
-if(cxxmodules)
-  # Copy-pasted from HandleLLVMOptions.cmake, please keep up to date.
-  set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -fmodules -fcxx-modules")
-  # Check that we can build code with modules enabled, and that repeatedly
-  # including <cassert> still manages to respect NDEBUG properly.
-  CHECK_CXX_SOURCE_COMPILES("#undef NDEBUG
-                             #include <cassert>
-                             #define NDEBUG
-                             #include <cassert>
-                             int main() { assert(this code is not compiled); }"
-                             CXX_SUPPORTS_MODULES)
-  set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
-  if(NOT CXX_SUPPORTS_MODULES)
-    message(FATAL_ERROR "cxxmodules is not supported by this compiler")
-  endif()
-
-  set(ROOT_CXXMODULES_COMMONFLAGS "${ROOT_CXXMODULES_COMMONFLAGS} -fmodules -fmodules-cache-path=${CMAKE_BINARY_DIR}/include/pcms/ -Xclang -fno-validate-pch -fno-autolink -fdiagnostics-show-note-include-stack")
-
-  # FIXME: We should remove this once libc++ supports -fmodules-local-submodule-visibility.
-  if (APPLE)
-    # FIXME: TGLIncludes and alike depend on glew.h doing special preprocessor
-    # trickery to override the contents of system's OpenGL.
-    # On OSX #include TGLIncludes.h will trigger the creation of the system
-    # OpenGL.pcm. Once it is built, glew cannot use preprocessor trickery to 'fix'
-    # the translation units which it needs to 'rewrite'. The translation units
-    # which need glew support are in graf3d. However, depending on the modulemap
-    # organization we could request it implicitly (eg. one big module for ROOT).
-    # In these cases we need to 'prepend' this include path to the compiler in order
-    # for glew.h to it its trick.
-    set(ROOT_CXXMODULES_COMMONFLAGS "${ROOT_CXXMODULES_COMMONFLAGS} -isystem ${CMAKE_SOURCE_DIR}/graf3d/glew/isystem")
-  endif()
-
-  # These vars are useful when we want to compile things without cxxmodules.
-  set(ROOT_CXXMODULES_CXXFLAGS "${ROOT_CXXMODULES_COMMONFLAGS} -fcxx-modules -Xclang -fmodules-local-submodule-visibility -Wno-module-import-in-extern-c" CACHE STRING "Useful to filter out the modules-related cxxflags.")
-  set(ROOT_CXXMODULES_CFLAGS "${ROOT_CXXMODULES_COMMONFLAGS}" CACHE STRING "Useful to filter out the modules-related cflags.")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ROOT_CXXMODULES_CFLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_CXXMODULES_CXXFLAGS}")
-endif(cxxmodules)
-
 #---Recurse into the given subdirectories.  This does not actually cause another cmake executable
 #  to run. The same process will walk through the project's entire directory structure.
 add_subdirectory (core)
-add_subdirectory (build)
 add_subdirectory (math)
 add_subdirectory (hist)
 add_subdirectory (tree)
@@ -427,9 +355,13 @@ add_subdirectory (net)
 add_subdirectory (graf2d)
 add_subdirectory (graf3d)
 add_subdirectory (gui)
-add_subdirectory (html)
+if(html)
+  add_subdirectory (html)
+endif()
 add_subdirectory (montecarlo)
-add_subdirectory (geom)
+if(geom)
+  add_subdirectory (geom)
+endif()
 add_subdirectory (rootx)
 add_subdirectory (misc)
 add_subdirectory (main)
@@ -464,8 +396,8 @@ file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/include/ROOT.modulemap" _to_native)
 add_custom_target(copymodulemap DEPENDS "${CMAKE_BINARY_DIR}/include/ROOT.modulemap")
 add_custom_command(
 		  OUTPUT "${CMAKE_BINARY_DIR}/include/ROOT.modulemap"
-                  DEPENDS build/unix/module.modulemap "${CMAKE_BINARY_DIR}/include/module.modulemap.extra"
-		  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/build/unix/module.modulemap" "${CMAKE_BINARY_DIR}/include/ROOT.modulemap"
+                  DEPENDS cmake/unix/module.modulemap "${CMAKE_BINARY_DIR}/include/module.modulemap.extra"
+		  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/cmake/unix/module.modulemap" "${CMAKE_BINARY_DIR}/include/ROOT.modulemap"
                   COMMAND ${_os_cat} "${_from_native}" >> "${_to_native}"
 )
 install(FILES "${CMAKE_BINARY_DIR}/include/ROOT.modulemap" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT headers)
@@ -488,14 +420,7 @@ configure_file("${CMAKE_BINARY_DIR}/include/module.modulemap.extra.tmp"
 set(ROOT_CXXMODULES_WRITE_TO_CURRENT_DIR ON)
 
 set (CMAKE_CXX_FLAGS_SEPARATE "${CMAKE_CXX_FLAGS}")
-if(cxxmodules)
-  # rootcling uses our internal version of clang. Passing the modules flags here
-  # would allow rootcling to find module files built by the external compiler
-  # (eg. $CXX or $CC). This, in turn, would cause problems if we are using
-  # different clang version (even different commit revision) as the modules files
-  # are not guaranteed to be compatible among clang revisions.
-  string(REPLACE "${ROOT_CXXMODULES_CXXFLAGS}" "" CMAKE_CXX_FLAGS_SEPARATE ${CMAKE_CXX_FLAGS_SEPARATE})
-endif(cxxmodules)
+
 string(REGEX REPLACE "[ ]-" ";-" CMAKE_CXX_FLAGS_SEPARATE "${CMAKE_CXX_FLAGS_SEPARATE}")
 if(MSVC)
   string(REPLACE "-Zc:__cplusplus" "" CMAKE_CXX_FLAGS_SEPARATE "${CMAKE_CXX_FLAGS_SEPARATE}")
@@ -541,7 +466,7 @@ else()
       etc/dictpch/allHeaders.h
       etc/dictpch/allLinkDefs.h
     COMMAND
-      ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/build/unix/makepchinput.py
+      ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/unix/makepchinput.py
       ${CMAKE_SOURCE_DIR} . ${pyroot_legacy} ${__cling_pch}
     COMMAND
       ${CMAKE_COMMAND} -E env ROOTIGNOREPREFIX=1 ${Python3_EXECUTABLE}
@@ -549,7 +474,7 @@ else()
       ${__allIncludes} -I${CMAKE_BINARY_DIR}/include -I${CMAKE_SOURCE_DIR}/core
     DEPENDS
       rootcling ${__pch_dependencies} ${__pch_dictionaries}
-      ${CMAKE_SOURCE_DIR}/build/unix/makepchinput.py
+      ${CMAKE_SOURCE_DIR}/cmake/unix/makepchinput.py
       ${CMAKE_SOURCE_DIR}/etc/dictpch/makepch.py
   )
   add_custom_target(onepcm ALL DEPENDS etc/allDict.cxx.pch)
@@ -619,14 +544,20 @@ if(runtime_cxxmodules)
   add_dependencies(hsimple modules_idx)
 endif()
 
+#---copy special headers required for building on Windows----------------------------------------
+if(WIN32)
+  file(COPY cmake/win/w32pragma.h DESTINATION ${CMAKE_BINARY_DIR}/include/)
+  file(COPY cmake/win/sehmap.h DESTINATION ${CMAKE_BINARY_DIR}/include/)
+endif()
+
 #---version--------------------------------------------------------------------------------------
 if(NOT WIN32)
-add_custom_target(version COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/build/unix/makeversion.py
+add_custom_target(version COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/unix/makeversion.py
                           WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 #---distribution commands------------------------------------------------------------------------
-add_custom_target(distsrc COMMAND ${CMAKE_SOURCE_DIR}/build/unix/makedistsrc.sh "${ROOT_FULL_VERSION}" "${CMAKE_SOURCE_DIR}")
+add_custom_target(distsrc COMMAND ${CMAKE_SOURCE_DIR}/cmake/unix/makedistsrc.sh "${ROOT_FULL_VERSION}" "${CMAKE_SOURCE_DIR}")
 add_custom_target(dist COMMAND cpack --config CPackConfig.cmake)
 
 #---Configure and install various files neded later and for clients -----------------------------
@@ -640,15 +571,8 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_INSTALL_PREFIX)
   else()
     install(DIRECTORY README DESTINATION ${CMAKE_INSTALL_DOCDIR})
   endif()
-  set(ETC_PATT_EXCL)
-  if(NOT roofit)
-    list(APPEND ETC_PATT_EXCL PATTERN HistFactorySchema.dtd EXCLUDE)
-    list(APPEND ETC_PATT_EXCL PATTERN RooFitHS3_wsexportkeys.json EXCLUDE)
-    list(APPEND ETC_PATT_EXCL PATTERN RooFitHS3_wsfactoryexpressions.json EXCLUDE)
-  endif()
   install(DIRECTORY etc/ DESTINATION ${CMAKE_INSTALL_SYSCONFDIR} USE_SOURCE_PERMISSIONS
                          ${DIR_PERMISSIONS}
-                         ${ETC_PATT_EXCL}
                          PATTERN "system.rootrc" EXCLUDE
                          PATTERN "system.rootauthrc" EXCLUDE
                          PATTERN "system.rootdaemonrc" EXCLUDE
@@ -667,9 +591,6 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_INSTALL_PREFIX)
   if(NOT fortran OR NOT CMAKE_Fortran_COMPILER)
     list(APPEND MAN_PATT_EXCL PATTERN h2root.1 EXCLUDE)
     list(APPEND MAN_PATT_EXCL PATTERN g2root.1 EXCLUDE)
-  endif()
-  if(NOT roofit)
-    list(APPEND MAN_PATT_EXCL PATTERN prepareHistFactory.1 EXCLUDE)
   endif()
   install(DIRECTORY man/    DESTINATION ${CMAKE_INSTALL_MANDIR} ${DIR_PERMISSIONS} ${MAN_PATT_EXCL})
   install(DIRECTORY tutorials/ DESTINATION ${CMAKE_INSTALL_TUTDIR} ${DIR_PERMISSIONS} COMPONENT tests)
@@ -784,7 +705,7 @@ Install path:      ${CMAKE_INSTALL_PREFIX}
 Compiler:          ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}
 C++ standard:      ${CMAKE_CXX_STANDARD}
 Compiler flags:")
-if(MSVC)
+if(MSVC AND NOT CMAKE_GENERATOR MATCHES Ninja)
 message(STATUS "
  - C:                         ${CMAKE_C_FLAGS}
  - C (build type specific):

@@ -105,7 +105,7 @@ End_Macro
 ////////////////////////////////////////////////////////////////////////////////
 /// Graph default constructor.
 
-TGraph::TGraph(): TNamed(), TAttLine(), TAttFill(0, 1000), TAttMarker()
+TGraph::TGraph() : TAttFill(0, 1000)
 {
    fNpoints = -1;  //will be reset to 0 in CtorAllocate
    if (!CtorAllocate()) return;
@@ -116,7 +116,7 @@ TGraph::TGraph(): TNamed(), TAttLine(), TAttFill(0, 1000), TAttMarker()
 /// the arrays x and y will be set later
 
 TGraph::TGraph(Int_t n)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    fNpoints = n;
    if (!CtorAllocate()) return;
@@ -127,7 +127,7 @@ TGraph::TGraph(Int_t n)
 /// Graph normal constructor with ints.
 
 TGraph::TGraph(Int_t n, const Int_t *x, const Int_t *y)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    if (!x || !y) {
       fNpoints = 0;
@@ -145,7 +145,7 @@ TGraph::TGraph(Int_t n, const Int_t *x, const Int_t *y)
 /// Graph normal constructor with floats.
 
 TGraph::TGraph(Int_t n, const Float_t *x, const Float_t *y)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    if (!x || !y) {
       fNpoints = 0;
@@ -164,7 +164,7 @@ TGraph::TGraph(Int_t n, const Float_t *x, const Float_t *y)
 /// values `start`, `start+step`, `start+2*step`, `start+3*step`, etc ...
 
 TGraph::TGraph(Int_t n, const Double_t *y, Double_t start, Double_t step)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    if (!y) {
       fNpoints = 0;
@@ -182,7 +182,7 @@ TGraph::TGraph(Int_t n, const Double_t *y, Double_t start, Double_t step)
 /// Graph normal constructor with doubles.
 
 TGraph::TGraph(Int_t n, const Double_t *x, const Double_t *y)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    if (!x || !y) {
       fNpoints = 0;
@@ -295,7 +295,7 @@ TGraph& TGraph::operator=(const TGraph &gr)
 /// in vx and vy.
 
 TGraph::TGraph(const TVectorF &vx, const TVectorF &vy)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    fNpoints = TMath::Min(vx.GetNrows(), vy.GetNrows());
    if (!CtorAllocate()) return;
@@ -314,7 +314,7 @@ TGraph::TGraph(const TVectorF &vx, const TVectorF &vy)
 /// in vx and vy.
 
 TGraph::TGraph(const TVectorD &vx, const TVectorD &vy)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    fNpoints = TMath::Min(vx.GetNrows(), vy.GetNrows());
    if (!CtorAllocate()) return;
@@ -330,7 +330,7 @@ TGraph::TGraph(const TVectorD &vx, const TVectorD &vy)
 /// Graph constructor importing its parameters from the TH1 object passed as argument
 
 TGraph::TGraph(const TH1 *h)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    if (!h) {
       Error("TGraph", "Pointer to histogram is null");
@@ -372,7 +372,7 @@ TGraph::TGraph(const TH1 *h)
 ///                at the fNpx+1 points of f and the integral is normalized to 1.
 
 TGraph::TGraph(const TF1 *f, Option_t *option)
-   : TNamed("Graph", "Graph"), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", "Graph"), TAttFill(0, 1000)
 {
    char coption = ' ';
    if (!f) {
@@ -437,7 +437,7 @@ TGraph::TGraph(const TF1 *f, Option_t *option)
 /// Note in that case, the instantiation is about two times slower.
 
 TGraph::TGraph(const char *filename, const char *format, Option_t *option)
-   : TNamed("Graph", filename), TAttLine(), TAttFill(0, 1000), TAttMarker()
+   : TNamed("Graph", filename), TAttFill(0, 1000)
 {
    Double_t x, y;
    TString fname = filename;
@@ -610,6 +610,23 @@ Double_t** TGraph::AllocateArrays(Int_t Narrays, Int_t arraySize)
    }
    fMaxSize = arraySize;
    return newarrays;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Performs the operation: `y = y + c1*f(x,y)`
+/// Errors are not recalculated.
+///
+/// \param f may be a 1-D function TF1 or 2-d function TF2
+/// \param c1 a scaling factor, 1 by default
+
+void TGraph::Add(TF1 *f, Double_t c1)
+{
+   if (fHistogram) SetBit(kResetHisto);
+
+   for (Int_t i = 0; i < fNpoints; i++) {
+      fY[i] += c1*f->Eval(fX[i], fY[i]);
+   }
+   if (gPad) gPad->Modified();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2094,14 +2111,14 @@ void TGraph::SaveAs(const char *filename, Option_t *option) const
       }
       if (InheritsFrom(TGraphErrors::Class()) ) {
          if(opt.Contains("title"))
-         out << "# " << GetXaxis()->GetTitle() << del << "ex" << del << GetYaxis()->GetTitle() << del << "ey" << std::endl;
+         out << "# " << GetXaxis()->GetTitle() << "\tex\t" << GetYaxis()->GetTitle() << "\tey" << std::endl;
          double *ex = this->GetEX();
          double *ey = this->GetEY();
          for(int i=0 ; i<fNpoints ; i++)
          out << fX[i] << del << (ex?ex[i]:0) << del << fY[i] << del << (ey?ey[i]:0) << std::endl;
       } else if (InheritsFrom(TGraphAsymmErrors::Class()) || InheritsFrom(TGraphBentErrors::Class())) {
          if(opt.Contains("title"))
-         out << "# " << GetXaxis()->GetTitle() << del << "exl" << del << "exh" << del << GetYaxis()->GetTitle() << del << "eyl" << del << "eyh" << std::endl;
+         out << "# " << GetXaxis()->GetTitle() << "\texl\t" << "\texh\t" << GetYaxis()->GetTitle() << "\teyl" << "\teyh" << std::endl;
          double *exl = this->GetEXlow();
          double *exh = this->GetEXhigh();
          double *eyl = this->GetEYlow();
@@ -2110,7 +2127,7 @@ void TGraph::SaveAs(const char *filename, Option_t *option) const
          out << fX[i] << del << (exl?exl[i]:0) << del << (exh?exh[i]:0) << del << fY[i] << del << (eyl?eyl[i]:0) << del << (eyh?eyh[i]:0) << std::endl;
       } else {
          if(opt.Contains("title"))
-         out << "# " << GetXaxis()->GetTitle() << del << GetYaxis()->GetTitle() << std::endl;
+         out << "# " << GetXaxis()->GetTitle() << "\t" << GetYaxis()->GetTitle() << std::endl;
          for (int i=0 ; i<fNpoints ; i++)
          out << fX[i] << del << fY[i] << std::endl;
       }

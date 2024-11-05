@@ -100,8 +100,6 @@ Objects can correspond to pages or clusters of pages depending on the RNTuple-DA
 // clang-format on
 class RPageSinkDaos : public RPagePersistentSink {
 private:
-   std::unique_ptr<RPageAllocatorHeap> fPageAllocator;
-
    /// \brief Underlying DAOS container. An internal `std::shared_ptr` keep the pool connection alive.
    /// ISO C++ ensures the correct destruction order, i.e., `~RDaosContainer` is invoked first
    /// (which calls `daos_cont_close()`; the destructor for the `std::shared_ptr<RDaosPool>` is invoked
@@ -128,7 +126,7 @@ protected:
    CommitSealedPageImpl(DescriptorId_t physicalColumnId, const RPageStorage::RSealedPage &sealedPage) final;
    std::vector<RNTupleLocator>
    CommitSealedPageVImpl(std::span<RPageStorage::RSealedPageGroup> ranges, const std::vector<bool> &mask) final;
-   std::uint64_t CommitClusterImpl() final;
+   std::uint64_t StageClusterImpl() final;
    RNTupleLocator CommitClusterGroupImpl(unsigned char *serializedPageList, std::uint32_t length) final;
    using RPagePersistentSink::CommitDatasetImpl;
    void CommitDatasetImpl(unsigned char *serializedFooter, std::uint32_t length) final;
@@ -139,9 +137,6 @@ protected:
 public:
    RPageSinkDaos(std::string_view ntupleName, std::string_view uri, const RNTupleWriteOptions &options);
    ~RPageSinkDaos() override;
-
-   RPage ReservePage(ColumnHandle_t columnHandle, std::size_t nElements) final;
-   void ReleasePage(RPage &page) final;
 }; // class RPageSinkDaos
 
 // clang-format off
@@ -166,8 +161,8 @@ private:
 
    RNTupleDescriptorBuilder fDescriptorBuilder;
 
-   RPage LoadPageImpl(ColumnHandle_t columnHandle, const RClusterInfo &clusterInfo,
-                      ClusterSize_t::ValueType idxInCluster) final;
+   RPageRef LoadPageImpl(ColumnHandle_t columnHandle, const RClusterInfo &clusterInfo,
+                         ClusterSize_t::ValueType idxInCluster) final;
 
 protected:
    void LoadStructureImpl() final {}
@@ -178,8 +173,6 @@ protected:
 public:
    RPageSourceDaos(std::string_view ntupleName, std::string_view uri, const RNTupleReadOptions &options);
    ~RPageSourceDaos() override;
-
-   void ReleasePage(RPage &page) final;
 
    void LoadSealedPage(DescriptorId_t physicalColumnId, RClusterIndex clusterIndex, RSealedPage &sealedPage) final;
 

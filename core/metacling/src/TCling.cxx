@@ -785,17 +785,10 @@ int TCling_GenerateDictionary(const std::vector<std::string> &classes,
          }
          fileContent += "#pragma link C++ class ";
          fileContent +=    *it + "+;\n" ;
-         fileContent += "#pragma link C++ class ";
-         if (iSTLType != sSTLTypes.end()) {
-            // STL class; we cannot (and don't need to) store iterators;
-            // their shadow and the compiler's version don't agree. So
-            // don't ask for the '+'
-            fileContent +=    *it + "::*;\n" ;
-         }
-         else {
+         if (iSTLType == sSTLTypes.end()) {
             // Not an STL class; we need to allow the I/O of contained
             // classes (now that we have a dictionary for them).
-            fileContent +=    *it + "::*+;\n" ;
+            fileContent += "#pragma link C++ class " + *it + "::*+;\n" ;
          }
       }
       fileContent += "#endif\n";
@@ -967,26 +960,24 @@ bool TClingLookupHelper__ExistingTypeCheck(const std::string &tname,
    if (lastPos != inner)   // Main switch: case 1 - scoped enum, case 2 global enum
    {
       // We have a scope
-      // All of this C gymnastic is to avoid allocations on the heap
       const auto enName = lastPos;
-      const auto scopeNameSize = ((Long64_t)lastPos - (Long64_t)inner) / sizeof(decltype(*lastPos)) - 2;
-      char *scopeName = new char[scopeNameSize + 1];
-      strncpy(scopeName, inner, scopeNameSize);
-      scopeName[scopeNameSize] = '\0';
+      const auto scopeNameSize = (lastPos - inner) / sizeof(decltype(*lastPos)) - 2;
+      std::string scopeName{inner, scopeNameSize};
       // Check if the scope is in the list of classes
-      if (auto scope = static_cast<TClass *>(gROOT->GetListOfClasses()->FindObject(scopeName))) {
+      if (auto scope = static_cast<TClass *>(gROOT->GetListOfClasses()->FindObject(scopeName.c_str()))) {
          auto enumTable = dynamic_cast<const THashList *>(scope->GetListOfEnums(false));
-         if (enumTable && enumTable->THashList::FindObject(enName)) { delete [] scopeName; return true; }
+         if (enumTable && enumTable->THashList::FindObject(enName))
+            return true;
       }
       // It may still be in one of the loaded protoclasses
-      else if (auto scope = static_cast<TProtoClass *>(gClassTable->GetProtoNorm(scopeName))) {
+      else if (auto scope = static_cast<TProtoClass *>(gClassTable->GetProtoNorm(scopeName.c_str()))) {
          auto listOfEnums = scope->GetListOfEnums();
          if (listOfEnums) { // it could be null: no enumerators in the protoclass
             auto enumTable = dynamic_cast<const THashList *>(listOfEnums);
-            if (enumTable && enumTable->THashList::FindObject(enName)) { delete [] scopeName; return true; }
+            if (enumTable && enumTable->THashList::FindObject(enName))
+               return true;
          }
       }
-      delete [] scopeName;
    } else
    {
       // We don't have any scope: this could only be a global enum
@@ -3243,8 +3234,8 @@ Bool_t TCling::IsLoaded(const char* filename) const
                            clang::SourceLocation(),
                            /*isAngled*/ false,
                            /*FromDir*/ nullptr, CurDir,
-                           clang::ArrayRef<std::pair<const clang::FileEntry *,
-                           const clang::DirectoryEntry *>>(),
+                           clang::ArrayRef<std::pair<clang::OptionalFileEntryRef,
+                           clang::DirectoryEntryRef>>(),
                            /*SearchPath*/ nullptr,
                            /*RelativePath*/ nullptr,
                            /*RequestingModule*/ nullptr,
@@ -5449,7 +5440,7 @@ const char* TCling::GetTopLevelMacroName() const
 ///   std::cout << "  TCling::GetTopLevelMacroName() returns " <<
 ///      TCling::GetTopLevelMacroName() << std::endl;
 ///   std::cout << "  Now calling inclfile..." << std::endl;
-///   gInterpreter->ProcessLine(".x inclfile.C");;
+///   gInterpreter->ProcessLine(".x inclfile.C");
 ///   }
 /// ~~~
 /// Running mymacro.C will print:
@@ -6653,9 +6644,13 @@ void TCling::RefreshClassInfo(TClass *cl, const clang::NamedDecl *def, bool alia
          cl->ResetCaches();
          TClass::RemoveClassDeclId(cci->GetDeclId());
          if (def) {
-            // It's a tag decl, not a namespace decl.
-            cci->Init(*cci->GetType());
-            TClass::AddClassToDeclIdMap(cci->GetDeclId(), cl);
+            if (cci->GetType()) {
+               // It's a tag decl, not a namespace decl.
+               cci->Init(*cci->GetType());
+               TClass::AddClassToDeclIdMap(cci->GetDeclId(), cl);
+            } else {
+               Error("RefreshClassInfo", "Should not need to update the classInfo a non type decl: %s", oldDef->getNameAsString().c_str());
+            }
          }
       }
    } else if (!cl->TestBit(TClass::kLoading) && !cl->fHasRootPcmInfo) {
@@ -7041,6 +7036,7 @@ static std::string GetClassSharedLibsForModule(const char *cls, cling::LookupHel
             case TemplateArgument::Integral:
             case TemplateArgument::Pack:
             case TemplateArgument::NullPtr:
+            case TemplateArgument::StructuralValue:
             case TemplateArgument::Expression:
             case TemplateArgument::Template:
             case TemplateArgument::TemplateExpansion: return;
@@ -8730,7 +8726,7 @@ void TCling::SetDeclAttr(DeclId_t declId, const char* attribute)
 {
    Decl* decl = static_cast<Decl*>(const_cast<void*>(declId));
    ASTContext &C = decl->getASTContext();
-   decl->addAttr(AnnotateAttr::CreateImplicit(C, attribute));
+   decl->addAttr(AnnotateAttr::CreateImplicit(C, attribute, nullptr, 0));
 }
 
 //______________________________________________________________________________
@@ -8909,7 +8905,7 @@ Long_t TCling::FuncTempInfo_Property(FuncTempInfo_t *ft_info) const
       if (md->isVirtual()) {
          property |= kIsVirtual;
       }
-      if (md->isPure()) {
+      if (md->isPureVirtual()) {
          property |= kIsPureVirtual;
       }
       if (const clang::CXXConstructorDecl *cd =

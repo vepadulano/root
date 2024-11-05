@@ -16,15 +16,6 @@ if(roofit_multiprocess)
 endif()
 
 if(roofit_legacy_eval_backend)
-  set(LegacyEvalBackendHeaders
-    RooAbsOptTestStatistic.h
-    RooAbsTestStatistic.h
-    RooChi2Var.h
-    RooNLLVar.h
-    RooRealMPFE.h
-    RooXYChi2Var.h
-  )
-
   set(LegacyEvalBackendSources
     src/BidirMMapPipe.cxx
     src/BidirMMapPipe.h
@@ -57,7 +48,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(RooFitCore
     RooAbsCategoryLValue.h
     RooAbsCollection.h
     RooAbsData.h
-    RooAbsDataFiller.h
+    RooAbsDataHelper.h
     RooAbsDataStore.h
     RooAbsFunc.h
     RooAbsGenContext.h
@@ -126,7 +117,6 @@ ROOT_STANDARD_LIBRARY_PACKAGE(RooFitCore
     RooFirstMoment.h
     RooFit.h
     RooFit/Config.h
-    RooFit/Detail/BatchModeDataHelpers.h
     RooFit/Detail/CodeSquashContext.h
     RooFit/Detail/MathFuncs.h
     RooFit/Detail/NormalizationHelpers.h
@@ -244,7 +234,6 @@ ROOT_STANDARD_LIBRARY_PACKAGE(RooFitCore
     RooWorkspace.h
     RooWorkspaceHandle.h
     RooWrapperPdf.h
-    ${LegacyEvalBackendHeaders}
   SOURCES
     src/BatchModeDataHelpers.cxx
     src/ConstraintHelpers.cxx
@@ -265,7 +254,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(RooFitCore
     src/RooAbsCategoryLValue.cxx
     src/RooAbsCollection.cxx
     src/RooAbsData.cxx
-    src/RooAbsDataFiller.cxx
+    src/RooAbsDataHelper.cxx
     src/RooAbsDataStore.cxx
     src/RooAbsFunc.cxx
     src/RooAbsGenContext.cxx
@@ -485,6 +474,10 @@ endif()
 
 if(roofit_multiprocess)
   target_compile_definitions(RooFitCore PUBLIC ROOFIT_MULTIPROCESS)
+endif()
+
+if(clad)
+  target_compile_definitions(RooFitCore PUBLIC ROOFIT_CLAD)
 endif()
 
 if(cuda)
