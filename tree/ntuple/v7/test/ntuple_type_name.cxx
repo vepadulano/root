@@ -281,3 +281,35 @@ TEST(RNTuple, ContextDependentTypeNames)
       }
    }
 }
+
+TEST(RNTuple, AtlasLikeDataVector)
+{
+   FileRaii fileGuard("test_ntuple_atlas_like_datavector.root");
+
+   {
+      auto model = RNTupleModel::Create();
+      auto f1 = model->MakeField<AtlasLikeDataVector<CustomStruct>>("f1");
+      AtlasLikeDataVector<CustomStruct> f2Val{{CustomStruct{}, CustomStruct{}}};
+      model->AddField(RFieldBase::Create("f2", "AtlasLikeDataVector<CustomStruct>").Unwrap());
+      model->GetDefaultEntry().BindRawPtr("f2", &f2Val);
+      auto writer = RNTupleWriter::Recreate(std::move(model), "ntpl", fileGuard.GetPath());
+      *f1 = AtlasLikeDataVector<CustomStruct>{{CustomStruct{}, CustomStruct{}}};
+      writer->Fill();
+   }
+
+   auto reader = RNTupleReader::Open("ntpl", fileGuard.GetPath());
+   EXPECT_EQ(1u, reader->GetNEntries());
+
+   auto f1 = reader->GetModel().GetDefaultEntry().GetPtr<AtlasLikeDataVector<CustomStruct>>("f1");
+   auto f2 = reader->GetModel().GetDefaultEntry().GetPtr<AtlasLikeDataVector<CustomStruct>>("f2");
+
+   reader->LoadEntry(0);
+
+   EXPECT_EQ(f1->size(), 2);
+   for (const auto &el : *f1)
+      EXPECT_EQ(el, CustomStruct{});
+
+   EXPECT_EQ(f2->size(), 2);
+   for (const auto &el : *f2)
+      EXPECT_EQ(el, CustomStruct{});
+}

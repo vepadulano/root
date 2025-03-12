@@ -1240,7 +1240,7 @@ int TClassEdit::GetSplit(const char *type, vector<string>& output, int &nestedLo
 ///      CleanType(" A<B, C< D, E> > *,F,G>") returns "A<B,C<D,E> >*"
 ////////////////////////////////////////////////////////////////////////////
 
-string TClassEdit::CleanType(const char *typeDesc, int mode, const char **tail)
+string TClassEdit::CleanType(const char *typeDesc, int mode, const char **tail, bool removeFinalAngleBlank)
 {
    static const char* remove[] = {"class", "const", "volatile", nullptr};
    auto initLengthsVector = []() {
@@ -1298,6 +1298,26 @@ string TClassEdit::CleanType(const char *typeDesc, int mode, const char **tail)
       if (*c == '>' || *c == ')')    lev--;
    }
    if(tail) *tail=c;
+
+   if (removeFinalAngleBlank) {
+      auto angle = result.find('<');
+      if (angle != std::string::npos) {
+         auto dst = result.begin() + angle;
+         auto end = result.end();
+         for (auto src = dst; src != end; ++src) {
+            if (*src == ' ') {
+               auto next = src + 1;
+               if (next != end && *next == '>') {
+                  // Skip this space before a closing angle bracket.
+                  continue;
+               }
+            }
+            *(dst++) = *src;
+         }
+         result.erase(dst, end);
+      }
+   }
+
    return result;
 }
 

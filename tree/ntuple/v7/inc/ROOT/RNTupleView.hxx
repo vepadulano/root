@@ -230,8 +230,10 @@ protected:
       const auto &desc = pageSource.GetSharedDescriptorGuard().GetRef();
       const auto &fieldDesc = desc.GetFieldDescriptor(fieldId);
       if (fieldDesc.GetTypeName() != RField<T>::TypeName()) {
-         throw RException(R__FAIL("type mismatch for field " + fieldDesc.GetFieldName() + ": " +
-                                  fieldDesc.GetTypeName() + " vs. " + RField<T>::TypeName()));
+         // Try harder via TClass
+         if (fieldDesc.GetTypeName() != ROOT::Internal::GetTypeNameFromTClass(typeid(T)))
+            throw RException(R__FAIL("type mismatch for field " + fieldDesc.GetFieldName() + ": " +
+                                     fieldDesc.GetTypeName() + " vs. " + RField<T>::TypeName()));
       }
       RField<T> field(fieldDesc.GetFieldName());
       field.SetOnDiskId(fieldId);

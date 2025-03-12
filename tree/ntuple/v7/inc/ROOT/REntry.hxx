@@ -158,8 +158,10 @@ private:
    {
       if constexpr (!std::is_void_v<T>) {
          if (fFieldTypes[token.fIndex] != RField<T>::TypeName()) {
-            throw RException(R__FAIL("type mismatch for field " + FindFieldName(token) + ": " +
-                                     fFieldTypes[token.fIndex] + " vs. " + RField<T>::TypeName()));
+            // Try harder via TClass
+            if (fFieldTypes[token.fIndex] != ROOT::Internal::GetTypeNameFromTClass(typeid(T)))
+               throw RException(R__FAIL("type mismatch for field " + FindFieldName(token) + ": " +
+                                        fFieldTypes[token.fIndex] + " vs. " + RField<T>::TypeName()));
          }
       }
    }

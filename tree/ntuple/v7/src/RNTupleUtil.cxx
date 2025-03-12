@@ -15,6 +15,9 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
+#include <TClass.h>
+#include <TClassEdit.h>
+
 #include "ROOT/RNTupleUtil.hxx"
 
 #include "ROOT/RLogger.hxx"
@@ -50,4 +53,15 @@ ROOT::RResult<void> ROOT::Internal::EnsureValidNameForRNTuple(std::string_view n
                      "carriage return.");
 
    return RResult<void>::Success();
+}
+
+std::string ROOT::Internal::GetTypeNameFromTClass(const std::type_info &ti)
+{
+   if (auto *tclass = TClass::GetClass(ti)) {
+      const auto cleanType =
+         TClassEdit::CleanType(tclass->GetName(), /*mode*/ 0, /*tail*/ nullptr, /*removeFinalAngleBlank*/ true);
+      return TClassEdit::InsertStd(cleanType.c_str());
+   }
+
+   return "";
 }

@@ -332,6 +332,8 @@ static_assert(kTestLocatorType < RNTupleLocator::ELocatorType::kLastSerializable
 /// Check whether a given string is a valid name according to the RNTuple specification
 RResult<void> EnsureValidNameForRNTuple(std::string_view name, std::string_view where);
 
+std::string GetTypeNameFromTClass(const std::type_info &ti);
+
 } // namespace Internal
 
 namespace Experimental {

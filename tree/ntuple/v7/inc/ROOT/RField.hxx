@@ -504,8 +504,10 @@ template <typename T>
 std::unique_ptr<T, typename RFieldBase::RCreateObjectDeleter<T>::deleter> RFieldBase::CreateObject() const
 {
    if (GetTypeName() != RField<T>::TypeName()) {
-      throw RException(
-         R__FAIL("type mismatch for field " + GetFieldName() + ": " + GetTypeName() + " vs. " + RField<T>::TypeName()));
+      // Try harder via TClass
+      if (GetTypeName() != ROOT::Internal::GetTypeNameFromTClass(typeid(T)))
+         throw RException(R__FAIL("type mismatch for field " + GetFieldName() + ": " + GetTypeName() + " vs. " +
+                                  RField<T>::TypeName()));
    }
    return std::unique_ptr<T>(static_cast<T *>(CreateObjectRawPtr()));
 }
