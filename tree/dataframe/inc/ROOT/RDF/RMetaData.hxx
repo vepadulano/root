@@ -71,6 +71,9 @@ public:
    double GetD(const std::string &key, double defaultVal) const;
    const std::string GetS(const std::string &key, const std::string &defaultVal) const;
 
+   void ImportJSON(const std::string &jsonString);
+   std::string ExportJSON() const;
+
 private:
    std::unique_ptr<Internal::RDF::RMetaDataJson> fJson;
 };
