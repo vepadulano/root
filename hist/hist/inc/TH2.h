@@ -53,6 +53,9 @@ protected:
    virtual TH1D     *DoQuantiles(bool onX, const char *name, Double_t prob) const;
    virtual void      DoFitSlices(bool onX, TF1 *f1, Int_t firstbin, Int_t lastbin, Int_t cut, Option_t *option, TObjArray* arr);
 
+   // TODO SLice
+   virtual TH1* Slice(Int_t binXLow, Int_t binXUp, Int_t binYLow, Int_t binYUp) const;
+
    Int_t    BufferFill(Double_t, Double_t) override {return -2;} //may not use
    Int_t    Fill(Double_t) override; //MayNotUse
    Int_t    Fill(const char*, Double_t) override { return Fill(0);}  //MayNotUse

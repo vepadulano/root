@@ -2811,6 +2811,35 @@ void TH2::Streamer(TBuffer &R__b)
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////
+// TODO SLice 
+
+TH1* TH2::Slice(Int_t binXLow, Int_t binXUp, Int_t binYLow, Int_t binYUp) const
+{
+   std::cout << "TH2 Slice: " << binXLow << " " << binXUp << " " << binYLow << " " << binYUp << std::endl;
+   if (binXLow >= binXUp || binXUp > fXaxis.GetNbins() + 2 ||
+      binYLow >= binYUp || binYUp > fYaxis.GetNbins() + 2) {
+      Error("Slice", "Invalid range");
+      return nullptr;
+   }
+
+   Double_t newXlow = GetXaxis()->GetBinLowEdge(  binXLow+1 );
+   Double_t newXup  = GetXaxis()->GetBinUpEdge(     binXUp-1 );
+   Double_t newYlow = GetYaxis()->GetBinLowEdge(  binYLow+1 );
+   Double_t newYup  = GetYaxis()->GetBinUpEdge(     binYUp-1 );
+   Int_t   newNbx  = binXUp  - binXLow;
+   Int_t   newNby  = binYUp  - binYLow;
+   
+   auto hSlice = (TH1*)IsA()->GetNew()(nullptr);
+   hSlice->SetName(TString::Format("%s_slice", GetName()));
+   hSlice->SetTitle(GetTitle());
+   hSlice->SetBins(newNbx, newXlow, newXup,
+                 newNby, newYlow, newYup);
+
+   return hSlice;
+}
+
+
 //______________________________________________________________________________
 //                     TH2C methods
 //  TH2C a 2-D histogram with one byte per cell (char)
