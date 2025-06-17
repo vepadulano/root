@@ -904,7 +904,16 @@ void TClassEdit::GetNormalizedName(std::string &norm_name, std::string_view name
    }
 
    AtomicTypeNameHandlerRAII nameHandler(norm_name);
-
+   if (gInterpreterHelper) {
+      // See if the expanded name itself is a typedef.
+      std::string typeresult;
+      if (gInterpreterHelper->ExistingTypeCheck(norm_name, typeresult)) {
+         if (!typeresult.empty()) {
+            norm_name = typeresult;
+         }
+         return;
+      }
+   }
    // Remove the std:: and default template argument and insert the Long64_t and change basic_string to string.
    TClassEdit::TSplitType splitname(norm_name.c_str(),(TClassEdit::EModType)(TClassEdit::kLong64 | TClassEdit::kDropStd | TClassEdit::kDropStlDefault | TClassEdit::kKeepOuterConst));
    splitname.ShortType(norm_name, TClassEdit::kDropStd | TClassEdit::kDropStlDefault | TClassEdit::kResolveTypedef | TClassEdit::kKeepOuterConst);
