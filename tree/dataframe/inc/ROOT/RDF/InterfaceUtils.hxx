@@ -558,7 +558,7 @@ void JitDefineHelper(F &&f, const ColumnNames_t &cols, std::string_view name, RL
    using ColTypes_t = typename TTraits::CallableTraits<Callable_t>::arg_types;
 
    auto ds = lm->GetDataSource();
-   if (ds != nullptr && colsPtr)
+   if (ds != nullptr)
       AddDSColumns(cols, *lm, *ds, ColTypes_t(), *colRegister);
 
    // will never actually be used (trumped by jittedDefine->GetTypeName()), but we set it to something meaningful

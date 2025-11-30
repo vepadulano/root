@@ -90,11 +90,6 @@ std::string &GetCodeToJit()
    static std::string code;
    return code;
 }
-std::string &GetCodeToDeclare()
-{
-   static std::string code;
-   return code;
-}
 
 std::string &GetCodeToDeclare()
 {
