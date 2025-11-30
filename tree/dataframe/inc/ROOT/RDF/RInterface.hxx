@@ -293,12 +293,8 @@ public:
    /// ~~~
    RInterface<RDFDetail::RJittedFilter, DS_t> Filter(std::string_view expression, std::string_view name = "")
    {
-      // deleted by the jitted call to JitFilterHelper
-      auto upcastNodeOnHeap = RDFInternal::MakeSharedOnHeap(RDFInternal::UpcastNode(fProxiedPtr));
-      using BaseNodeType_t = typename std::remove_pointer_t<decltype(upcastNodeOnHeap)>::element_type;
-      RInterface<BaseNodeType_t> upcastInterface(*upcastNodeOnHeap, *fLoopManager, fColRegister);
-      const auto jittedFilter =
-         RDFInternal::BookFilterJit(upcastNodeOnHeap, name, expression, fColRegister, nullptr, GetDataSource());
+      const auto jittedFilter = RDFInternal::BookFilterJit(RDFInternal::UpcastNode(fProxiedPtr), name, expression,
+                                                           fColRegister, nullptr, GetDataSource());
 
       return RInterface<RDFDetail::RJittedFilter, DS_t>(std::move(jittedFilter), *fLoopManager, fColRegister);
    }
@@ -540,9 +536,8 @@ public:
       RDFInternal::CheckForRedefinition(where, name, fColRegister,
                                         GetDataSource() ? GetDataSource()->GetColumnNames() : ColumnNames_t{});
 
-      auto upcastNodeOnHeap = RDFInternal::MakeSharedOnHeap(RDFInternal::UpcastNode(fProxiedPtr));
-      auto jittedDefine =
-         RDFInternal::BookDefineJit(name, expression, *fLoopManager, GetDataSource(), fColRegister, upcastNodeOnHeap);
+      auto jittedDefine = RDFInternal::BookDefineJit(name, expression, *fLoopManager, GetDataSource(), fColRegister,
+                                                     RDFInternal::UpcastNode(fProxiedPtr));
 
       RDFInternal::RColumnRegister newCols(fColRegister);
       newCols.AddDefine(std::move(jittedDefine));
@@ -630,9 +625,8 @@ public:
                                       GetDataSource() ? GetDataSource()->GetColumnNames() : ColumnNames_t{});
       RDFInternal::CheckForNoVariations(where, name, fColRegister);
 
-      auto upcastNodeOnHeap = RDFInternal::MakeSharedOnHeap(RDFInternal::UpcastNode(fProxiedPtr));
-      auto jittedDefine =
-         RDFInternal::BookDefineJit(name, expression, *fLoopManager, GetDataSource(), fColRegister, upcastNodeOnHeap);
+      auto jittedDefine = RDFInternal::BookDefineJit(name, expression, *fLoopManager, GetDataSource(), fColRegister,
+                                                     RDFInternal::UpcastNode(fProxiedPtr));
 
       RDFInternal::RColumnRegister newCols(fColRegister);
       newCols.AddDefine(std::move(jittedDefine));
@@ -807,9 +801,8 @@ public:
       RDFInternal::CheckForRedefinition("DefinePerSample", name, fColRegister,
                                         GetDataSource() ? GetDataSource()->GetColumnNames() : ColumnNames_t{});
 
-      auto upcastNodeOnHeap = RDFInternal::MakeSharedOnHeap(RDFInternal::UpcastNode(fProxiedPtr));
-      auto jittedDefine =
-         RDFInternal::BookDefinePerSampleJit(name, expression, *fLoopManager, fColRegister, upcastNodeOnHeap);
+      auto jittedDefine = RDFInternal::BookDefinePerSampleJit(name, expression, *fLoopManager, fColRegister,
+                                                              RDFInternal::UpcastNode(fProxiedPtr));
 
       RDFInternal::RColumnRegister newCols(fColRegister);
       newCols.AddDefine(std::move(jittedDefine));
@@ -3420,10 +3413,9 @@ private:
             throw std::logic_error("A column name was passed to the same Vary invocation multiple times.");
       }
 
-      auto upcastNodeOnHeap = RDFInternal::MakeSharedOnHeap(RDFInternal::UpcastNode(fProxiedPtr));
-      auto jittedVariation =
-         RDFInternal::BookVariationJit(colNames, variationName, variationTags, expression, *fLoopManager,
-                                       GetDataSource(), fColRegister, upcastNodeOnHeap, isSingleColumn);
+      auto jittedVariation = RDFInternal::BookVariationJit(colNames, variationName, variationTags, expression,
+                                                           *fLoopManager, GetDataSource(), fColRegister,
+                                                           RDFInternal::UpcastNode(fProxiedPtr), isSingleColumn);
 
       RDFInternal::RColumnRegister newColRegister(fColRegister);
       newColRegister.AddVariation(std::move(jittedVariation));

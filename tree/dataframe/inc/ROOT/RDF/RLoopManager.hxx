@@ -204,22 +204,22 @@ class RLoopManager : public RNodeBase {
 
    // deferred function calls to Jitted functions
    struct DeferredJitCall {
-      std::string functionId;
-      std::shared_ptr<RNodeBase> *prevNodeOnHeap;
-      ROOT::Internal::RDF::RColumnRegister *colRegister;
-      std::vector<std::string> colNames;
-      void *wkJittedNode, *argument;
-      DeferredJitCall(const std::string &id, std::shared_ptr<RNodeBase> *prevNode,
-                      ROOT::Internal::RDF::RColumnRegister *cols, const std::vector<std::string> &colnames,
-                      void *wkNodePtr, void *arg)
-         : functionId(id),
-           prevNodeOnHeap(prevNode),
-           colRegister(cols),
-           colNames(colnames),
-           wkJittedNode(wkNodePtr),
-           argument(arg)
-      {
-      }
+      std::string fFunctionId;
+      std::shared_ptr<ROOT::Detail::RDF::RNodeBase> fPrevNode;
+      std::unique_ptr<ROOT::Internal::RDF::RColumnRegister> fColRegister;
+      std::vector<std::string> fColNames;
+      std::shared_ptr<void> fJittedNode;
+      std::shared_ptr<void> fExtraArgs;
+      DeferredJitCall(const std::string &id, std::shared_ptr<ROOT::Detail::RDF::RNodeBase> prevN,
+                      std::unique_ptr<ROOT::Internal::RDF::RColumnRegister> cols,
+                      const std::vector<std::string> &colNamesArg, std::shared_ptr<void> wkNodePtr,
+                      std::shared_ptr<void> arg);
+
+      DeferredJitCall(const DeferredJitCall &) = delete;
+      DeferredJitCall &operator=(const DeferredJitCall &) = delete;
+      DeferredJitCall(DeferredJitCall &&) noexcept;
+      DeferredJitCall &operator=(DeferredJitCall &&) noexcept;
+      ~DeferredJitCall();
    };
    std::vector<DeferredJitCall> fJitHelperCalls;
 
@@ -263,9 +263,10 @@ public:
    void IncrChildrenCount() final { ++fNChildren; }
    void StopProcessing() final { ++fNStopsReceived; }
    void ToJitExec(const std::string &) const;
-   void RegisterJitHelperCall(const std::string &funcBody, std::shared_ptr<RNodeBase> *prevNodeOnHeap,
-                              ROOT::Internal::RDF::RColumnRegister *colRegister,
-                              const std::vector<std::string> &colNames, void *wkJittedPtr, void *argument = nullptr);
+   void RegisterJitHelperCall(const std::string &funcBody, std::shared_ptr<ROOT::Detail::RDF::RNodeBase> prevNodeOnHeap,
+                              std::unique_ptr<ROOT::Internal::RDF::RColumnRegister> colRegister,
+                              const std::vector<std::string> &colnames, std::shared_ptr<void> wkNodePtr,
+                              std::shared_ptr<void> argument = nullptr);
    void RegisterCallback(ULong64_t everyNEvents, std::function<void(unsigned int)> &&f);
    unsigned int GetNRuns() const { return fNRuns; }
    bool HasDataSourceColumnReaders(std::string_view col, const std::type_info &ti) const;

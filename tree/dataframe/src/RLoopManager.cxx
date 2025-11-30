@@ -96,11 +96,15 @@ std::string &GetCodeToDeclare()
    static std::string code;
    return code;
 }
-using JitHelperFunc = void(RLoopManager *, std::shared_ptr<RNodeBase> *, RColumnRegister *, const ColumnNames_t &,
-                           void *, void *);
-std::unordered_map<std::string, JitHelperFunc *> &GetJitHelperFuncMap()
+
+// Signature of all helper functions that are created by JIT helpers, see
+// Book*Jit and JitBuildAction in RDFInterfaceUtils.cxx
+using JitHelperFunc_t = void (*)(const std::vector<std::string> &, ROOT::Internal::RDF::RColumnRegister &,
+                                 ROOT::Detail::RDF::RLoopManager &, void *,
+                                 std::shared_ptr<ROOT::Detail::RDF::RNodeBase> *, std::shared_ptr<void> *);
+std::unordered_map<std::string, JitHelperFunc_t> &GetJitHelperFuncMap()
 {
-   static std::unordered_map<std::string, JitHelperFunc *> map;
+   static std::unordered_map<std::string, JitHelperFunc_t> map;
    return map;
 }
 std::unordered_map<std::string, std::string> &GetJitHelperNameMap()
@@ -808,16 +812,17 @@ void RLoopManager::Jit()
       auto clinfo = gInterpreter->ClassInfo_Factory("R_rdf");
       assert(gInterpreter->ClassInfo_IsValid(clinfo));
       for (auto &codeAndName : nameMap) {
-         JitHelperFunc *&addr = funcMap[codeAndName.second];
+         JitHelperFunc_t &addr = funcMap[codeAndName.second];
          if (!addr) {
             // fast fetch of the address via gInterpreter
             // (faster than gInterpreter->Evaluate(function name, ret), ret->GetAsPointer())
+            // Retrieve the JIT helper function we registered via RegisterJitHelperCall
             auto declid = gInterpreter->GetFunction(clinfo, codeAndName.second.c_str());
             assert(declid);
             auto minfo = gInterpreter->MethodInfo_Factory(declid);
             assert(gInterpreter->MethodInfo_IsValid(minfo));
             auto mname = gInterpreter->MethodInfo_GetMangledName(minfo);
-            addr = reinterpret_cast<JitHelperFunc *>(gInterpreter->FindSym(mname));
+            addr = reinterpret_cast<JitHelperFunc_t>(gInterpreter->FindSym(mname));
             gInterpreter->MethodInfo_Delete(minfo);
          }
       }
@@ -837,19 +842,20 @@ void RLoopManager::Jit()
 void RLoopManager::RunDeferredCalls()
 {
    if (!fJitHelperCalls.empty()) {
-      R__READ_LOCKGUARD(ROOT::gCoreMutex); // methods are thread-safe but funcMap isn't (yet)
-      TStopwatch s2;
-      s2.Start();
-      auto &funcMap = GetJitHelperFuncMap();
+      // funcMap is not thread-safe (yet) and fJitHelperCalls is cleared at the end of this function
+      R__WRITE_LOCKGUARD(ROOT::gCoreMutex);
+      TStopwatch s;
+      s.Start();
+      const auto &funcMap = GetJitHelperFuncMap();
       for (auto &call : fJitHelperCalls) {
-         assert(funcMap.find(call.functionId) != funcMap.end());
-         funcMap[call.functionId](this, call.prevNodeOnHeap, call.colRegister, call.colNames, call.wkJittedNode,
-                                  call.argument);
+         funcMap.at(call.fFunctionId)(call.fColNames, *call.fColRegister, *this, call.fJittedNode.get(),
+                                      &call.fPrevNode, &call.fExtraArgs);
       }
-      s2.Stop();
-      R__LOG_INFO(RDFLogChannel()) << "Deferred calls (" << fJitHelperCalls.size() << ") completed"
-                                   << (s2.RealTime() > 1e-3 ? " in " + std::to_string(s2.RealTime()) + " seconds."
-                                                            : " in less than 1ms.");
+      s.Stop();
+      const auto realTime = s.RealTime();
+      R__LOG_INFO(RDFLogChannel()) << fJitHelperCalls.size() << " deferred calls completed"
+                                   << (realTime > 1e-3 ? " in " + std::to_string(realTime) + " seconds."
+                                                       : " in less than 1ms.");
       fJitHelperCalls.clear();
    }
 }
@@ -1002,30 +1008,35 @@ void RLoopManager::ToJitExec(const std::string &code) const
    GetCodeToJit().append(code);
 }
 
-void RLoopManager::RegisterJitHelperCall(const std::string &funcCode, std::shared_ptr<RNodeBase> *prevNodeOnHeap,
-                                         ROOT::Internal::RDF::RColumnRegister *colRegister,
-                                         const std::vector<std::string> &colNames, void *wkJittedNode, void *argument)
+void RLoopManager::RegisterJitHelperCall(const std::string &funcBody,
+                                         std::shared_ptr<ROOT::Detail::RDF::RNodeBase> prevNode,
+                                         std::unique_ptr<ROOT::Internal::RDF::RColumnRegister> colRegister,
+                                         const std::vector<std::string> &colNames, std::shared_ptr<void> wkNodePtr,
+                                         std::shared_ptr<void> argument)
 {
    auto &nameMap = GetJitHelperNameMap();
    {
       R__READ_LOCKGUARD(ROOT::gCoreMutex);
-      auto match = nameMap.find(funcCode);
+      auto match = nameMap.find(funcBody);
       if (match != nameMap.end()) {
+         R__WRITE_LOCKGUARD(ROOT::gCoreMutex); // modifying fJitHelperCalls
          R__LOG_DEBUG(0, RDFLogChannel()) << "JitHelper " << match->second << " already defined";
-         fJitHelperCalls.emplace_back(match->second, prevNodeOnHeap, colRegister, colNames, wkJittedNode, argument);
+         fJitHelperCalls.emplace_back(match->second, prevNode, std::move(colRegister), colNames, wkNodePtr, argument);
          return;
       }
    }
 
    {
+      // Register lazily a JIT helper
       R__WRITE_LOCKGUARD(ROOT::gCoreMutex);
       std::string registerId = "jitNodeRegistrator_" + std::to_string(nameMap.size());
-      nameMap[funcCode] = registerId;
-      R__LOG_DEBUG(0, RDFLogChannel()) << "JitHelper new " << registerId << " defined for funcCode " << funcCode;
-      // step 1: register function (now)
-      std::string toDeclare = "namespace R_rdf {\n  void " + registerId + funcCode + "\n}\n";
+      auto res = nameMap.insert({funcBody, registerId});
+      assert(res.second);
+      R__LOG_DEBUG(0, RDFLogChannel()) << "JitHelper new " << registerId << " defined for funcBody " << funcBody;
+
+      std::string toDeclare = "namespace R_rdf {\n  void " + registerId + funcBody + "\n}\n";
       GetCodeToDeclare().append(toDeclare);
-      fJitHelperCalls.emplace_back(registerId, prevNodeOnHeap, colRegister, colNames, wkJittedNode, argument);
+      fJitHelperCalls.emplace_back(registerId, prevNode, std::move(colRegister), colNames, wkNodePtr, argument);
    }
 }
 
@@ -1331,4 +1342,25 @@ void ROOT::Detail::RDF::RLoopManager::TTreeThreadTask(TTreeReader &treeReader, R
    (void)slotStack;
    (void)entryCount;
 #endif
+}
+
+ROOT::Detail::RDF::RLoopManager::DeferredJitCall::DeferredJitCall(
+   ROOT::Detail::RDF::RLoopManager::DeferredJitCall &&) noexcept = default;
+
+ROOT::Detail::RDF::RLoopManager::DeferredJitCall &ROOT::Detail::RDF::RLoopManager::DeferredJitCall::operator=(
+   ROOT::Detail::RDF::RLoopManager::DeferredJitCall &&) noexcept = default;
+
+ROOT::Detail::RDF::RLoopManager::DeferredJitCall::~DeferredJitCall() = default;
+
+ROOT::Detail::RDF::RLoopManager::DeferredJitCall::DeferredJitCall(
+   const std::string &id, std::shared_ptr<ROOT::Detail::RDF::RNodeBase> prevN,
+   std::unique_ptr<ROOT::Internal::RDF::RColumnRegister> colRegisterPtr, const std::vector<std::string> &colNamesArg,
+   std::shared_ptr<void> jittedNodePtr, std::shared_ptr<void> argPtr)
+   : fFunctionId(id),
+     fPrevNode(prevN),
+     fColRegister(std::move(colRegisterPtr)),
+     fColNames(colNamesArg),
+     fJittedNode(jittedNodePtr),
+     fExtraArgs(argPtr)
+{
 }
