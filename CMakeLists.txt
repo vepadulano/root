@@ -395,6 +395,58 @@ endif()
 #---Add the main sources ---------------------------------
 add_subdirectory (interpreter)
 
+function(print_recursive_dependencies target)
+    print_recursive_dependencies_impl("${target}" "" "")
+endfunction()
+
+# function(print_recursive_dependencies_impl target indent visited)
+#     # Check if target exists
+#     if(NOT TARGET ${target})
+#         message(STATUS "${indent}${target} (not a CMake target)")
+#         return()
+#     endif()
+    
+#     # Check if we've already visited this target (avoid infinite loops)
+#     list(FIND visited ${target} already_visited)
+#     if(NOT already_visited EQUAL -1)
+#         message(STATUS "${indent}${target} (already visited)")
+#         return()
+#     endif()
+    
+#     # Add current target to visited list
+#     list(APPEND visited ${target})
+    
+#     # Get LINK_LIBRARIES property
+#     get_target_property(link_libs ${target} LINK_LIBRARIES)
+    
+#     # Get INTERFACE_LINK_LIBRARIES property
+#     get_target_property(interface_libs ${target} INTERFACE_LINK_LIBRARIES)
+    
+#     # Print LINK_LIBRARIES
+#     if(link_libs)
+#         message(STATUS "${indent}${target} [LINK_LIBRARIES]:")
+#         foreach(lib ${link_libs})
+#             message(STATUS "${indent}  -> ${lib}")
+#             print_recursive_dependencies_impl("${lib}" "${indent}    " "${visited}")
+#         endforeach()
+#     else()
+#         message(STATUS "${indent}${target} [LINK_LIBRARIES]: (none)")
+#     endif()
+    
+#     # Print INTERFACE_LINK_LIBRARIES
+#     if(interface_libs)
+#         message(STATUS "${indent}${target} [INTERFACE_LINK_LIBRARIES]:")
+#         foreach(lib ${interface_libs})
+#             message(STATUS "${indent}  -> ${lib}")
+#             print_recursive_dependencies_impl("${lib}" "${indent}    " "${visited}")
+#         endforeach()
+#     else()
+#         message(STATUS "${indent}${target} [INTERFACE_LINK_LIBRARIES]: (none)")
+#     endif()
+# endfunction()
+# ROOT_EXECUTABLE(myexe myexe.cxx LIBRARIES clingInterpreter clingMetaProcessor clingUtils NOINSTALL)
+# print_recursive_dependencies(myexe)
+
 # Update etc/gitinfo.txt for every build.
 find_package(Git)
 add_custom_target(gitinfotxt

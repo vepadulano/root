@@ -277,6 +277,14 @@ if(builtin_llvm)
   endif()
 else()
   find_package(LLVM REQUIRED CONFIG)
+  if(TARGET LLVM)
+      set_target_properties(LLVM PROPERTIES
+          IMPORTED_LOCATION_RELEASE ""
+          IMPORTED_SONAME_RELEASE ""
+      )
+  else()
+      message(FATAL_ERROR "The LLVM package found does not define the LLVM target.")
+  endif()
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in ${LLVM_CMAKE_DIR}")
 
   separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
