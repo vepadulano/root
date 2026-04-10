@@ -130,7 +130,6 @@ protected:
       }
    }
 
-   RDFDetail::RLoopManager *GetLoopManager() const { return fLoopManager.get(); }
    RDataSource *GetDataSource() const { return fLoopManager->GetDataSource(); }
 
    ColumnNames_t GetValidatedColumnNames(const unsigned int nColumns, const ColumnNames_t &columns)
@@ -220,6 +219,8 @@ public:
    unsigned int GetNSlots() const;
    unsigned int GetNRuns() const;
    unsigned int GetNFiles();
+
+   RDFDetail::RLoopManager *GetLoopManager() const { return fLoopManager.get(); }
 };
 } // namespace RDF
 } // namespace ROOT

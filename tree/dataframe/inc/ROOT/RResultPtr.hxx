@@ -238,7 +238,9 @@ public:
    const T &GetValue()
    {
       ThrowIfNull();
-      return *GetSharedPtr();
+      if (fActionPtr != nullptr && !fActionPtr->HasRun())
+         TriggerRun();
+      return *fObjPtr;
    }
 
    /// Get the pointer to the encapsulated object.

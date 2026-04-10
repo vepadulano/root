@@ -939,40 +939,42 @@ void FillColl(bool v, COLL& c) {
 // No optimisations, no transformations: just copies.
 template <typename RealT_t, typename T, typename COLL>
 class R__CLING_PTRCHECK(off) TakeHelper : public RActionImpl<TakeHelper<RealT_t, T, COLL>> {
-   Results<std::shared_ptr<COLL>> fColls;
+   std::weak_ptr<COLL> fSharedResultColl;
+   // Results<std::shared_ptr<COLL>> fColls;
 
 public:
    using ColumnTypes_t = TypeList<T>;
-   TakeHelper(const std::shared_ptr<COLL> &resultColl, const unsigned int nSlots)
+   TakeHelper(const std::shared_ptr<COLL> &resultColl, const unsigned int nSlots = 1)
    {
-      fColls.emplace_back(resultColl);
-      for (unsigned int i = 1; i < nSlots; ++i)
-         fColls.emplace_back(std::make_shared<COLL>());
+      fSharedResultColl = resultColl;
+      // fColls.reserve(nSlots);
+      // for (unsigned int i = 1; i < nSlots; ++i)
+      //    fColls.push_back(resultColl);
    }
    TakeHelper(TakeHelper &&);
    TakeHelper(const TakeHelper &) = delete;
 
    void InitTask(TTreeReader *, unsigned int) {}
 
-   void Exec(unsigned int slot, T &v) { FillColl(v, *fColls[slot]); }
+   void Exec(unsigned int slot, T &v) { FillColl(v, *fSharedResultColl.lock().get()); }
 
    void Initialize() { /* noop */}
 
    void Finalize()
    {
-      auto rColl = fColls[0];
-      for (unsigned int i = 1; i < fColls.size(); ++i) {
-         const auto &coll = fColls[i];
-         const auto end = coll->end();
-         // Use an explicit loop here to prevent compiler warnings introduced by
-         // clang's range-based loop analysis and vector<bool> references.
-         for (auto j = coll->begin(); j != end; j++) {
-            FillColl(*j, *rColl);
-         }
-      }
+      // auto rColl = fColls[0];
+      // for (unsigned int i = 1; i < fColls.size(); ++i) {
+      //    const auto &coll = fColls[i];
+      //    const auto end = coll->end();
+      //    // Use an explicit loop here to prevent compiler warnings introduced by
+      //    // clang's range-based loop analysis and vector<bool> references.
+      //    for (auto j = coll->begin(); j != end; j++) {
+      //       FillColl(*j, *rColl);
+      //    }
+      // }
    }
 
-   COLL &PartialUpdate(unsigned int slot) { return *fColls[slot].get(); }
+   COLL &PartialUpdate(unsigned int slot) { return *fSharedResultColl.lock().get(); }
 
    std::string GetActionName() { return "Take"; }
 
@@ -980,7 +982,7 @@ public:
    {
       auto &result = *static_cast<std::shared_ptr<COLL> *>(newResult);
       result->clear();
-      return TakeHelper(result, fColls.size());
+      return TakeHelper(result);
    }
 };
 
@@ -989,43 +991,46 @@ public:
 template <typename RealT_t, typename T>
 class R__CLING_PTRCHECK(off) TakeHelper<RealT_t, T, std::vector<T>>
    : public RActionImpl<TakeHelper<RealT_t, T, std::vector<T>>> {
-   Results<std::shared_ptr<std::vector<T>>> fColls;
+   std::weak_ptr<std::vector<T>> fSharedResultColl;
+
+   // Results<std::shared_ptr<std::vector<T>>> fColls;
 
 public:
    using ColumnTypes_t = TypeList<T>;
-   TakeHelper(const std::shared_ptr<std::vector<T>> &resultColl, const unsigned int nSlots)
+   TakeHelper(const std::shared_ptr<std::vector<T>> &resultColl, const unsigned int nSlots = 1)
    {
-      fColls.emplace_back(resultColl);
-      for (unsigned int i = 1; i < nSlots; ++i) {
-         auto v = std::make_shared<std::vector<T>>();
-         v->reserve(1024);
-         fColls.emplace_back(v);
-      }
+      fSharedResultColl = resultColl;
+      // fColls.emplace_back(resultColl);
+      // for (unsigned int i = 1; i < nSlots; ++i) {
+      //    auto v = std::make_shared<std::vector<T>>();
+      //    v->reserve(1024);
+      //    fColls.emplace_back(v);
+      // }
    }
    TakeHelper(TakeHelper &&);
    TakeHelper(const TakeHelper &) = delete;
 
    void InitTask(TTreeReader *, unsigned int) {}
 
-   void Exec(unsigned int slot, T &v) { FillColl(v, *fColls[slot]); }
+   void Exec(unsigned int slot, T &v) { FillColl(v, *fSharedResultColl.lock().get()); }
 
    void Initialize() { /* noop */}
 
    // This is optimised to treat vectors
    void Finalize()
    {
-      ULong64_t totSize = 0;
-      for (auto &coll : fColls)
-         totSize += coll->size();
-      auto rColl = fColls[0];
-      rColl->reserve(totSize);
-      for (unsigned int i = 1; i < fColls.size(); ++i) {
-         auto &coll = fColls[i];
-         rColl->insert(rColl->end(), coll->begin(), coll->end());
-      }
+      // ULong64_t totSize = 0;
+      // for (auto &coll : fColls)
+      //    totSize += coll->size();
+      // auto rColl = fColls[0];
+      // rColl->reserve(totSize);
+      // for (unsigned int i = 1; i < fColls.size(); ++i) {
+      //    auto &coll = fColls[i];
+      //    rColl->insert(rColl->end(), coll->begin(), coll->end());
+      // }
    }
 
-   std::vector<T> &PartialUpdate(unsigned int slot) { return *fColls[slot]; }
+   std::vector<T> &PartialUpdate(unsigned int slot) { return *fSharedResultColl.lock().get(); }
 
    std::string GetActionName() { return "Take"; }
 
@@ -1033,7 +1038,7 @@ public:
    {
       auto &result = *static_cast<std::shared_ptr<std::vector<T>> *>(newResult);
       result->clear();
-      return TakeHelper(result, fColls.size());
+      return TakeHelper(result);
    }
 };
 

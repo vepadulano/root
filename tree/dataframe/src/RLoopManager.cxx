@@ -1397,3 +1397,13 @@ ROOT::Detail::RDF::RLoopManager::DeferredJitCall::DeferredJitCall(
 {
    assert(fJittedNode != nullptr);
 }
+
+void RLoopManager::PrintBookedActions() const
+{
+   std::cout << "Booked actions [" << fBookedActions.size() << "]\n";
+}
+
+void RLoopManager::PrintRunActions() const
+{
+   std::cout << "Run actions [" << fRunActions.size() << "]\n";
+}

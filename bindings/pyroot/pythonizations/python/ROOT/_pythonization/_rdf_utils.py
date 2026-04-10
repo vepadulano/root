@@ -35,3 +35,11 @@ class ndarray(numpy.ndarray):
         """
         if obj is None: return
         self.result_ptr = getattr(obj, "result_ptr", None)
+
+    def __del__(self):
+        """
+        Dunder method invoked when the instance of this class is garbage collected.
+        It deletes the `RResultPtr` attached to the instance to avoid memory leaks.
+        """
+        print("Deleting ndarray instance and its result pointer to avoid memory leaks.")
+        del self.result_ptr

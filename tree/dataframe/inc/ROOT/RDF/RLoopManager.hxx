@@ -336,6 +336,9 @@ public:
    /// The task run by every thread on an entry range (known by the input TTreeReader), for the TTree data source.
    void
    TTreeThreadTask(TTreeReader &treeReader, ROOT::Internal::RSlotStack &slotStack, std::atomic<ULong64_t> &entryCount);
+
+   void PrintBookedActions() const;
+   void PrintRunActions() const;
 };
 
 /// \brief Create an RLoopManager that reads a TChain.

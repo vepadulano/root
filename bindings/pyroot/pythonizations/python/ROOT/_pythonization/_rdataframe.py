@@ -372,6 +372,9 @@ class AsNumpyResult(object):
 
                     self._py_arrays[column] = ndarray(tmp, self._result_ptrs[column])
 
+                del cpp_reference
+                del tmp
+
         return self._py_arrays
 
     def Merge(self, other):
@@ -423,6 +426,15 @@ class AsNumpyResult(object):
         """
         self._py_arrays = state
 
+
+    def __del__(self):
+        """
+        Dunder method invoked when the instance of this class is garbage collected.
+        It deletes the `RResultPtr` attached to the instance to avoid memory leaks.
+        """
+        print("Deleting AsNumpyResult instance and its result pointers to avoid memory leaks.")
+        del self._py_arrays
+        del self._result_ptrs
 
 def _clone_asnumpyresult(res: AsNumpyResult) -> AsNumpyResult:
     """
