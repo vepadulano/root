@@ -104,12 +104,15 @@ public:
    }
 
    /// Update the value at the address returned by GetValuePtr with the content corresponding to the given entry
-   void Update(unsigned int slot, Long64_t entry) final
+   void Update(unsigned int slot, Long64_t entry, bool mask) final
    {
       if (entry != fLastCheckedEntry[slot * RDFInternal::CacheLineStep<Long64_t>()]) {
          // evaluate this define expression, cache the result
-         fLastResults[slot * RDFInternal::CacheLineStep<T>()] = GetValueOrDefault(slot, entry);
-         fLastCheckedEntry[slot * RDFInternal::CacheLineStep<Long64_t>()] = entry;
+         fValues[slot]->Load(entry, mask);
+         if (mask) {
+            fLastResults[slot * RDFInternal::CacheLineStep<T>()] = GetValueOrDefault(slot, entry);
+            fLastCheckedEntry[slot * RDFInternal::CacheLineStep<Long64_t>()] = entry;
+         }
       }
    }
 

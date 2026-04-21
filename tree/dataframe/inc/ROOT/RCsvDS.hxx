@@ -27,7 +27,7 @@
 namespace ROOT::Internal::RDF {
 class R__CLING_PTRCHECK(off) RCsvDSColumnReader final : public ROOT::Detail::RDF::RColumnReaderBase {
    void *fValuePtr;
-   void *GetImpl(Long64_t) final { return fValuePtr; }
+   void *GetImpl(std::size_t) final { return fValuePtr; }
 
 public:
    RCsvDSColumnReader(void *valuePtr) : fValuePtr(valuePtr) {}

@@ -37,8 +37,10 @@ namespace RDF {
 
 class R__CLING_PTRCHECK(off) RTreeOpaqueColumnReader final : public ROOT::Detail::RDF::RColumnReaderBase {
    std::unique_ptr<ROOT::Internal::TTreeReaderOpaqueValue> fTreeValue;
+   void *fValuePtr{};
 
-   void *GetImpl(Long64_t) override;
+   void *GetImpl(std::size_t) override;
+   void LoadImpl(Long64_t entry, bool mask) override;
 
 public:
    /// Construct the RTreeColumnReader. Actual initialization is performed lazily by the Init method.
@@ -56,8 +58,10 @@ public:
 /// RTreeColumnReader specialization for TTree values read via TTreeReaderUntypedValue
 class R__CLING_PTRCHECK(off) RTreeUntypedValueColumnReader final : public ROOT::Detail::RDF::RColumnReaderBase {
    std::unique_ptr<ROOT::Internal::TTreeReaderUntypedValue> fTreeValue;
+   void *fValuePtr{};
 
-   void *GetImpl(Long64_t) override;
+   void *GetImpl(std::size_t) override;
+   void LoadImpl(Long64_t entry, bool mask) override;
 
 public:
    RTreeUntypedValueColumnReader(TTreeReader &r, std::string_view colName, std::string_view typeName);
@@ -107,15 +111,20 @@ private:
    /// Whether we already printed a warning about performing a copy of the TTreeReaderArray contents
    bool fCopyWarningPrinted = false;
 
-   void *GetImpl(Long64_t entry) override;
+   void *fValuePtr{};
+
+   void *GetImpl(std::size_t idx) override;
+   void LoadImpl(Long64_t entry, bool mask) override;
 };
 
 class R__CLING_PTRCHECK(off) RMaskedColumnReader : public ROOT::Detail::RDF::RColumnReaderBase {
    std::unique_ptr<ROOT::Detail::RDF::RColumnReaderBase> fValueReader;
    std::unique_ptr<TTreeReaderValue<uint64_t>> fTreeValueMask;
    unsigned int fMaskIndex = 0;
+   void *fValuePtr{};
 
-   void *GetImpl(Long64_t) override;
+   void *GetImpl(std::size_t) override;
+   void LoadImpl(Long64_t entry, bool mask) override;
 
 public:
    RMaskedColumnReader(TTreeReader &r, std::unique_ptr<ROOT::Detail::RDF::RColumnReaderBase> valueReader,

@@ -5,9 +5,14 @@
 
 #include <bitset>
 
-void *ROOT::Internal::RDF::RTreeOpaqueColumnReader::GetImpl(Long64_t)
+void ROOT::Internal::RDF::RTreeOpaqueColumnReader::LoadImpl(Long64_t, bool mask)
 {
-   return fTreeValue->GetAddress();
+   fValuePtr = mask ? fTreeValue->GetAddress() : nullptr;
+}
+
+void *ROOT::Internal::RDF::RTreeOpaqueColumnReader::GetImpl(std::size_t)
+{
+   return fValuePtr;
 }
 
 ROOT::Internal::RDF::RTreeOpaqueColumnReader::RTreeOpaqueColumnReader(TTreeReader &r, std::string_view colName)
@@ -17,9 +22,14 @@ ROOT::Internal::RDF::RTreeOpaqueColumnReader::RTreeOpaqueColumnReader(TTreeReade
 
 ROOT::Internal::RDF::RTreeOpaqueColumnReader::~RTreeOpaqueColumnReader() = default;
 
-void *ROOT::Internal::RDF::RTreeUntypedValueColumnReader::GetImpl(Long64_t)
+void ROOT::Internal::RDF::RTreeUntypedValueColumnReader::LoadImpl(Long64_t, bool mask)
 {
-   return fTreeValue->Get();
+   fValuePtr = mask ? fTreeValue->GetAddress() : nullptr;
+}
+
+void *ROOT::Internal::RDF::RTreeUntypedValueColumnReader::GetImpl(std::size_t)
+{
+   return fValuePtr;
 }
 
 ROOT::Internal::RDF::RTreeUntypedValueColumnReader::RTreeUntypedValueColumnReader(TTreeReader &r,
@@ -31,17 +41,19 @@ ROOT::Internal::RDF::RTreeUntypedValueColumnReader::RTreeUntypedValueColumnReade
 
 ROOT::Internal::RDF::RTreeUntypedValueColumnReader::~RTreeUntypedValueColumnReader() = default;
 
-void *ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::GetImpl(Long64_t entry)
+void ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::LoadImpl(Long64_t entry, bool mask)
 {
-   if (entry == fLastEntry)
-      return &fRVec; // we already pointed our fRVec to the right address
+   if (entry == fLastEntry || !mask) {
+      fValuePtr = &fRVec; // we already pointed our fRVec to the right address
+      return;
+   }
 
    auto &readerArray = *fTreeArray;
    const auto readerArraySize = readerArray.GetSize();
 
    // The reader could not read an array, signal this back to the node requesting the value
    if (R__unlikely(readerArray.GetReadStatus() == ROOT::Internal::TTreeReaderValueBase::EReadStatus::kReadError))
-      return nullptr;
+      return;
 
    if (readerArray.IsContiguous() && !(fCollectionType == ECollectionType::kRVecBool)) {
       if (readerArraySize > 0) {
@@ -92,9 +104,14 @@ void *ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::GetImpl(Long64_t entry
    }
    fLastEntry = entry;
    if (fCollectionType == ECollectionType::kStdArray)
-      return fRVec.data();
+      fValuePtr = fRVec.data();
    else
-      return &fRVec;
+      fValuePtr = &fRVec;
+}
+
+void *ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::GetImpl(std::size_t)
+{
+   return fValuePtr;
 }
 
 ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::RTreeUntypedArrayColumnReader(TTreeReader &r,
@@ -119,11 +136,23 @@ ROOT::Internal::RDF::RMaskedColumnReader::RMaskedColumnReader(
 
 ROOT::Internal::RDF::RMaskedColumnReader::~RMaskedColumnReader() = default;
 
-void *ROOT::Internal::RDF::RMaskedColumnReader::GetImpl(Long64_t event)
+void ROOT::Internal::RDF::RMaskedColumnReader::LoadImpl(Long64_t entry, bool mask)
 {
-   const std::bitset<64> mask{*fTreeValueMask->Get()};
-   if (mask.test(fMaskIndex) == false)
-      return nullptr;
+   if (!mask) {
+      fValuePtr = nullptr;
+      return;
+   }
 
-   return fValueReader->TryGet<void>(event);
+   const std::bitset<64> variationMask{*fTreeValueMask->Get()};
+   if (variationMask.test(fMaskIndex) == false) {
+      fValuePtr = nullptr;
+      return;
+   }
+
+   fValuePtr = fValueReader->TryGet<void>(entry);
+}
+
+void *ROOT::Internal::RDF::RMaskedColumnReader::GetImpl(std::size_t)
+{
+   return fValuePtr;
 }

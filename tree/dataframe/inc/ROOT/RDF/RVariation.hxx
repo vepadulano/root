@@ -172,11 +172,11 @@ class R__CLING_PTRCHECK(off) RVariation final : public RVariationBase {
    }
 
    template <typename... ColTypes, std::size_t... S>
-   void UpdateHelper(unsigned int slot, Long64_t entry, TypeList<ColTypes...>, std::index_sequence<S...>)
+   void UpdateHelper(unsigned int slot, std::size_t idx, TypeList<ColTypes...>, std::index_sequence<S...>)
    {
       // fExpression must return an RVec<T>
-      auto &&results = fExpression(GetValueChecked<ColTypes>(slot, S, entry)...);
-      (void)entry; // avoid unused parameter warnings (gcc 12.1)
+      auto &&results = fExpression(GetValueChecked<ColTypes>(slot, S, idx)...);
+      (void)idx; // avoid unused parameter warnings (gcc 12.1)
 
       if (!ResultsSizeEq(results, fVariationNames.size(), fColNames.size(),
                          std::integral_constant<bool, IsSingleColumn>{})) {
@@ -230,12 +230,15 @@ public:
    }
 
    /// Update the value at the address returned by GetValuePtr with the content corresponding to the given entry
-   void Update(unsigned int slot, Long64_t entry) final
+   void Update(unsigned int slot, Long64_t entry, bool mask) final
    {
       if (entry != fLastCheckedEntry[slot * CacheLineStep<Long64_t>()]) {
          // evaluate this filter, cache the result
-         UpdateHelper(slot, entry, ColumnTypes_t{}, TypeInd_t{});
-         fLastCheckedEntry[slot * CacheLineStep<Long64_t>()] = entry;
+         std::for_each(fValues[slot].begin(), fValues[slot].end(), [entry, mask](auto *v) { v->Load(entry, mask); });
+         if (mask) {
+            UpdateHelper(slot, /*idx=*/0u, ColumnTypes_t{}, TypeInd_t{});
+            fLastCheckedEntry[slot * CacheLineStep<Long64_t>()] = entry;
+         }
       }
    }
 

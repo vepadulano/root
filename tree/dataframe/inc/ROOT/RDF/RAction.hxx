@@ -112,18 +112,23 @@ public:
    }
 
    template <typename... ColTypes, std::size_t... S>
-   void CallExec(unsigned int slot, Long64_t entry, TypeList<ColTypes...>, std::index_sequence<S...>)
+   void CallExec(unsigned int slot, std::size_t idx, TypeList<ColTypes...>, std::index_sequence<S...>)
    {
       ROOT::Internal::RDF::CallGuaranteedOrder{[&](auto &&...args) { return fHelper.Exec(slot, args...); },
-                                               GetValueChecked<ColTypes>(slot, S, entry)...};
-      (void)entry; // avoid unused parameter warning (gcc 12.1)
+                                               GetValueChecked<ColTypes>(slot, S, idx)...};
+      (void)idx; // avoid unused parameter warning (gcc 12.1)
    }
 
    void Run(unsigned int slot, Long64_t entry) final
    {
-      // check if entry passes all filters
-      if (fPrevNode.CheckFilters(slot, entry))
-         CallExec(slot, entry, ColumnTypes_t{}, TypeInd_t{});
+      // Check filters for the current entry, for now returning one boolean value
+      const auto mask = fPrevNode.CheckFilters(slot, entry);
+      // Load all values in the bulk depending on the mask
+      std::for_each(fValues[slot].begin(), fValues[slot].end(), [entry, mask](auto *v) { v->Load(entry, mask); });
+
+      // Execute the helper on the values after masking
+      if (mask)
+         CallExec(slot, /*idx=*/0u, ColumnTypes_t{}, TypeInd_t{});
    }
 
    void TriggerChildrenCount() final { fPrevNode.IncrChildrenCount(); }

@@ -31,18 +31,33 @@ public:
 
    /// Return the column value for the given entry.
    /// \tparam T The column type
-   /// \param entry The entry number
+   /// \param idx The index of the value to load with respect to the beginning of the last entry mask passed to Load().
    ///
    /// The caller is responsible for checking that the returned value actually
    /// exists.
    template <typename T>
-   T *TryGet(Long64_t entry)
+   T *TryGet(std::size_t idx)
    {
-      return static_cast<T *>(GetImpl(entry));
+      return static_cast<T *>(GetImpl(idx));
+   }
+
+   /// Load the column value for the given entry.
+   /// \param entry The entry number to load.
+   /// \param mask The entry mask. Values will be loaded only for entries for which the mask equals true.
+   void Load(Long64_t entry, bool mask)
+   {
+      // For now, as `mask` is just a single boolean, as an optimization we can return early here if `mask == false`.
+      if (mask) {
+         fLoadedEntry = entry;
+         LoadImpl(entry, mask);
+      }
    }
 
 private:
-   virtual void *GetImpl(Long64_t entry) = 0;
+   Long64_t fLoadedEntry{-1}; ///< The entry number of the currently loaded value. This is used to avoid loading the same entry multiple times, e.g. when multiple actions share the same reader for some column.
+   virtual void *GetImpl(std::size_t idx) = 0;
+   // TODO remove the default implementation when all readers will be required to do something non-trivial at load time
+   virtual void LoadImpl(Long64_t /*entry*/, bool /*mask*/) {}
 };
 
 } // namespace RDF
