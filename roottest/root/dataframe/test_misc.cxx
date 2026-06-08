@@ -9,6 +9,9 @@
 #include <iostream>
 
 #include <gtest/gtest.h>
+#include <TChain.h>
+#include <TTreeReader.h>
+#include <TTreeReaderValue.h>
 
 using FourVector = ROOT::Math::XYZTVector;
 using FourVectors = std::vector<FourVector>;
@@ -154,6 +157,29 @@ TEST_F(RootTestRDFMisc, Test5)
    EXPECT_EQ(h2->GetEntries(), 20);
    EXPECT_EQ(h3->GetEntries(), 290);
    EXPECT_EQ(h4->GetEntries(), 290);
+}
+
+TEST_F(RootTestRDFMisc, TTreeReader)
+{
+   TChain m{fTreeName};
+   m.Add(fFileName);
+
+   TChain f{"friend"};
+   f.Add((std::string(fFileName) + "?#myTree").c_str());
+
+   m.AddFriend(&f);
+
+   TTreeReader r{&m};
+   ROOT::Internal::TTreeReaderUntypedValue rv_b1{r, "friend.b1", ROOT::Internal::RDF::TypeID2TypeName(typeid(double))};
+
+   r.Next();
+   r.Next();
+   std::vector<std::byte> memory(1 * sizeof(double));
+   void *val{memory.data()};
+   void *addrOfAddr{&val};
+   rv_b1.SetAddress(val, addrOfAddr);
+   rv_b1.Get();
+   std::cout << "Value: " << *static_cast<double *>(val) << "\n";
 }
 
 TEST_F(RootTestRDFMisc, Test6)

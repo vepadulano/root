@@ -4,6 +4,7 @@
 #include <TTreeReaderArray.h>
 
 #include <bitset>
+#include <list>
 
 void *ROOT::Internal::RDF::RTreeOpaqueColumnReader::GetImpl(std::size_t)
 {
@@ -12,7 +13,7 @@ void *ROOT::Internal::RDF::RTreeOpaqueColumnReader::GetImpl(std::size_t)
 
 void ROOT::Internal::RDF::RTreeOpaqueColumnReader::LoadImpl(const ROOT::Internal::RDF::RMaskedEntryRange &mask)
 {
-   // Assume size-1 bulk for now
+   // Assume 1-size bulk for now
    if (mask[0])
       fValuePtr = fTreeValue->GetAddress();
 }
@@ -56,15 +57,23 @@ void ROOT::Internal::RDF::RTreeUntypedValueColumnReader::LoadImpl(const ROOT::In
    fCachedResultsInvalidIndices.reserve(validIndices.size());
 
    fCachedResults.clear();
-   fCachedResults.reserve(validIndices.size() * fValueSize);
+   fCachedResults.resize(validIndices.size() * fValueSize);
+
+   fCachedBranchAddresses.clear();
+   fCachedBranchAddresses.reserve(validIndices.size() * fValueSize);
+
+   fCachedBranchAddressesOfAddresses.clear();
+   fCachedBranchAddressesOfAddresses.reserve(validIndices.size() * fValueSize);
+
    for (auto idx : validIndices) {
-      // TODO: go back/forth to the correct valid index in the TTreeReaderValue
-      auto val = reinterpret_cast<std::byte *>(fTreeValue->Get());
-      if (!val) {
-         fCachedResultsInvalidIndices.push_back(idx);
-      } else {
-         std::copy(val, val + fValueSize, std::back_inserter(fCachedResults));
-      }
+      fCachedBranchAddresses.push_back(fCachedResults.data() + idx * fValueSize);
+      // Crucial for reading non-PODs. Also crucial that this specific address
+      // survives until the end of the Get method which reads the actual value
+      // from the branch into the memory location above
+      fCachedBranchAddressesOfAddresses.push_back(&fCachedBranchAddresses.back());
+
+      fTreeValue->SetAddress(fCachedBranchAddresses.back(), fCachedBranchAddressesOfAddresses.back());
+      fTreeValue->Get();
    }
 }
 
@@ -208,7 +217,7 @@ void *ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::LoadRVec(Long64_t entr
 
 void ROOT::Internal::RDF::RTreeUntypedArrayColumnReader::LoadImpl(const ROOT::Internal::RDF::RMaskedEntryRange &mask)
 {
-   // Assume size-1 bulk for now
+   // Assume 1-size bulk for now
    if (mask[0]) {
       if (fCollectionType == ECollectionType::kStdArray)
          fValuePtr = LoadStdArray(mask.GetFirstEntry());

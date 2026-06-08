@@ -60,6 +60,8 @@ class R__CLING_PTRCHECK(off) RTreeUntypedValueColumnReader final : public ROOT::
    std::unique_ptr<ROOT::Internal::TTreeReaderUntypedValue> fTreeValue;
    ROOT::RVec<std::byte> fCachedResults{};
    ROOT::RVec<std::size_t> fCachedResultsInvalidIndices{};
+   ROOT::RVec<void *> fCachedBranchAddresses{};
+   ROOT::RVec<void *> fCachedBranchAddressesOfAddresses{};
    std::size_t fValueSize{0};
    std::uint64_t fLastEntry = std::numeric_limits<std::uint64_t>::max();
 

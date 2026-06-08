@@ -297,6 +297,35 @@ void *ROOT::Internal::TTreeReaderValueBase::GetAddress()
    return (Byte_t *)fProxy->GetWhere();
 }
 
+void ROOT::Internal::TTreeReaderValueBase::SetAddress(void *addr, void *addrOfAddr)
+{
+   // assume we are connected to a TTreeReader and in turn it is connected to a TTree and we have information about
+   // the data type of the branch
+   assert(fTreeReader);
+   assert(fTreeReader->fTree);
+   assert(fDict);
+   TClass *cl{nullptr};
+   EDataType dt{EDataType::kOther_t};
+   if (fHaveLeaf && fLeaf) {
+      fLeaf->SetAddress(addr);
+   } else if (auto dictAsClass = dynamic_cast<TClass *>(fDict)) {
+      cl = dictAsClass;
+      cl->New(addr);
+      TBranch *brPtr{nullptr};
+      TBranch **brPtrPtr{&brPtr};
+      GetTreeReader()->GetTree()->SetBranchAddress(fBranchName, addrOfAddr, /*branchPtr*/ brPtrPtr, cl, dt,
+                                                   /*isPtr*/ true);
+      assert(brPtr);
+      if (auto *brObj = dynamic_cast<TBranchObject *>(brPtr))
+         brObj->SetAutoDelete(false);
+   } else if (auto dictAsDataType = dynamic_cast<TDataType *>(fDict)) {
+      dt = static_cast<EDataType>(dictAsDataType->GetType()); // returns Int_t but the data member is an EDataType
+      GetTreeReader()->GetTree()->SetBranchAddress(fBranchName, addr, /*branchPtr*/ nullptr, cl, dt, /*isPtr*/ false);
+   } else {
+      Error("TTreeReaderValueBase::SetAddress", "Unrecognized TTreeReaderValue branch (or leaf) setup.");
+   }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// \brief Search a branch the name of which contains a "."
 /// \param[out] myLeaf The leaf identified by the name if found (can be untouched).

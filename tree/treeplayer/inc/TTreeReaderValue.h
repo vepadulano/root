@@ -99,10 +99,13 @@ public:
    TLeaf *GetLeaf() { return fLeaf; }
 
    void *GetAddress();
+   void SetAddress(void *addr, void *addrOfAddr);
 
    const char *GetBranchName() const { return fBranchName; }
 
    virtual ~TTreeReaderValueBase();
+
+   TTreeReader *GetTreeReader() const { return fTreeReader; }
 
 protected:
    TTreeReaderValueBase(TTreeReader *reader, const char *branchname, TDictionary *dict, bool opaqueRead = false);
