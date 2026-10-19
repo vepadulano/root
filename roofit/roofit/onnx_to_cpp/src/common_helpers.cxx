@@ -214,7 +214,7 @@ void col2im(const Dtype *data_col, const int channels,
 // https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md). Unidirectional
 // broadcast: only the input shape is stretched to targetShape, not vice versa.
 // These are rewritten with respect to ONNXToCpp/common.hxx to avoid the
-// dependency on std::span (which would require C++20 or ROOT's RSpan.hxx in the
+// dependency on a span type (which would require C++20 or a helper header in the
 // generated code): the input is passed as a raw pointer plus a length instead.
 constexpr const char *kBroadcastTensor = R"ONNXToCpp(
 template <typename T>

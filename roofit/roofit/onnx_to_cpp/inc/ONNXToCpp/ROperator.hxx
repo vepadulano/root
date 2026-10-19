@@ -3,7 +3,7 @@
 
 #include "ONNXToCpp/common.hxx"
 
-#include <ROOT/RSpan.hxx>
+#include "ONNXToCpp/span.hxx"
 
 #include <memory>
 #include <string>
@@ -45,11 +45,11 @@ protected:
    mutable std::vector<std::string_view> fOutputTensorNames;
 
 public:
-   std::span<const std::string_view> GetOpInputTensors() const {
+   span<const std::string_view> GetOpInputTensors() const {
       return fInputTensorNames;
    }
 
-   std::span<const std::string_view> GetOpOutputTensors() const {
+   span<const std::string_view> GetOpOutputTensors() const {
       return fOutputTensorNames;
    }
 
