@@ -34,7 +34,7 @@ public:
    RooArgList const &inputTensorList(int iTensor) const { return *(_inputTensors[iTensor]); }
 
    std::string funcName() const { return _funcName; }
-   std::string outerWrapperName() const { return "TMVA_SOFIE_" + funcName() + "::roo_outer_wrapper"; }
+   std::string outerWrapperName() const { return "ROOT::Internal::ONNXToCpp_" + funcName() + "::roo_outer_wrapper"; }
 
 protected:
    double evaluate() const override;
