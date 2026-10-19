@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_BatchNormalization.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_BatchNormalization.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseBatchNormalization = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseBatchNormalization = [](RModelParser_ONNX &parser, cons
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser BatchNorm op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser BatchNorm op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -37,12 +37,12 @@ ParserFuncSignature ParseBatchNormalization = [](RModelParser_ONNX &parser, cons
                                                           nodeproto.input(1), nodeproto.input(2), nodeproto.input(3),
                                                           nodeproto.input(4), output_name));
       } else {
-         throw std::runtime_error("TMVA::SOFIE ONNX Parser BatchNormalization op requires exactly 5 inputs, got " +
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser BatchNormalization op requires exactly 5 inputs, got " +
                                   std::to_string(nodeproto.input_size()));
       }
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator BatchNorm does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator BatchNorm does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -53,6 +53,6 @@ ParserFuncSignature ParseBatchNormalization = [](RModelParser_ONNX &parser, cons
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

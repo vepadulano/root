@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Pad.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Pad.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,18 +13,18 @@ ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodePro
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Pad op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Pad op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
    if (nodeproto.input_size() < 2) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Pad op has invalid input size < 2");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Pad op has invalid input size < 2");
    }
 
    // pads is second inputs
    std::string pads_name = nodeproto.input(1);
    if (!parser.IsRegisteredTensorType(pads_name)) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Pad op has input tensor" + pads_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Pad op has input tensor" + pads_name +
                                   " but its type is not yet registered");
    }
    // in case of optional inputs
@@ -53,7 +53,7 @@ ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodePro
       op.reset(new ROperator_Pad<float>(input_name, pads_name, cvalue_name, axes_name, output_name, mode));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Pad does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Pad does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -64,6 +64,6 @@ ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodePro
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

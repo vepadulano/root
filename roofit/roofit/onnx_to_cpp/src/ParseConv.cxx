@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Conv.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Conv.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodePr
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Conv op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Conv op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -44,7 +44,7 @@ ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodePr
          attr_strides =
             std::vector<size_t>({nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end()});
       } else {
-         std::cout << "TMVA::SOFIE Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
                    << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
@@ -61,7 +61,7 @@ ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodePr
                                          attr_strides, nodeproto.input(0), nodeproto.input(1), name_b, output_name));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Conv does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Conv does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -72,6 +72,6 @@ ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodePr
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

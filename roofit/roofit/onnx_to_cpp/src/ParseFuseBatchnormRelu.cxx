@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_BatchNormalization.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_BatchNormalization.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuseFuncSignature ParseFuseBatchnormRelu = [](RModelParser_ONNX &parser, const onnx::NodeProto &batchnormnode,
                                                 const onnx::NodeProto &relunode) {
@@ -14,7 +14,7 @@ ParserFuseFuncSignature ParseFuseBatchnormRelu = [](RModelParser_ONNX &parser, c
         if (parser.IsRegisteredTensorType(input_name)) {
             input_type = parser.GetTensorType(input_name);
         } else {
-            throw std::runtime_error("TMVA::SOFIE ONNX Parser BatchNorm op has input tensor " + input_name +
+            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser BatchNorm op has input tensor " + input_name +
                                     " but its type is not yet registered");
         }
         
@@ -40,7 +40,7 @@ ParserFuseFuncSignature ParseFuseBatchnormRelu = [](RModelParser_ONNX &parser, c
             }
             break;
         default:
-            throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator BatchNorm does not yet support input type " +
+            throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator BatchNorm does not yet support input type " +
                                     std::to_string(static_cast<int>(input_type)));
         }
         
@@ -51,6 +51,6 @@ ParserFuseFuncSignature ParseFuseBatchnormRelu = [](RModelParser_ONNX &parser, c
         return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

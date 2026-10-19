@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_LeakyRelu.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_LeakyRelu.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseLeakyRelu = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseLeakyRelu = [](RModelParser_ONNX &parser, const onnx::N
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser leaky relu op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser leaky relu op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -31,7 +31,7 @@ ParserFuncSignature ParseLeakyRelu = [](RModelParser_ONNX &parser, const onnx::N
    switch (input_type) {
    case ETensorType::FLOAT: op.reset(new ROperator_LeakyRelu<float>(attr_alpha, input_name, output_name)); break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Leaky Relu does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Leaky Relu does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -42,6 +42,6 @@ ParserFuncSignature ParseLeakyRelu = [](RModelParser_ONNX &parser, const onnx::N
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

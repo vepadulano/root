@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Gemm.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Gemm.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseMatMul = [](RModelParser_ONNX &parser, const onnx::NodeProto &matmulnode) {
    ETensorType input_type = ETensorType::UNDEFINED;
@@ -14,7 +14,7 @@ ParserFuncSignature ParseMatMul = [](RModelParser_ONNX &parser, const onnx::Node
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser MatMul op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser MatMul op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -33,7 +33,7 @@ ParserFuncSignature ParseMatMul = [](RModelParser_ONNX &parser, const onnx::Node
       break;
    default:
       throw std::runtime_error(
-         "TMVA::SOFIE - Unsupported - Operator for fusing MatMul and Add to Gemm does not yet support input type " +
+         "Internal::ONNXToCpp - Unsupported - Operator for fusing MatMul and Add to Gemm does not yet support input type " +
          std::to_string(static_cast<int>(input_type)));
    }
 
@@ -45,6 +45,6 @@ ParserFuncSignature ParseMatMul = [](RModelParser_ONNX &parser, const onnx::Node
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

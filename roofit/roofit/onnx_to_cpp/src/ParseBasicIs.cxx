@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Basic_Is.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Basic_Is.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <EBasicIsOperator Op>
 std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
@@ -13,7 +13,7 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
    std::string input_name = nodeproto.input(0);
    if (!parser.IsRegisteredTensorType(input_name)) {
       throw
-         std::runtime_error("TMVA::SOFIE ONNX Parser " + IsOpTraits<Op>::Name() + " op has input tensor " + input_name +
+         std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() + " op has input tensor " + input_name +
                                   " but its type is not yet registered");
    }
 
@@ -29,7 +29,7 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
    }
 
    if (detect_positive == 0 && detect_negative == 0)
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser IsInf op has invalide attributes");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser IsInf op has invalide attributes");
 
 
    std::unique_ptr<ROperator> op;
@@ -44,7 +44,7 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
       else if (detect_positive == 0)
          op.reset(new ROperator_Basic_Is<EBasicIsOperator::kIsInfNeg>(input_name, output_name));
    } else
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser " + IsOpTraits<Op>::Name() + " operator - invalid attributes");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() + " operator - invalid attributes");
 
    // Register the output type (is always BOOL)
    if (!parser.IsRegisteredTensorType(output_name)) {
@@ -60,6 +60,6 @@ void RegisterBasicIsParsers(RModelParser_ONNX &parser)
    parser.RegisterOperator("IsInf", ParseBasicIs<EBasicIsOperator::kIsInf>);
 }
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

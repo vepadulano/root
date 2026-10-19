@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Clip.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Clip.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 // ---------------------------------------------------------------------------
 // ParseClip
@@ -29,14 +29,14 @@ ParserFuncSignature ParseClip = [](RModelParser_ONNX &parser,
    // Clip requires at least 1 input (X); min and max are optional
    if (nodeproto.input_size() < 1) {
       throw std::runtime_error(
-         "TMVA::SOFIE ONNX Parser Clip op has invalid input size " +
+         "Internal::ONNXToCpp ONNX Parser Clip op has invalid input size " +
          std::to_string(nodeproto.input_size()) + " (expected 1, 2 or 3)");
    }
 
    // ---- main input X must be registered --------------------------------
    if (!parser.IsRegisteredTensorType(nodeproto.input(0))) {
       throw std::runtime_error(
-         "TMVA::SOFIE ONNX Parser Clip op has input tensor " +
+         "Internal::ONNXToCpp ONNX Parser Clip op has input tensor " +
          nodeproto.input(0) + " but its type is not yet registered");
    }
 
@@ -50,7 +50,7 @@ ParserFuncSignature ParseClip = [](RModelParser_ONNX &parser,
    if (!minName.empty() && parser.IsRegisteredTensorType(minName)) {
       if (parser.GetTensorType(minName) != input_type) {
          throw std::runtime_error(
-            "TMVA::SOFIE ONNX Parser Clip op: min tensor " + minName +
+            "Internal::ONNXToCpp ONNX Parser Clip op: min tensor " + minName +
             " type " + ConvertTypeToString(parser.GetTensorType(minName)) +
             " does not match input type " + ConvertTypeToString(input_type));
       }
@@ -58,7 +58,7 @@ ParserFuncSignature ParseClip = [](RModelParser_ONNX &parser,
    if (!maxName.empty() && parser.IsRegisteredTensorType(maxName)) {
       if (parser.GetTensorType(maxName) != input_type) {
          throw std::runtime_error(
-            "TMVA::SOFIE ONNX Parser Clip op: max tensor " + maxName +
+            "Internal::ONNXToCpp ONNX Parser Clip op: max tensor " + maxName +
             " type " + ConvertTypeToString(parser.GetTensorType(maxName)) +
             " does not match input type " + ConvertTypeToString(input_type));
       }
@@ -87,7 +87,7 @@ ParserFuncSignature ParseClip = [](RModelParser_ONNX &parser,
       break;
    default:
       throw std::runtime_error(
-         "TMVA::SOFIE - Unsupported - Clip Operator does not yet support "
+         "Internal::ONNXToCpp - Unsupported - Clip Operator does not yet support "
          "input type " + ConvertTypeToString(input_type));
    }
 
@@ -99,6 +99,6 @@ ParserFuncSignature ParseClip = [](RModelParser_ONNX &parser,
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

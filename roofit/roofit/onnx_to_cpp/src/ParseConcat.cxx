@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Concat.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Concat.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseConcat = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type = ETensorType::UNDEFINED;
@@ -19,7 +19,7 @@ ParserFuncSignature ParseConcat = [](RModelParser_ONNX &parser, const onnx::Node
          else
             assert(parser.GetTensorType(input_name) == input_type);
       } else {
-         throw std::runtime_error("TMVA::SOFIE ONNX Parser Concat op has input tensor" + input_name +
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Concat op has input tensor" + input_name +
                                   " but its type is not yet registered");
       }
       inputs.emplace_back(input_name);
@@ -42,7 +42,7 @@ ParserFuncSignature ParseConcat = [](RModelParser_ONNX &parser, const onnx::Node
    op.reset(new ROperator_Concat(inputs, attr_axis, attr_new_axis, output_name));
    //break;
    //default:
-   //   throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Concat does not yet support input type " +
+   //   throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Concat does not yet support input type " +
    //                            std::to_string(static_cast<int>(input_type)));
   // }
 
@@ -52,6 +52,6 @@ ParserFuncSignature ParseConcat = [](RModelParser_ONNX &parser, const onnx::Node
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

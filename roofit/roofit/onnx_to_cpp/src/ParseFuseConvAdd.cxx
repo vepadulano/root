@@ -1,15 +1,15 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Conv.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Conv.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const onnx::NodeProto &convnode,
                                               const onnx::NodeProto &addnode) {
    if (addnode.input_size() != 2) {
-      throw std::runtime_error("TMVA::SOFIE - Cannot fuse Conv and Add - Add input size is not 2");
+      throw std::runtime_error("Internal::ONNXToCpp - Cannot fuse Conv and Add - Add input size is not 2");
    }
    std::string name_b;
    if (convnode.output(0) == addnode.input(0))
@@ -17,14 +17,14 @@ ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const o
    else if (convnode.output(0) == addnode.input(1))
       name_b = addnode.input(0);
    else
-      throw std::runtime_error("TMVA::SOFIE - Cannot fuse Conv and Add - output of Conv is not input to Add");
+      throw std::runtime_error("Internal::ONNXToCpp - Cannot fuse Conv and Add - output of Conv is not input to Add");
 
    ETensorType input_type;
    auto input_name = convnode.input(0);
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Conv op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Conv op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -52,7 +52,7 @@ ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const o
       } else if (attribute_name == "strides") {
          attr_strides = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else {
-         std::cout << "TMVA::SOFIE Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
                    << convnode.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
@@ -64,7 +64,7 @@ ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const o
                                          attr_strides, convnode.input(0), convnode.input(1), name_b, output_name));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Conv does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Conv does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -75,6 +75,6 @@ ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const o
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

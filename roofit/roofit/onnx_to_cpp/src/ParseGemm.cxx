@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Gemm.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Gemm.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodePr
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser gemm op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser gemm op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -33,13 +33,13 @@ ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodePr
       } else if (attribute_name == "transA") {
          attr_transA = nodeproto.attribute(i).i();
          if (attr_transA != 0 && attr_transA != 1)
-            throw std::runtime_error("TMVA::SOFIE Error - Model Loading - attribute transA in Operator Gemm not 0/1");
+            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transA in Operator Gemm not 0/1");
       } else if (attribute_name == "transB") {
          attr_transB = nodeproto.attribute(i).i();
          if (attr_transB != 0 && attr_transB != 1)
-            throw std::runtime_error("TMVA::SOFIE Error - Model Loading - attribute transB in Operator Gemm not 0/1");
+            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transB in Operator Gemm not 0/1");
       } else {
-         std::cout << "TMVA::SOFIE Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
                    << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
@@ -56,7 +56,7 @@ ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodePr
       }
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Gemm does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Gemm does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -67,6 +67,6 @@ ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodePr
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

@@ -1,15 +1,15 @@
-// TMVA SOFIE — minimal, dependency-free ONNX protobuf reader.
+// ONNXToCpp — minimal, dependency-free ONNX protobuf reader.
 //
 // Drop-in replacement for the protoc-generated onnx_proto3.pb.h. Provides the
-// subset of the onnx:: message API that the SOFIE ONNX parser actually uses,
+// subset of the onnx:: message API that the ONNXToCpp ONNX parser actually uses,
 // backed by a hand-written protobuf wire-format decoder. No libprotobuf, no
 // protoc, no codegen.
 //
 // Only the read-side accessors used by RModelParser_ONNX and the Parse*.cxx
 // operator parsers are implemented.
 
-#ifndef TMVA_SOFIE_ONNX_LITE
-#define TMVA_SOFIE_ONNX_LITE
+#ifndef ONNXTOCPP_ONNX_LITE
+#define ONNXTOCPP_ONNX_LITE
 
 #include <cstdint>
 #include <cstring>
@@ -20,17 +20,17 @@
 #include <string>
 #include <vector>
 
-// The messages live in TMVA::Experimental::SOFIE::onnx, not in the global onnx
+// The messages live in ROOT::Internal::ONNXToCpp::onnx, not in the global onnx
 // namespace the protoc-generated headers use. The real ONNX C++ library ships
 // inside the `onnx` Python wheel, and when that extension module is loaded in
 // the same process (as any PyTorch ONNX export does) its exported symbols
-// interpose ours on ELF platforms: SOFIE would then call protobuf's
+// interpose ours on ELF platforms: ONNXToCpp would then call protobuf's
 // onnx::TensorProto destructor on an object with this file's layout.
-// Unqualified `onnx::` inside namespace SOFIE still names these classes, so
+// Unqualified `onnx::` inside namespace ONNXToCpp still names these classes, so
 // the parser sources need no change.
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 namespace onnx {
 
@@ -672,8 +672,8 @@ private:
 
 } // namespace onnx
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
 #endif

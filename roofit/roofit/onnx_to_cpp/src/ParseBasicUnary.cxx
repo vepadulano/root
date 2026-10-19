@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_BasicUnary.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_BasicUnary.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <EBasicUnaryOperator Op>
 std::unique_ptr<ROperator> ParseBasicUnary(RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
@@ -16,7 +16,7 @@ std::unique_ptr<ROperator> ParseBasicUnary(RModelParser_ONNX &parser, const onnx
       input_type = parser.GetTensorType(input_name);
    } else {
       throw
-         std::runtime_error("TMVA::SOFIE ONNX Parser Unary op has input tensor " + input_name +
+         std::runtime_error("Internal::ONNXToCpp ONNX Parser Unary op has input tensor " + input_name +
                                   " but its type is not yet registered");
    }
 
@@ -28,7 +28,7 @@ std::unique_ptr<ROperator> ParseBasicUnary(RModelParser_ONNX &parser, const onnx
       op.reset(new ROperator_BasicUnary<float, Op>(input_name, output_name));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Binary Operator does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Binary Operator does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -58,6 +58,6 @@ void RegisterBasicUnaryParsers(RModelParser_ONNX &parser)
    parser.RegisterOperator("Floor", ParseBasicUnary<EBasicUnaryOperator::kFloor>);
 }
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

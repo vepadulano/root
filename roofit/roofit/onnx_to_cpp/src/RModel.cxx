@@ -7,10 +7,10 @@
 #include <string>
 #include <cstdlib>
 
-#include "TMVA/RModel.hxx"
-#include "TMVA/ROperator.hxx"
+#include "ONNXToCpp/RModel.hxx"
+#include "ONNXToCpp/ROperator.hxx"
 
-namespace TMVA::Experimental::SOFIE {
+namespace ROOT::Internal::ONNXToCpp {
 
 // Out-of-line because ROperator is forward-declared in the public header.
 void RModel::ROperatorDeleter::operator()(ROperator *ptr) const
@@ -68,7 +68,7 @@ std::string SafetensorsDType(ETensorType type)
    case ETensorType::DOUBLE: return "F64";
    case ETensorType::INT64: return "I64";
    default:
-      throw std::runtime_error("tmva-sofie tensor with type " + ConvertTypeToString(type) +
+      throw std::runtime_error("Internal::ONNXToCpp tensor with type " + ConvertTypeToString(type) +
                                " cannot be written to a safetensors file");
    }
 }
@@ -116,7 +116,7 @@ std::vector<size_t> RModel::GetTensorShape(const std::string & name) const {
     }
     auto f3 = fInputTensorInfos.find(name);
     if (f3 != fInputTensorInfos.end()) {
-        throw std::runtime_error("TMVA SOFIE tensor [" + name + "] is an input tensor with unspecified dimension parameter");
+        throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] is an input tensor with unspecified dimension parameter");
     }
     auto f4 = fIntermediateTensorInfos.find(name);
     if (f4 != fIntermediateTensorInfos.end()) {
@@ -133,12 +133,12 @@ std::vector<size_t> RModel::GetTensorShape(const std::string & name) const {
     }
 
     if (fDynamicTensorInfos.find(name) != fDynamicTensorInfos.end())
-      throw std::runtime_error("TMVA SOFIE tensor [" + name + "] is a dynamic tensor. Use GetDynamicTensorShape instead of GetTensorShape");
+      throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] is a dynamic tensor. Use GetDynamicTensorShape instead of GetTensorShape");
 
    if (fIsSubGraph && fParentGraph)
       return fParentGraph->GetTensorShape(name);
 
-    throw std::runtime_error("TMVA SOFIE tensor [" + name + "] for which the shape is requested is not found");
+    throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] for which the shape is requested is not found");
 }
 
 std::vector<Dim> RModel::GetDimTensorShape(const std::string & name) const {
@@ -161,9 +161,9 @@ std::vector<Dim> RModel::GetDynamicTensorShape(const std::string & name) const {
    }
    // throw error if shape is not dynamic
    if (!IsDynamicTensor(name))
-      throw std::runtime_error("TMVA SOFIE tensor [" + name + "] for which the shape is requested is not dynamic");
+      throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] for which the shape is requested is not dynamic");
 
-   throw std::runtime_error("TMVA SOFIE tensor [" + name + "] for which the shape is requested is not found");
+   throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] for which the shape is requested is not found");
 }
 
 ETensorType RModel::GetTensorType(std::string name) const {
@@ -195,7 +195,7 @@ ETensorType RModel::GetTensorType(std::string name) const {
     if (fIsSubGraph && fParentGraph)
       return fParentGraph->GetTensorType(name);
 
-    throw std::runtime_error("TMVA SOFIE tensor [" + name + "] for which the type is requested is not found, model name: " + fName);
+    throw std::runtime_error("Internal::ONNXToCpp tensor [" + name + "] for which the type is requested is not found, model name: " + fName);
 }
 
 bool RModel::CheckIfTensorAlreadyExist(std::string tensor_name) {
@@ -212,7 +212,7 @@ bool RModel::CheckIfTensorAlreadyExist(std::string tensor_name) {
 void RModel::AddInputTensorInfo(std::string input_name, ETensorType type, std::vector<Dim> shape) {
     input_name = UTILITY::Clean_name(input_name);
     if (CheckIfTensorAlreadyExist(input_name)) {
-        throw std::runtime_error("TMVA-SOFIE: input tensor with name " + input_name + " already exists \n");
+        throw std::runtime_error("Internal::ONNXToCpp: input tensor with name " + input_name + " already exists \n");
     }
 
     InputTensorInfo inputInfo { type, shape };
@@ -222,7 +222,7 @@ void RModel::AddInputTensorInfo(std::string input_name, ETensorType type, std::v
 void RModel::AddInputTensorInfo(std::string input_name, ETensorType type, std::vector<size_t> shape) {
     input_name = UTILITY::Clean_name(input_name);
     if (CheckIfTensorAlreadyExist(input_name)) {
-        throw std::runtime_error("TMVA-SOFIE: input tensor with name " + input_name + " already exists \n");
+        throw std::runtime_error("Internal::ONNXToCpp: input tensor with name " + input_name + " already exists \n");
     }
     TensorInfo inputInfo { type, shape };
     fReadyInputTensorInfos[input_name] = inputInfo;
@@ -269,7 +269,7 @@ void RModel::AddInitializedTensor(std::string tensor_name, ETensorType type, std
     tensor_name = UTILITY::Clean_name(tensor_name);
     //NB: own data
     if (CheckIfTensorAlreadyExist(tensor_name)) {
-        throw std::runtime_error("TMVA-SOFIE: initialized tensor with name " + tensor_name + " already exists \n");
+        throw std::runtime_error("Internal::ONNXToCpp: initialized tensor with name " + tensor_name + " already exists \n");
     }
     InitializedTensor new_tensor {type, shape, data};
     fInitializedTensors[tensor_name] = new_tensor;
@@ -289,7 +289,7 @@ void RModel::AddConstantTensor(std::string tensor_name, ETensorType type, std::v
     tensor_name = UTILITY::Clean_name(tensor_name);
     //NB: own data
     if (CheckIfTensorAlreadyExist(tensor_name)) {
-        throw std::runtime_error("TMVA-SOFIE: constant tensor with name " + tensor_name + " already exists \n");
+        throw std::runtime_error("Internal::ONNXToCpp: constant tensor with name " + tensor_name + " already exists \n");
     }
     InitializedTensor new_tensor {type, shape, data, true};   // add here flag to specify is a constant tensor
     fInitializedTensors[tensor_name] = new_tensor;
@@ -298,7 +298,7 @@ void RModel::AddConstantTensor(std::string tensor_name, ETensorType type, std::v
 void RModel::AddShapeTensor(const std::string & name, const std::vector<Dim> & shape_values, bool scalar){
    auto tensor_name = UTILITY::Clean_name(name);
    if (fShapeTensors.count(tensor_name) != 0) {
-      throw std::runtime_error("TMVA-SOFIE: shape tensor with name " + tensor_name + " already exists \n");
+      throw std::runtime_error("Internal::ONNXToCpp: shape tensor with name " + tensor_name + " already exists \n");
    }
    fShapeTensors[tensor_name] = std::make_pair(shape_values, scalar);
 }
@@ -312,7 +312,7 @@ bool RModel::AddAliasTensor(const std::string &name, const std::string &origin)
    // two operators writing the same tensor is a malformed graph rather than a case to refuse,
    // so this comes before the checks below and the error does not depend on the optimization level
    if (fAliasTensors.count(tensor_name) != 0) {
-      throw std::runtime_error("TMVA-SOFIE: alias tensor with name " + tensor_name + " already exists \n");
+      throw std::runtime_error("Internal::ONNXToCpp: alias tensor with name " + tensor_name + " already exists \n");
    }
    // an alias of an alias refers directly to the tensor owning the memory
    if (auto it = fAliasTensors.find(origin_name); it != fAliasTensors.end())
@@ -390,7 +390,7 @@ void RModel::AddIntermediateTensor(std::string tensor_name, ETensorType type, st
 void RModel::AddIntermediateTensor(std::string tensor_name, ETensorType type, std::vector<std::size_t> shape) {
     tensor_name = UTILITY::Clean_name(tensor_name);
     if (CheckIfTensorAlreadyExist(tensor_name)) {
-        throw std::runtime_error("TMVA-SOFIE: intermediate tensor with name " + tensor_name + " already exists \n");
+        throw std::runtime_error("Internal::ONNXToCpp: intermediate tensor with name " + tensor_name + " already exists \n");
     }
     TensorInfo new_tensor {type, shape};
     fIntermediateTensorInfos[tensor_name] = new_tensor;
@@ -399,7 +399,7 @@ void RModel::AddIntermediateTensor(std::string tensor_name, ETensorType type, st
 void RModel::AddDynamicTensor(std::string tensor_name, ETensorType type, std::vector<Dim> shape){
    tensor_name = UTILITY::Clean_name(tensor_name);
    if (CheckIfTensorAlreadyExist(tensor_name)){
-      throw std::runtime_error("TMVA-SOFIE: intermediate tensor with name " + tensor_name + " already exists \n");
+      throw std::runtime_error("Internal::ONNXToCpp: intermediate tensor with name " + tensor_name + " already exists \n");
    }
    DynamicTensorInfo new_tensor {type, shape};
    fDynamicTensorInfos[tensor_name] = new_tensor;
@@ -450,7 +450,7 @@ void RModel::UpdateOutputTensorList(std::vector<std::string> curr_output_tensors
 void RModel::UpdateInitializedTensor(std::string tensor_name, ETensorType type, std::vector<std::size_t> shape, std::shared_ptr<void> data) {
     tensor_name = UTILITY::Clean_name(tensor_name);
     if (!CheckIfTensorAlreadyExist(tensor_name)) {
-        throw std::runtime_error("TMVA-SOFIE: tensor " + tensor_name + " not found when trying to update it");
+        throw std::runtime_error("Internal::ONNXToCpp: tensor " + tensor_name + " not found when trying to update it");
     }
     InitializedTensor new_tensor {type, shape, data};
     fInitializedTensors[tensor_name] = new_tensor;
@@ -459,7 +459,7 @@ void RModel::UpdateInitializedTensor(std::string tensor_name, ETensorType type, 
 std::shared_ptr<void> RModel::GetInitializedTensorData(std::string tensor_name) {
     auto f = fInitializedTensors.find(tensor_name);
     if (f == fInitializedTensors.end()) {
-        throw std::runtime_error("TMVA-SOFIE: tensor " + tensor_name + " not found when trying to get its data");
+        throw std::runtime_error("Internal::ONNXToCpp: tensor " + tensor_name + " not found when trying to get its data");
     } else {
         return f->second.sharedptr();
     }
@@ -468,7 +468,7 @@ std::shared_ptr<void> RModel::GetInitializedTensorData(std::string tensor_name) 
 void RModel::SetNotWritableInitializedTensor(const std::string & tensor_name) {
       auto t = fInitializedTensors.find(tensor_name);
       if (t == fInitializedTensors.end()) {
-         throw std::runtime_error("TMVA-SOFIE: initialized tensor " + tensor_name + " not found when trying to get its info");
+         throw std::runtime_error("Internal::ONNXToCpp: initialized tensor " + tensor_name + " not found when trying to get its info");
       }
       t->second.SetNotWritable();
    }
@@ -1067,7 +1067,7 @@ void RModel::GenerateDynamicTensorInfo()
 
             if (begin> end) {
                std::cout << "op " << op_index << "tensor_" << name << " begin " << begin << "  "  << " end " << end << std::endl;
-               throw std::runtime_error("TMVA-SOFIE: RModel::GenerateDynamicTensorInfo: tensor_" + name + " has end before begin");
+               throw std::runtime_error("Internal::ONNXToCpp: RModel::GenerateDynamicTensorInfo: tensor_" + name + " has end before begin");
             }
 
             // write in code
@@ -1096,7 +1096,7 @@ void RModel::GenerateDynamicTensorInfo()
       }
    }
    if (missingTensor)
-      throw std::runtime_error("TMVA-SOFIE: RModel::GenerateDynamicTensorInfo - some tensors are not in input/output list");
+      throw std::runtime_error("Internal::ONNXToCpp: RModel::GenerateDynamicTensorInfo - some tensors are not in input/output list");
 
    fGC += out.str();
 }
@@ -1201,7 +1201,7 @@ std::string RModel::GenerateInferSignature(bool isdecl) {
       if (isdecl) {
          std::string type = ConvertTypeToString(GetTensorType(name));
          if (type == "other")
-            throw std::runtime_error("TMVA-SOFIE: input tensor " + name +
+            throw std::runtime_error("Internal::ONNXToCpp: input tensor " + name +
                                      " is of a data type which is not yet supported.");
          rGC += type + " const* ";
       }
@@ -1318,7 +1318,7 @@ void RModel::GenerateOutput()
                dynamic_parameters_check += d.param + " > " + memberName + " || ";
                input_params_checked.insert(pName);
                fGC += SP + "if (" + d.param + " > " + memberName + ") {\n";
-               fGC += SP + SP + "throw std::runtime_error(\"TMVA-SOFIE: dynamic input tensor shape parameter " +
+               fGC += SP + SP + "throw std::runtime_error(\"Internal::ONNXToCpp: dynamic input tensor shape parameter " +
                       d.param + " exceeds the initialized maximum allowed shape.\");\n";
                fGC += SP + "}\n";
             }
@@ -1479,7 +1479,7 @@ void RModel::GenerateSessionCode()
       fGC += "   static std::string LoadWeightsFromFile(const std::string &filename) {\n";
       fGC += "      std::ifstream f(filename, std::ios::binary);\n";
       fGC += "      if (!f.is_open()) {\n";
-      fGC += "         throw std::runtime_error(\"tmva-sofie failed to open file \" + filename + \" for input "
+      fGC += "         throw std::runtime_error(\"Internal::ONNXToCpp failed to open file \" + filename + \" for input "
              "weights\");\n";
       fGC += "      }\n";
       fGC += "      return std::string(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());\n";
@@ -1570,7 +1570,7 @@ void RModel::GenerateSessionCode()
       std::cout << "Generating main inference code for " << fName << std::endl;
 
    if (fOutputTensorNames.size() == 0)
-      throw std::runtime_error("TMVA-SOFIE: output size=0 are not supported");
+      throw std::runtime_error("Internal::ONNXToCpp: output size=0 are not supported");
 
    std::string allOperatorCode;
 
@@ -1665,10 +1665,10 @@ void RModel::Generate(std::underlying_type_t<Options> options, int batchSize, bo
    GenerateSessionCode();
 
    if (!fIsSubGraph) {
-      fGC += ("} //TMVA_SOFIE_" + fName + "\n");
+      fGC += ("} //ROOT::Internal::ONNXToCpp_" + fName + "\n");
       fGC += "\n#endif  // " + hgname + "\n";
       // dump the standalone definitions of the helper functions this model uses
-      // so that the generated header does not depend on TMVA/SOFIE_common.hxx
+      // so that the generated header does not depend on ONNXToCpp/common.hxx
       EmitHelperFunctionsCode();
    }
 }
@@ -1683,7 +1683,7 @@ void RModel::ReadInitializedTensorsFromFile() {
         fGC += "   std::ifstream f;\n";
         fGC += "   f.open(filename);\n";
         fGC += "   if (!f.is_open()) {\n";
-        fGC += "      throw std::runtime_error(\"tmva-sofie failed to open file \" + filename + \" for input weights\");\n";
+        fGC += "      throw std::runtime_error(\"Internal::ONNXToCpp failed to open file \" + filename + \" for input weights\");\n";
         fGC += "   }\n";
 
         // ReadTensorFromStream is emitted as a standalone helper in the header
@@ -1698,7 +1698,7 @@ void RModel::ReadInitializedTensorsFromFile() {
                std::string length = std::to_string(ConvertShapeToLength(i.second.shape()));
                fGC += "   ReadTensorFromStream(f, " + tensor_name + ", \"" + tensor_name + "\", " + length + ");\n";
             } else {
-               throw std::runtime_error("tmva-sofie tensor " + tensor_name + " with type " + ConvertTypeToString(i.second.type()) + " cannot be read from a file");
+               throw std::runtime_error("Internal::ONNXToCpp tensor " + tensor_name + " with type " + ConvertTypeToString(i.second.type()) + " cannot be read from a file");
             }
         }
         fGC += "   f.close();\n";
@@ -1711,7 +1711,7 @@ void RModel::ReadInitializedTensorsFromFile() {
        // standalone helpers in the generated header
        AddNeededHelperFunction("SafetensorsReader");
 
-       fGC += "   SafetensorsReader sofie_weights_reader(weights_blob);\n";
+       fGC += "   SafetensorsReader weights_reader(weights_blob);\n";
 
        for (auto &i : fInitializedTensors) {
           // skip Constant and shape tensors (not written in a file)
@@ -1722,12 +1722,12 @@ void RModel::ReadInitializedTensorsFromFile() {
           try {
              dtype = SafetensorsDType(i.second.type());
           } catch (const std::runtime_error &) {
-             throw std::runtime_error("tmva-sofie tensor " + tensor_name + " with type " +
+             throw std::runtime_error("Internal::ONNXToCpp tensor " + tensor_name + " with type " +
                                       ConvertTypeToString(i.second.type()) +
                                       " cannot be read from a safetensors payload");
           }
           std::string length = std::to_string(ConvertShapeToLength(i.second.shape()));
-          fGC += "   sofie_weights_reader.Read(\"" + tensor_name + "\", fTensor_" + i.first + ", " + length + ", \"" +
+          fGC += "   weights_reader.Read(\"" + tensor_name + "\", fTensor_" + i.first + ", " + length + ", \"" +
                  dtype + "\");\n";
        }
     }
@@ -1757,7 +1757,7 @@ long RModel::WriteInitializedTensorsToFile(std::string filename) {
     if (fWeightFile == WeightFileType::Safetensors) {
         std::ofstream f(filename, std::ios::binary);
         if (!f.is_open())
-            throw std::runtime_error("tmva-sofie failed to open file " + filename + " for tensor weight data");
+            throw std::runtime_error("Internal::ONNXToCpp failed to open file " + filename + " for tensor weight data");
 
         WriteInitializedTensorsToStream(f);
 
@@ -1769,7 +1769,7 @@ long RModel::WriteInitializedTensorsToFile(std::string filename) {
         f.open(filename);
         if (!f.is_open())
             throw
-            std::runtime_error("tmva-sofie failed to open file " + filename + " for tensor weight data");
+            std::runtime_error("Internal::ONNXToCpp failed to open file " + filename + " for tensor weight data");
         for (auto& i: fInitializedTensors) {
              // skip Constant tensors and not writable tensors (e.g. shape tensors)
             if (!i.second.IsWeightTensor()) {
@@ -1795,10 +1795,10 @@ long RModel::WriteInitializedTensorsToFile(std::string filename) {
                }
             }
             else {
-               throw std::runtime_error("tmva-sofie tensor " + tensor_name + " with type " + ConvertTypeToString(i.second.type()) + " cannot be written to a file");
+               throw std::runtime_error("Internal::ONNXToCpp tensor " + tensor_name + " with type " + ConvertTypeToString(i.second.type()) + " cannot be written to a file");
             }
             if (f.fail())
-               throw std::runtime_error("tmva-sofie failed to write tensor data to file for  " + tensor_name);
+               throw std::runtime_error("Internal::ONNXToCpp failed to write tensor data to file for  " + tensor_name);
         }
         long curr_pos = f.tellp();
         f.close();
@@ -1814,7 +1814,7 @@ void RModel::WriteInitializedTensorsToStream(std::ostream &f)
    // write silently corrupted output on a big-endian host
    const std::uint16_t one = 1;
    if (!*reinterpret_cast<const std::uint8_t *>(&one))
-      throw std::runtime_error("tmva-sofie: safetensors weights can only be written on a little-endian host");
+      throw std::runtime_error("Internal::ONNXToCpp: safetensors weights can only be written on a little-endian host");
 
    // The safetensors layout (https://huggingface.co/docs/safetensors):
    //   8 bytes: little-endian unsigned size N of the JSON header
@@ -1860,7 +1860,7 @@ void RModel::WriteInitializedTensorsToStream(std::ostream &f)
       f.write(reinterpret_cast<const char *>(tensor.data<void>()), nbytes);
    }
    if (f.fail())
-      throw std::runtime_error("tmva-sofie failed to write safetensors payload");
+      throw std::runtime_error("Internal::ONNXToCpp failed to write safetensors payload");
 }
 
 std::string RModel::WriteInitializedTensorsToBuffer()
@@ -2095,17 +2095,17 @@ void RModel::HeadInitializedTensors(std::string name, int n_print) {
 }
 
 void RModel::GenerateHeaderInfo(std::string& hgname) {
-    fGC += ("//Code generated automatically by TMVA for Inference of Model file [" + fFileName + "] at [" + fParseTime.substr(0, fParseTime.length()-1) +"] \n");
+    fGC += ("//Code generated automatically by Internal::ONNXToCpp for Inference of Model file [" + fFileName + "] at [" + fParseTime.substr(0, fParseTime.length()-1) +"] \n");
     // add header guards
     hgname = fName;
     std::transform(hgname.begin(), hgname.end(), hgname.begin(), [](unsigned char c) {
                        return std::toupper(c);
                    } );
-    hgname = "ROOT_TMVA_SOFIE_" + hgname;
+    hgname = "ROOT_INTERNAL_ONNXTOCPP_" + hgname;
     fGC += "\n#ifndef " + hgname + "\n";
     fGC += "#define " + hgname + "\n\n";
     // Standard library headers the generated code relies on. Listed explicitly
-    // now that they are no longer pulled in transitively via SOFIE_common.hxx.
+    // now that they are no longer pulled in transitively via common.hxx.
     for (const char *h : {"cstdint", "cstring", "string", "vector", "map", "memory", "sstream", "iostream", "iomanip",
                           "limits", "stdexcept", "algorithm", "cmath", "cassert"}) {
         fNeededStdLib.insert(h);
@@ -2126,7 +2126,7 @@ void RModel::GenerateHeaderInfo(std::string& hgname) {
     if (fWeightFile == WeightFileType::Safetensors)
         fGC += "#include <iterator>\n";
 
-    fGC += "\nnamespace TMVA_SOFIE_" + fName + "{\n";
+    fGC += "\nnamespace ROOT::Internal::ONNXToCpp_" + fName + "{\n";
     if (!fNeededBlasRoutines.empty()) {
         fGC += ("namespace BLAS{\n");
         for (auto &routine : fNeededBlasRoutines) {
@@ -2157,7 +2157,7 @@ void RModel::GenerateHeaderInfo(std::string& hgname) {
 void RModel::EmitHelperFunctionsCode()
 {
     HelperFunctionsCode code =
-        GenerateHelperFunctionsCode(fNeededHelperFunctions, "TMVA_SOFIE_" + fName, fBlasSgemmDeclared);
+        GenerateHelperFunctionsCode(fNeededHelperFunctions, "ROOT::Internal::ONNXToCpp_" + fName, fBlasSgemmDeclared);
 
     auto replaceMarker = [this](const std::string &marker, const std::string &replacement) {
         auto pos = fGC.find(marker);
@@ -2195,7 +2195,7 @@ void RModel::OutputGenerated(std::string filename, bool append) {
     else
         f.open(filename);
     if (!f.is_open()) {
-        throw std::runtime_error("tmva-sofie failed to open file for output generated inference code");
+        throw std::runtime_error("Internal::ONNXToCpp failed to open file for output generated inference code");
     }
     f << fGC;
     f.close();
@@ -2216,4 +2216,4 @@ void RModel::OutputGenerated(std::string filename, bool append) {
     }
 }
 
-} // namespace SOFIE::Experimental::TMVA
+} // namespace ONNXToCpp::Internal::ROOT

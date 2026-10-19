@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_NonZero.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_NonZero.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseNonZero = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseNonZero = [](RModelParser_ONNX &parser, const onnx::Nod
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser NonZero op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser NonZero op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -40,7 +40,7 @@ ParserFuncSignature ParseNonZero = [](RModelParser_ONNX &parser, const onnx::Nod
          op.reset(new ROperator_NonZero<bool>(input_name, output_name));
          break;
       default:
-         throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator NonZero does not yet support input type " +
+         throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator NonZero does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -53,6 +53,6 @@ ParserFuncSignature ParseNonZero = [](RModelParser_ONNX &parser, const onnx::Nod
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

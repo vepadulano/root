@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Random.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Random.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
 
@@ -22,7 +22,7 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
       if (parser.IsRegisteredTensorType(input_name)) {
          input_type = parser.GetTensorType(input_name);
       } else {
-         throw std::runtime_error("TMVA::SOFIE ONNX Parser Randomr op has input tensor" + input_name +
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Randomr op has input tensor" + input_name +
                                " but its type is not yet registered");
       }
    }
@@ -41,11 +41,11 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
          else if (attr_type == onnx::AttributeProto::INT)
             seed = nodeproto.attribute(i).i();
          else
-            throw std::runtime_error("TMVA::SOFIE ONNX Parser Random  op has invalid type for attribute seed");
+            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute seed");
       }
       else if (attribute_name == "shape") {
          if (attr_type != onnx::AttributeProto::INTS)
-            throw std::runtime_error("TMVA::SOFIE ONNX Parser Random  op has invalid type for attribute shape");
+            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute shape");
          shape = std::vector<size_t>(nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end());
       }
       else {
@@ -55,7 +55,7 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
          else if (attr_type == onnx::AttributeProto::INT)
             value = nodeproto.attribute(i).i();
          else
-            throw std::runtime_error("TMVA::SOFIE ONNX Parser Random  op has invalid type for attribute " + attribute_name);
+            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute " + attribute_name);
          paramMap[attribute_name] = value;
       }
    }
@@ -71,6 +71,6 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

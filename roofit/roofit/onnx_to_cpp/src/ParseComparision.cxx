@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Comparision.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Comparision.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <EComparisionOperator Op>
 std::unique_ptr<ROperator> ParseComparision(RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
@@ -20,10 +20,10 @@ std::unique_ptr<ROperator> ParseComparision(RModelParser_ONNX &parser, const onn
          else
             if (input_type != parser.GetTensorType(input_name)) {
                throw
-                  std::runtime_error("TMVA::SOFIE ONNX parser Comparision op has input tensors of different types");
+                  std::runtime_error("Internal::ONNXToCpp ONNX parser Comparision op has input tensors of different types");
             }
       } else {
-         throw std::runtime_error("TMVA::SOFIE ONNX Parser Comparision op has input tensor " + input_name +
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Comparision op has input tensor " + input_name +
                                   " but its type is not yet registered");
       }
    }
@@ -43,7 +43,7 @@ std::unique_ptr<ROperator> ParseComparision(RModelParser_ONNX &parser, const onn
       op.reset(new ROperator_Comparision<int32_t, Op>(nodeproto.input(0), nodeproto.input(1), output_name));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Comparision Operator does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Comparision Operator does not yet support input type " +
                                ConvertTypeToString(input_type));
    }
 
@@ -64,6 +64,6 @@ void RegisterComparisionParsers(RModelParser_ONNX &parser)
    parser.RegisterOperator("GreaterOrEqual", ParseComparision<EComparisionOperator::GreaterEq>);
 }
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

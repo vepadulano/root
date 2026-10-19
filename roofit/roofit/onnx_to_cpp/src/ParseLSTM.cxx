@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_LSTM.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_LSTM.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodePr
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser LSTM op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser LSTM op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -47,7 +47,7 @@ ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodePr
       } else if (attribute_name == "layout") {
          attr_layout = nodeproto.attribute(i).i();
       } else {
-         std::cout << "TMVA SOFIE Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
                    << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
@@ -94,7 +94,7 @@ ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodePr
          name_sequence_lens, name_initial_h, name_initial_c, name_p, name_y, name_y_h, name_y_c));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator LSTM does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator LSTM does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -106,6 +106,6 @@ ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodePr
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Reshape.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Reshape.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseReshape = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    // make Reshape operator
@@ -27,7 +27,7 @@ ParserFuncSignature ParseReshape = [](RModelParser_ONNX &parser, const onnx::Nod
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Reshape op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Reshape op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -62,6 +62,6 @@ ParserFuncSignature ParseReshape = [](RModelParser_ONNX &parser, const onnx::Nod
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

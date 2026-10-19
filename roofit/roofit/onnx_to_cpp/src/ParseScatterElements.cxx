@@ -1,32 +1,32 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_ScatterElements.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_ScatterElements.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseScatterElements = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
 
    if (nodeproto.input_size() != 3) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser ScatterElements op has invalid input size");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser ScatterElements op has invalid input size");
    }
    // data is input 0
    if (!parser.IsRegisteredTensorType(nodeproto.input(0))){
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(0)
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(0)
                                 + " but its type is not yet registered");
    }
    if (!parser.IsRegisteredTensorType(nodeproto.input(1))){
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(1)
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(1)
                                 + " but its type is not yet registered");
    }
    if (!parser.IsRegisteredTensorType(nodeproto.input(2))){
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(2)
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser ScatterElements op has input tensor " +  nodeproto.input(2)
                                 + " but its type is not yet registered");
    }
    ETensorType input_type = parser.GetTensorType(nodeproto.input(0));
    if (parser.GetTensorType(nodeproto.input(2)) != input_type) {
-      throw std::runtime_error("TMVA::SOFIE ONNX parser ScatterElements op has input tensors of different types: " +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX parser ScatterElements op has input tensors of different types: " +
                   nodeproto.input(2) + " : " + ConvertTypeToString(parser.GetTensorType(nodeproto.input(2))) +
                      " and " +  nodeproto.input(0) + " : " + ConvertTypeToString(input_type));
    }
@@ -56,6 +56,6 @@ ParserFuncSignature ParseScatterElements = [](RModelParser_ONNX &parser, const o
 };
 
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

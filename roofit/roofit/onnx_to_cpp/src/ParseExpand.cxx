@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Expand.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Expand.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseExpand = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    std::unique_ptr<ROperator> op;
@@ -15,7 +15,7 @@ ParserFuncSignature ParseExpand = [](RModelParser_ONNX &parser, const onnx::Node
       input_type = parser.GetTensorType(input_name);
    } else {
       throw std::runtime_error(
-        "TMVA::SOFIE ONNX Parser Expand op has input tensor " + input_name +
+        "Internal::ONNXToCpp ONNX Parser Expand op has input tensor " + input_name +
         " but its type is not yet registered");
    }
 
@@ -23,11 +23,11 @@ ParserFuncSignature ParseExpand = [](RModelParser_ONNX &parser, const onnx::Node
    if (parser.IsRegisteredTensorType(shape_name)) {
       if (parser.GetTensorType(shape_name) != ETensorType::INT64) {
          throw
-            std::runtime_error("TMVA::SOFIE - ONNX Parser Expand Op shape type not supported");
+            std::runtime_error("Internal::ONNXToCpp - ONNX Parser Expand Op shape type not supported");
       }
    } else {
       throw std::runtime_error(
-        "TMVA::SOFIE ONNX Parser Sign op has input tensor " + input_name +
+        "Internal::ONNXToCpp ONNX Parser Sign op has input tensor " + input_name +
         " but its type is not yet registered");
    }
 
@@ -43,7 +43,7 @@ ParserFuncSignature ParseExpand = [](RModelParser_ONNX &parser, const onnx::Node
          op.reset(new ROperator_Expand<uint8_t>(input_name, shape_name, output_name));
          break;
       default:
-         throw std::runtime_error("TMVA::SOFIE - Unsupported - Expand Operator does "
+         throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Expand Operator does "
                              "not support input type " +
                              std::to_string(static_cast<int>(input_type)));
    }
@@ -54,6 +54,6 @@ ParserFuncSignature ParseExpand = [](RModelParser_ONNX &parser, const onnx::Node
 };
 
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Range.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Range.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseRange = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,19 +13,19 @@ ParserFuncSignature ParseRange = [](RModelParser_ONNX &parser, const onnx::NodeP
    if (parser.IsRegisteredTensorType(start)) {
       input_type = parser.GetTensorType(start);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Tanh op has input tensor" + start +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Tanh op has input tensor" + start +
                                " but its type is not yet registered");
    }
 
    auto limit = nodeproto.input(1);
    if (!parser.IsRegisteredTensorType(limit)) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Tanh op has input tensor" + limit +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Tanh op has input tensor" + limit +
                                " but its type is not yet registered");
    }
 
    auto delta = nodeproto.input(2);
    if (!parser.IsRegisteredTensorType(delta)) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Tanh op has input tensor" + delta +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Tanh op has input tensor" + delta +
                                " but its type is not yet registered");
    }
 
@@ -36,7 +36,7 @@ ParserFuncSignature ParseRange = [](RModelParser_ONNX &parser, const onnx::NodeP
    case ETensorType::FLOAT: op.reset(new ROperator_Range<float>(start, limit, delta, output_name)); break;
    case ETensorType::INT64: op.reset(new ROperator_Range<int64_t>(start, limit, delta, output_name)); break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Range does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Range does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -47,6 +47,6 @@ ParserFuncSignature ParseRange = [](RModelParser_ONNX &parser, const onnx::NodeP
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

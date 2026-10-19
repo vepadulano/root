@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Relu.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Relu.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseRelu = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseRelu = [](RModelParser_ONNX &parser, const onnx::NodePr
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser relu op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser relu op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -23,7 +23,7 @@ ParserFuncSignature ParseRelu = [](RModelParser_ONNX &parser, const onnx::NodePr
    switch (input_type) {
    case ETensorType::FLOAT: op.reset(new ROperator_Relu<float>(input_name, output_name)); break;
    default:
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Relu does not yet support input type " +
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Relu does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 
@@ -34,6 +34,6 @@ ParserFuncSignature ParseRelu = [](RModelParser_ONNX &parser, const onnx::NodePr
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

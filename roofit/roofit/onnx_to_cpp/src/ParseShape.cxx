@@ -1,17 +1,17 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Shape.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Shape.hxx"
 #include "onnx.hxx"
 
 #include <climits> // for INT_MAX
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseShape = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    auto input_name = nodeproto.input(0);
    if (!parser.IsRegisteredTensorType(input_name)) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Shape op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Shape op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -38,6 +38,6 @@ ParserFuncSignature ParseShape = [](RModelParser_ONNX &parser, const onnx::NodeP
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

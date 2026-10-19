@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_TopK.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_TopK.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseTopK = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type = ETensorType::UNDEFINED;
@@ -13,12 +13,12 @@ ParserFuncSignature ParseTopK = [](RModelParser_ONNX &parser, const onnx::NodePr
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser TopK op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser TopK op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
    std::string k_name = nodeproto.input(1);
    if (!parser.IsRegisteredTensorType(k_name)) {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser TopK op has input tensor " + k_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser TopK op has input tensor " + k_name +
                                " but its type is not yet registered");
    }
 
@@ -51,6 +51,6 @@ ParserFuncSignature ParseTopK = [](RModelParser_ONNX &parser, const onnx::NodePr
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Swish.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Swish.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseSwish = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseSwish = [](RModelParser_ONNX &parser, const onnx::NodeP
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Swish op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Swish op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -29,7 +29,7 @@ ParserFuncSignature ParseSwish = [](RModelParser_ONNX &parser, const onnx::NodeP
    }
    // ROperator_Swish implements alpha = 1 (x * sigmoid(x)); reject other values
    if (attr_alpha != 1.0) {
-      throw std::runtime_error("TMVA::SOFIE - Unsupported - Operator Swish does not yet support alpha != 1");
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Swish does not yet support alpha != 1");
    }
 
    std::string output_name = nodeproto.output(0);
@@ -43,6 +43,6 @@ ParserFuncSignature ParseSwish = [](RModelParser_ONNX &parser, const onnx::NodeP
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

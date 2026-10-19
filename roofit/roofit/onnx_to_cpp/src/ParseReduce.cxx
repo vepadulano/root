@@ -1,11 +1,11 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Reduce.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Reduce.hxx"
 #include "onnx.hxx"
 #include <stdexcept>
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <EReduceOpMode Op>
 std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
@@ -28,14 +28,14 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
       op_mode = ReduceMin;
 
    if (op_mode == InvalidReduceOp) {
-      throw std::runtime_error("TMVA::SOFIE - Reduce op mode not supported.");
+      throw std::runtime_error("Internal::ONNXToCpp - Reduce op mode not supported.");
    }
 
    auto input_name = nodeproto.input(0);
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Reduce  op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Reduce  op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
    //in the latest version of ONNX axis is not an attribute but an input
@@ -43,7 +43,7 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
    if (nodeproto.input_size() > 1) {
       axes_name = nodeproto.input(1);
       if (!parser.IsRegisteredTensorType(axes_name)) {
-         throw std::runtime_error("TMVA::SOFIE ONNX Parser Reduce  op has input tensor" + axes_name +
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Reduce  op has input tensor" + axes_name +
                                " but its type is not yet registered");
       }
    }
@@ -67,7 +67,7 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
    //    op.reset(new ROperator_Reduce<float, Op>(attr_keepdims, attr_axes, input_name, axes_name, output_name));
    //    break;
    // default:
-   //    throw std::runtime_error("TMVA::SOFIE - Unsupported - Reduce Operator does not yet support input type " +
+   //    throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Reduce Operator does not yet support input type " +
    //                             std::to_string(static_cast<int>(input_type)));
    // }
 
@@ -87,6 +87,6 @@ void RegisterReduceParsers(RModelParser_ONNX &parser)
    parser.RegisterOperator("ReduceMin", ParseReduce<EReduceOpMode::ReduceMin>);
 }
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

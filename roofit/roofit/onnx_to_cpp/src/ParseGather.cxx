@@ -1,11 +1,11 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_Gather.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_Gather.hxx"
 #include "onnx.hxx"
 #include <stdexcept>
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseGather = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type = ETensorType::UNDEFINED;
@@ -13,7 +13,7 @@ ParserFuncSignature ParseGather = [](RModelParser_ONNX &parser, const onnx::Node
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser Gather op has input tensor" + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Gather op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
 
@@ -24,7 +24,7 @@ ParserFuncSignature ParseGather = [](RModelParser_ONNX &parser, const onnx::Node
       indices_type = parser.GetTensorType(indices_name);
       if (indices_type != ETensorType::INT64 && indices_type != ETensorType::INT32) {
          throw
-            std::runtime_error("TMVA::SOFIE ONNX Parser Gather op Indices tensor type not supported.");
+            std::runtime_error("Internal::ONNXToCpp ONNX Parser Gather op Indices tensor type not supported.");
       }
    }
 
@@ -44,6 +44,6 @@ ParserFuncSignature ParseGather = [](RModelParser_ONNX &parser, const onnx::Node
    return op;
 };
 
-} // namespace SOFIE
-} // namespace Experimental
-} // namespace TMVA
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT

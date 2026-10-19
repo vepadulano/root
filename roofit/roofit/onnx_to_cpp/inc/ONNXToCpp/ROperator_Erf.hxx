@@ -1,0 +1,65 @@
+#ifndef ONNXTOCPP_ROPERATOR_Erf
+#define ONNXTOCPP_ROPERATOR_Erf
+
+#include "ONNXToCpp/common.hxx"
+#include "ONNXToCpp/ROperator.hxx"
+#include "ONNXToCpp/RModel.hxx"
+
+#include <sstream>
+
+namespace ROOT{
+namespace Internal{
+namespace ONNXToCpp{
+
+template <typename T>
+class ROperator_Erf final : public ROperator
+{
+
+private:
+
+   std::string fNX;
+   std::string fNY;
+   std::vector<size_t> fShape;
+
+public:
+   ROperator_Erf(){}
+   ROperator_Erf(std::string nameX, std::string nameY):
+      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)){
+         fInputTensorNames = { fNX };
+         fOutputTensorNames = { fNY };
+      }
+
+   void Initialize(RModel& model) override {
+       //input must be a graph input, or already initialized intermediate tensor
+      if (model.CheckIfTensorAlreadyExist(fNX) == false){
+        throw std::runtime_error("Internal::ONNXToCpp Erf Op Input Tensor is not found in model");
+      }
+      fShape = model.GetTensorShape(fNX);
+      model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShape);
+   }
+
+
+   std::string Generate(std::string OpName) override {
+      OpName = "op_" + OpName;
+      if (fShape.empty()) {
+         throw std::runtime_error("Internal::ONNXToCpp Erf operator called to Generate without being initialized first");
+      }
+      std::stringstream out;
+      size_t length = ConvertShapeToLength(fShape);
+      out << "\n//------ ERF\n";
+      out << SP << "for (int id = 0; id < " << length << " ; id++){\n";
+      out << SP << SP << "tensor_" << fNY << "[id] = std::erf(tensor_" << fNX << "[id]);\n";
+      out << SP << "}\n";
+      return out.str();
+   }
+
+   std::vector<std::string> GetStdLibs() override { return { std::string("cmath") };}
+   
+};
+
+}//ONNXToCpp
+}//Internal
+}//ROOT
+
+
+#endif //ONNXTOCPP_ROPERATOR_Erf

@@ -1,10 +1,10 @@
-#include "TMVA/RModelParser_ONNX.hxx"
-#include "TMVA/ROperator_LayerNormalization.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/ROperator_LayerNormalization.hxx"
 #include "onnx.hxx"
 
-namespace TMVA {
-namespace Experimental {
-namespace SOFIE {
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
 -> std::unique_ptr<ROperator> {
@@ -13,7 +13,7 @@ ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, cons
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("TMVA::SOFIE ONNX Parser LayerNormalizaion op has input tensor " + input_name +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser LayerNormalizaion op has input tensor " + input_name +
                                " but its type is not yet registered");
    }
 
@@ -58,7 +58,7 @@ ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, cons
                                                        output_name, name_mean, name_std));
       break;
    default:
-      throw std::runtime_error("TMVA::SOFIE ONNX parser Operator with input type " + ConvertTypeToString(input_type) +
+      throw std::runtime_error("Internal::ONNXToCpp ONNX parser Operator with input type " + ConvertTypeToString(input_type) +
                                " not supported.");
       break;
    }
@@ -71,5 +71,5 @@ ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, cons
 };
 
 }
-} // namespace Experimental
-} // namespace TMVA
+} // namespace Internal
+} // namespace ROOT
