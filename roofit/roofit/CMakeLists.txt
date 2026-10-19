@@ -11,9 +11,6 @@
 
 set (EXTRA_DICT_OPTS)
 
-# Private library to convert ONNX models to standalone C++ code, used by RooONNXFunc
-add_subdirectory(onnx_to_cpp)
-
 if (runtime_cxxmodules AND WIN32)
   set (EXTRA_DICT_OPTS NO_CXXMODULE)
 endif()

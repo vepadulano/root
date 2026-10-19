@@ -22,18 +22,18 @@ if(BLAS_FOUND)
     ROOT_EXECUTABLE(ONNXToCppEmitCladModels ${CMAKE_CURRENT_BINARY_DIR}/EmitCladModels.cxx
       LIBRARIES Core ROOTInternalONNXToCpp)
 
-    ROOT_ADD_TEST(roofit-roofit-onnx_to_cpp-test_clad-ONNXToCppCladGenerateModels
+    ROOT_ADD_TEST(tree-ml-onnx_to_cpp-test_clad-ONNXToCppCladGenerateModels
                   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_clad_models.py --outdir ${CLAD_MODELS_DIR}
                   FIXTURES_SETUP onnxtocpp-clad-generate-models)
 
-    ROOT_ADD_TEST(roofit-roofit-onnx_to_cpp-test_clad-ONNXToCppCladCompileModels
+    ROOT_ADD_TEST(tree-ml-onnx_to_cpp-test_clad-ONNXToCppCladCompileModels
                   COMMAND ONNXToCppEmitCladModels
                   FIXTURES_REQUIRED onnxtocpp-clad-generate-models
                   FIXTURES_SETUP onnxtocpp-clad-compile-models)
 
     ROOT_EXECUTABLE(TestONNXToCppCladAutodiff TestONNXToCppCladAutodiff.cxx
       LIBRARIES Core BLAS::BLAS ROOTInternalONNXToCpp GTest::gtest GTest::gtest_main)
-    ROOT_ADD_TEST(roofit-roofit-onnx_to_cpp-test_clad-TestONNXToCppCladAutodiff
+    ROOT_ADD_TEST(tree-ml-onnx_to_cpp-test_clad-TestONNXToCppCladAutodiff
                   COMMAND TestONNXToCppCladAutodiff
                   WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR}
                   FIXTURES_REQUIRED onnxtocpp-clad-compile-models)
