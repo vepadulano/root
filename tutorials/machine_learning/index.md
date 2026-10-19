@@ -12,7 +12,6 @@
 - [Deep learning in TMVA](\ref deep_learing)
 - [TMVA Keras tutorials](\ref keras)
 - [TMVA PyTorch tutorials](\ref pytorch)
-- [Inference with SOFIE](\ref inference)
 - [Inference with ONNX and RDataFrame](\ref inference_onnx)
 - [Data loading for training](\ref data_loading)
 
@@ -111,16 +110,6 @@
 | RegressionPyTorch.py | Regression in TMVA with neural networks trained with PyTorch. |
 
 
-
-\anchor inference
-## Inference with SOFIE
-
-|          **Tutorial**          || **Description** |
-|---------------|-----------------|-----------------|
-| | TMVA_SOFIE_Inference.py | Using a trained model with PyTorch and make inference using SOFIE directly from Numpy. |
-| | TMVA_SOFIE_Models.py | Inference with SOFIE using a set of models trained with PyTorch. |
-| TMVA_SOFIE_ONNX.C | | Parsing of ONNX files into RModel object and further generating the .hxx header files for inference. |
-| TMVA_SOFIE_RSofieReader.C | | Using a trained model with PyTorch and make inference using SOFIE with the RSofieReader class. |
 
 \anchor inference_onnx
 ## Inference with ONNX and RDataFrame
