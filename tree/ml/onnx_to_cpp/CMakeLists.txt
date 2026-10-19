@@ -23,8 +23,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   option(ONNXTOCPP_BUILD_TESTS "Build the tests of ONNXToCpp" OFF)
 else()
   set(ONNXTOCPP_STANDALONE FALSE)
-  # The library is only used by RooFit
-  if(NOT roofit)
+  # The library is only used by RooFit and RDataFrame
+  if(NOT roofit AND NOT dataframe)
     return()
   endif()
   set(ONNXTOCPP_BUILD_TESTS ${testing})

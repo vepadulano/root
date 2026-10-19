@@ -42,6 +42,13 @@ if(NOT MSVC OR win_broken_tests)
 endif()
 ROOT_ADD_GTEST(dataframe_vecops dataframe_vecops.cxx LIBRARIES ROOTDataFrame)
 ROOT_ADD_GTEST(dataframe_helpers dataframe_helpers.cxx LIBRARIES ROOTDataFrame)
+# The tests of RONNXFunc, both the C++ and the Python ones, use the models written by an executable that runs
+# before them
+ROOT_EXECUTABLE(dataframe_ronnxfunc_models dataframe_ronnxfunc_models.cxx)
+ROOT_ADD_TEST(dataframe-ronnxfunc-models COMMAND dataframe_ronnxfunc_models
+              FIXTURES_SETUP dataframe_ronnxfunc_models_fixture)
+ROOT_ADD_GTEST(dataframe_ronnxfunc dataframe_ronnxfunc.cxx LIBRARIES ROOTDataFrame
+               FIXTURES_REQUIRED dataframe_ronnxfunc_models_fixture)
 if(MSVC)
   set_source_files_properties(dataframe_helpers.cxx PROPERTIES COMPILE_FLAGS /bigobj)
   set_source_files_properties(dataframe_cache.cxx PROPERTIES COMPILE_FLAGS /bigobj)
@@ -165,6 +172,7 @@ if(pyroot)
     ROOT_ADD_PYUNITTEST(dataframe_cache dataframe_cache.py ENVIRONMENT LEGACY_PYROOT="off")
     ROOT_ADD_PYUNITTEST(dataframe_datasetspec dataframe_datasetspec.py ENVIRONMENT LEGACY_PYROOT="off")
     ROOT_ADD_PYUNITTEST(datasource_py_csv datasource_csv.py)
+    ROOT_ADD_PYUNITTEST(dataframe_ronnxfunc dataframe_ronnxfunc.py FIXTURES_REQUIRED dataframe_ronnxfunc_models_fixture)
   endif()
   if(NOT MSVC OR win_broken_tests)
     ROOT_ADD_PYUNITTEST(dataframe_merge_results dataframe_merge_results.py)

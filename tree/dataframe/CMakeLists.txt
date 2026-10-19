@@ -87,6 +87,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     ROOT/RDF/RMergeableValue.hxx
     ROOT/RDF/RMetaData.hxx
     ROOT/RDF/RNodeBase.hxx
+    ROOT/RDF/RONNXFunc.hxx
     ROOT/RDF/RRangeBase.hxx
     ROOT/RDF/RRange.hxx
     ROOT/RDF/RResultMap.hxx
@@ -136,6 +137,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     src/RJittedVariation.cxx
     src/RLoopManager.cxx
     src/RMetaData.cxx
+    src/RONNXFunc.cxx
     src/RRangeBase.cxx
     src/RSample.cxx
     src/RTreeColumnReader.cxx
@@ -162,6 +164,9 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     ${RDATAFRAME_EXTRA_DEPS}
   ${EXTRA_DICT_OPTS}
 )
+
+# RONNXFunc converts ONNX models to C++ code with this library, which is private
+target_link_libraries(ROOTDataFrame PRIVATE ROOTInternalONNXToCpp)
 
 if(arrow)
   target_sources(ROOTDataFrame PRIVATE src/RArrowDS.cxx)
