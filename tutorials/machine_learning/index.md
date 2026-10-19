@@ -13,6 +13,7 @@
 - [TMVA Keras tutorials](\ref keras)
 - [TMVA PyTorch tutorials](\ref pytorch)
 - [Inference with SOFIE](\ref inference)
+- [Inference with ONNX and RDataFrame](\ref inference_onnx)
 - [Data loading for training](\ref data_loading)
 
 
@@ -119,10 +120,15 @@
 | | TMVA_SOFIE_Inference.py | Using a trained model with PyTorch and make inference using SOFIE directly from Numpy. |
 | | TMVA_SOFIE_Models.py | Inference with SOFIE using a set of models trained with PyTorch. |
 | TMVA_SOFIE_ONNX.C | | Parsing of ONNX files into RModel object and further generating the .hxx header files for inference. |
-| | TMVA_SOFIE_PyTorch_HiggsModel.py | Train a model on the Higgs dataset with PyTorch, export it to ONNX and run the SOFIE parser on it to generate the C++ inference code used by the other Higgs SOFIE tutorials. |
-| TMVA_SOFIE_RDataFrame.C | TMVA_SOFIE_RDataFrame.py | Inference with SOFIE and RDataFrame, of a model trained with PyTorch. |
-| TMVA_SOFIE_RDataFrame_JIT.C | | Using a trained model with PyTorch and make inference using SOFIE and RDataFrame. |
 | TMVA_SOFIE_RSofieReader.C | | Using a trained model with PyTorch and make inference using SOFIE with the RSofieReader class. |
+
+\anchor inference_onnx
+## Inference with ONNX and RDataFrame
+
+|          **Tutorial**          || **Description** |
+|---------------|-----------------|-----------------|
+| | ml_dataloader_training_higgs_dataframe_inference_onnx.py | Train a model on the Higgs dataset with PyTorch and export it to ONNX, the input of the other tutorials of inference with ONNX and RDataFrame. |
+| ml_dataframe_inference_onnx.C | ml_dataframe_inference_onnx.py | Inference with an ONNX model and RDataFrame, of a model trained with PyTorch. |
 
 \anchor data_loading
 ## Data loading for training

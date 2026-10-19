@@ -135,8 +135,6 @@ if (NOT dataframe)
         machine_learning/tmva102_Testing.py # depends on tmva101_Training.py
     )
     list(APPEND dataframe_veto machine_learning/tmva*.C)
-    list(APPEND dataframe_veto machine_learning/TMVA_SOFIE_RDataFrame*.C)
-    list(APPEND dataframe_veto machine_learning/TMVA_SOFIE_RDataFrame*.py)
     list(APPEND dataframe_veto machine_learning/TMVA_SOFIE_Inference.py)
     list(APPEND dataframe_veto machine_learning/ml_dataloader_NumPy.py)
     list(APPEND dataframe_veto machine_learning/ml_dataloader_TensorFlow.py)
@@ -347,6 +345,26 @@ if(NOT TARGET Gui)
   )
 endif()
 
+# The tutorials of inference with ONNX and RDataFrame don't need TMVA, so they are not vetoed with the other tutorials
+# of machine learning when TMVA is not enabled. They need RDataFrame (which also builds the library that converts the
+# model to C++ code) and PyROOT, PyTorch to train the model, and BLAS for the model compiled by the interpreter.
+set(onnx_inference_tutorials
+    machine_learning/ml_dataloader_training_higgs_dataframe_inference_onnx.py
+    machine_learning/ml_dataframe_inference_onnx.C
+    machine_learning/ml_dataframe_inference_onnx.py
+)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/data/Higgs_data.root ${CMAKE_CURRENT_BINARY_DIR}/machine_learning/data COPYONLY)
+if (tmva OR (dataframe AND pyroot))
+  ROOT_FIND_PYTHON_MODULE(torch)
+  ROOT_FIND_PYTHON_MODULE(onnx)
+endif()
+if (dataframe AND pyroot AND NOT BLAS_FOUND)
+  find_package(BLAS)
+endif()
+if (NOT dataframe OR NOT pyroot OR NOT ROOT_TORCH_FOUND OR NOT ROOT_ONNX_FOUND OR NOT BLAS_FOUND)
+  set(onnx_inference_veto ${onnx_inference_tutorials})
+endif()
+
 if (NOT tmva)
   list(APPEND tmva_veto machine_learning/*.C machine_learning/*.py machine_learning/keras/*.C machine_learning/keras/*.py machine_learning/pytorch/*.py )
 else()
@@ -354,19 +372,15 @@ else()
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/data/tmva_class_example.root ${CMAKE_CURRENT_BINARY_DIR}/machine_learning/data COPYONLY)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/data/tmva_reg_example.root ${CMAKE_CURRENT_BINARY_DIR}/machine_learning/data COPYONLY)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/data/tmva_multiclass_example.root ${CMAKE_CURRENT_BINARY_DIR}/machine_learning/data COPYONLY)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/data/Higgs_data.root ${CMAKE_CURRENT_BINARY_DIR}/machine_learning/data COPYONLY)
 
   #---These do not need to run for TMVA
   list(APPEND tmva_veto machine_learning/createData.C)
   #these depends on external packages
-  ROOT_FIND_PYTHON_MODULE(torch)
   ROOT_FIND_PYTHON_MODULE(keras)
-  ROOT_FIND_PYTHON_MODULE(onnx)
 
 
   if (NOT BLAS_FOUND)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_GNN_Application.C)
-    list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RDataFrame.C)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RSofieReader.C)
   endif()
   # The safetensors weight files used by this tutorial are little-endian only
@@ -377,11 +391,7 @@ else()
   if (NOT ROOT_TORCH_FOUND OR NOT ROOT_ONNX_FOUND)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_ONNX.py)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_Models.py)
-    list(APPEND tmva_veto machine_learning/TMVA_SOFIE_PyTorch_HiggsModel.py)
-    list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RDataFrame.C)
-    list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RDataFrame_JIT.C)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RSofieReader.C)
-    list(APPEND tmva_veto machine_learning/TMVA_SOFIE_RDataFrame.py)
     list(APPEND tmva_veto machine_learning/TMVA_SOFIE_Inference.py)
   endif()
   #veto this tutorial since it is added directly
@@ -569,6 +579,9 @@ if(root7 AND webgui)
   list(APPEND tutorials ${tutorials_exp})
 endif()
 file(GLOB tutorials_veto RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${all_veto})
+# The veto of TMVA doesn't apply to the tutorials that don't need it, which have their own conditions
+list(REMOVE_ITEM tutorials_veto ${onnx_inference_tutorials})
+list(APPEND tutorials_veto ${onnx_inference_veto})
 
 list(LENGTH tutorials nTotal)
 list(REMOVE_ITEM tutorials ${tutorials_veto})
@@ -652,9 +665,8 @@ set (machine_learning-tmva003_RReader-depends tutorial-machine_learning-TMVAClas
 set (machine_learning-pytorch-ApplicationClassificationPyTorch-depends tutorial-machine_learning-pytorch-ClassificationPyTorch-py)
 set (machine_learning-pytorch-RegressionPyTorch-depends tutorial-machine_learning-pytorch-ApplicationClassificationPyTorch-py)
 set (machine_learning-pytorch-ApplicationRegressionPyTorch-depends tutorial-machine_learning-pytorch-RegressionPyTorch-py)
-set (machine_learning-TMVA_SOFIE_RDataFrame-depends tutorial-machine_learning-TMVA_SOFIE_PyTorch_HiggsModel-py)
-set (machine_learning-TMVA_SOFIE_RDataFrame_JIT-depends tutorial-machine_learning-TMVA_SOFIE_RDataFrame)
-set (machine_learning-TMVA_SOFIE_RSofieReader-depends tutorial-machine_learning-TMVA_SOFIE_RDataFrame_JIT)
+set (machine_learning-ml_dataframe_inference_onnx-depends tutorial-machine_learning-ml_dataloader_training_higgs_dataframe_inference_onnx-py)
+set (machine_learning-TMVA_SOFIE_RSofieReader-depends tutorial-machine_learning-ml_dataframe_inference_onnx)
 set (machine_learning-TMVA_SOFIE_Inference-depends tutorial-machine_learning-TMVA_SOFIE_RSofieReader)
 set (machine_learning-keras-RegressionKeras-depends tutorial-machine_learning-pytorch-RegressionPyTorch-py)
 set (machine_learning-keras-ClassificationKeras-depends tutorial-machine_learning-pytorch-ClassificationPyTorch-py)
@@ -698,7 +710,7 @@ if(geom)
                 FAILREGEX "Error in" "error:" "warning: Failed to call" LABELS tutorial ENVIRONMENT ${TUTORIAL_ENV})
 endif()
 # define Python GNN parsing tutorial needed to run before
-if (ROOT_TORCH_FOUND AND ROOT_ONNX_FOUND)
+if (tmva AND ROOT_TORCH_FOUND AND ROOT_ONNX_FOUND)
   ROOT_ADD_TEST(tutorial-machine_learning-TMVA_SOFIE_GNN_Parser COMMAND ${Python3_EXECUTABLE}
   ${CMAKE_CURRENT_SOURCE_DIR}/machine_learning/TMVA_SOFIE_GNN_Parser.py
   PASSRC 0 FAILREGEX "Error in" ": error:" LABELS tutorial ENVIRONMENT ${TUTORIAL_ENV})
@@ -929,7 +941,7 @@ if(pyroot)
       machine_learning/ml_dataloader_resampling.py
       machine_learning/ml_dataloader_Higgs_Classification.py
       machine_learning/TMVA_SOFIE_Models.py
-      machine_learning/TMVA_SOFIE_PyTorch_HiggsModel.py
+      machine_learning/ml_dataloader_training_higgs_dataframe_inference_onnx.py
   )
   file(GLOB requires_xgboost RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
       machine_learning/tmva101_Training.py
