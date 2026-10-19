@@ -1,27 +1,28 @@
-//#include "TPython.h"
-#include "TROOT.h"
-#include "TSystem.h"
-#include "TInterpreter.h"
-//#include "TMacro.h"
-#include <vector>
+#include "driver_runner.h"
+
+#include "ONNXToCpp/RModel.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+
+#include <gtest/gtest.h>
+
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
-#include "TMVA/RModel.hxx"
-#include "TMVA/RModelParser_ONNX.hxx"
-
-#include  "gtest/gtest.h"
 //#define USE_ONNXSIM
 
 bool verbose = true;
 int sessionId = 0;
 
-void ExecuteSofieParser(std::string modelName) {
-   using namespace TMVA::Experimental;
-   SOFIE::RModelParser_ONNX parser;
+void ExecuteONNXToCppParser(std::string modelName) {
+   namespace ONNXToCpp = ROOT::Internal::ONNXToCpp;
+   ONNXToCpp::RModelParser_ONNX parser;
    std::string inputName = modelName + ".onnx";
    std::cout << "parsing file " << inputName << std::endl;
-   SOFIE::RModel model = parser.Parse(inputName);
+   ONNXToCpp::RModel model = parser.Parse(inputName);
    std::cout << "generating model.....\n";
    model.Generate();
    std::string outputName = modelName + ".hxx";
@@ -31,35 +32,32 @@ void ExecuteSofieParser(std::string modelName) {
 }
 
 
-int DeclareCode(std::string modelName)
+/// Compile a program that runs the generated model on the given input, and return its output
+std::vector<float> RunInference(std::string const &modelName, std::vector<float> const &input)
 {
-   // increment session Id to avoid clash in session variable name
-   sessionId++;
-   // inference code for gInterpreter->Declare + gROOT->ProcessLine
-   // one could also use TMacro build with correct signature
-   // TMacro m("testSofie"); m.AddLine("std::vector<float> testSofie(float *x) { return s.infer(x);}")
-   // std::vector<float> * result = (std::vector<float> *)m.Exec(Form(float*)0x%lx , xinput.data));
-   std::string code = std::string("#include \"") + modelName + ".hxx\"\n";
-   std::string sessionName = "s" + std::to_string(sessionId);
-   code += "TMVA_SOFIE_" + modelName + "::Session " + sessionName + ";\n";
+   std::stringstream driver;
+   driver << "#include \"" << modelName << ".hxx\"\n"
+          << "#include \"driver_support.hxx\"\n"
+          << "#include <iostream>\n#include <vector>\n"
+          << "int main() {\n   try {\n"
+          << "   std::vector<float> input = {";
+   for (std::size_t i = 0; i < input.size(); ++i)
+      driver << (i ? ", " : "") << std::hexfloat << input[i] << "f";
+   driver << "};\n"
+          << "   ROOT::Internal::ONNXToCpp_" << modelName << "::Session s;\n"
+          << "   std::vector<float> output = s.infer(input.data());\n"
+          << "   onnxtocpp_test::write(std::cout, output);\n"
+          << "   } catch (std::exception const &e) {\n"
+          << "      std::cerr << \"exception: \" << e.what() << std::endl;\n"
+          << "      return 1;\n"
+          << "   }\n   return 0;\n}\n";
 
-   if(!gInterpreter->Declare(code.c_str())) {
-      return 0;
-   }
-   // Verify that the session object is available now
-   if(gInterpreter->Calc(("&" + sessionName).c_str()) == 0) {
-      return 0;
-   }
-   return sessionId;
-}
+   DriverResult result = compileAndRunDriver(driver.str());
+   if (!checkDriver(result, "model " + modelName))
+      return {};
 
-std::vector<float> RunInference(float * x, int sId) {
-   // run inference code using gROOT->ProcessLine
-   printf("doing inference.....");
-   TString cmd = TString::Format("s%d.infer( (float*)0x%lx )", sId,(ULong_t)x);
-   if (!verbose)  cmd += ";";
-   std::vector<float> *result = (std::vector<float> *)gROOT->ProcessLine(cmd);
-   return *result;
+   std::istringstream in(result.output);
+   return onnxtocpp_test::Reader{in}.read<std::vector<float>>();
 }
 
 void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayers = 4)
@@ -71,20 +69,17 @@ void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayer
    // network parameters : nbatches, inputDim, nlayers
    std::vector<int> params = {nbatches, inputSize, nlayers};
 
-   std::string command = "python3 LinearModelGenerator.py ";
+   std::string command = std::string(ONNXTOCPP_TEST_PYTHON) + " LinearModelGenerator.py ";
    for (size_t i = 0; i < params.size(); i++)
       command += "  " + std::to_string(params[i]);
    if (useBN)
       command += "  --bn";
 
    printf("executing %s\n", command.c_str());
-   gSystem->Exec(command.c_str());
+   std::system(command.c_str());
 
-   ExecuteSofieParser(modelName);
+   ExecuteONNXToCppParser(modelName);
 
-   int id = DeclareCode(modelName);
-
-   ASSERT_NE(id, 0) << "Declareing model code to interpreter failed!";
 
    // input data
    std::vector<float> xinput(nbatches * inputSize);
@@ -93,7 +88,7 @@ void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayer
       std::copy(x1.begin(), x1.end(), xinput.begin() + ib * inputSize);
    }
 
-   auto result = RunInference(xinput.data(), id);
+   auto result = RunInference(modelName, xinput);
 
    // read reference value from test file
    std::vector<float> refValue(result.size());
@@ -131,7 +126,7 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
    argv[2] = std::to_string(nd);
    argv[3] = std::to_string(ngroups); // for 3d this is depth size
    argv[4] = std::to_string(nlayers);
-   std::string command = "python3 Conv" + type + "ModelGenerator.py ";
+   std::string command = std::string(ONNXTOCPP_TEST_PYTHON) + " Conv" + type + "ModelGenerator.py ";
    for (int i = 0; i < 5; i++) {
       command += " ";
       command += argv[i];
@@ -140,14 +135,14 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
    if (usePool == 1) command += " --maxpool";
    if (usePool == 2) command += " --avgpool";
    printf("executing %s\n", command.c_str());
-   gSystem->Exec(command.c_str());
+   std::system(command.c_str());
 
    // some model needs some simplifications
 #ifdef USE_ONNXSIM
    if (usePool == 2) {
       printf("simplify onnx model using onnxsim tool \n");
-      std::string cmd = "python3 -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
-      int ret = gSystem->Exec(cmd.c_str());
+      std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
+      int ret = std::system(cmd.c_str());
       if (ret != 0) {
          std::cout << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test" << std::endl;
          GTEST_SKIP();
@@ -157,11 +152,8 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
 #endif
 
 
-   ExecuteSofieParser(modelName);
+   ExecuteONNXToCppParser(modelName);
 
-   int id = DeclareCode(modelName);
-
-   ASSERT_NE(id, 0) << "Declareing model code to interpreter failed!";
 
    // input data
    std::vector<float> xinput(nbatches*inputSize);
@@ -174,7 +166,7 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
          std::copy(x2.begin(), x2.end(), xinput.begin() + ib * inputSize + x1.size());
    }
 
-   auto result = RunInference(xinput.data(), id);
+   auto result = RunInference(modelName, xinput);
 
 
    // read reference value from test file
@@ -198,7 +190,7 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
    // network parameters : nbatches, inputDim, nlayers
    std::vector<int> params = {nbatches, inputSize, seqSize, hiddenSize, nlayers};
 
-   std::string command = "python3 RecurrentModelGenerator.py ";
+   std::string command = std::string(ONNXTOCPP_TEST_PYTHON) + " RecurrentModelGenerator.py ";
    for (size_t i = 0; i < params.size(); i++)
       command += "  " + std::to_string(params[i]);
    if (type == "LSTM")
@@ -207,12 +199,12 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
       command += "  --gru";
 
    printf("executing %s\n", command.c_str());
-   gSystem->Exec(command.c_str());
+   std::system(command.c_str());
    // need to simplify obtained recurrent ONNX model
 #ifdef USE_ONNXSIM
    printf("simplify onnx model using onnxsim tool \n");
-   std::string cmd = "python3 -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
-   int ret = gSystem->Exec(cmd.c_str());
+   std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
+   int ret = std::system(cmd.c_str());
    if (ret != 0) {
       std::cout << "Error when simplifing ONNX Recurrent model using onnx-simplifier (onnxsim) - skip the test" << std::endl;
       GTEST_SKIP();
@@ -220,13 +212,8 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
    }
 #endif
 
-   ExecuteSofieParser(modelName);
+   ExecuteONNXToCppParser(modelName);
 
-   int id = DeclareCode(modelName);
-
-   std::cout << "id " << id << std::endl;
-
-   ASSERT_NE(id, 0) << "Declareing model code to interpreter failed!";
 
    // input data
    std::vector<float> xinput(nbatches * seqSize * inputSize);
@@ -250,7 +237,7 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
       }
    }
 
-   auto result = RunInference(xinput.data(), id);
+   auto result = RunInference(modelName, xinput);
 
    // read reference value from test file
    std::vector<float> refValue(result.size());
@@ -288,7 +275,7 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
    argv[2] = std::to_string(nd);
    argv[3] = std::to_string(ngroups); // for 3d this is depth size
    argv[4] = std::to_string(nlayers);
-   std::string command = "python3 ConvTrans" + type + "ModelGenerator.py ";
+   std::string command = std::string(ONNXTOCPP_TEST_PYTHON) + " ConvTrans" + type + "ModelGenerator.py ";
    for (int i = 0; i < 5; i++) {
       command += " ";
       command += argv[i];
@@ -297,13 +284,13 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
    if (usePool == 1) command += " --maxpool";
    if (usePool == 2) command += " --avgpool";
    printf("executing %s\n", command.c_str());
-   gSystem->Exec(command.c_str());
+   std::system(command.c_str());
 
    // some model needs some semplifications
    if (usePool == 2) {
       printf("simplify onnx model using onnxsim tool \n");
-      std::string cmd = "python3 -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
-      int ret = gSystem->Exec(cmd.c_str());
+      std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
+      int ret = std::system(cmd.c_str());
       if (ret != 0) {
          std::cout << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test" << std::endl;
          GTEST_SKIP();
@@ -312,11 +299,8 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
    }
 
 
-   ExecuteSofieParser(modelName);
+   ExecuteONNXToCppParser(modelName);
 
-   int id = DeclareCode(modelName);
-
-   ASSERT_NE(id, 0) << "Declareing model code to interpreter failed!";
 
    // input data
    std::vector<float> xinput(nbatches*inputSize);
@@ -331,7 +315,7 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
          std::copy(x2.begin(), x2.end(), xinput.begin() + ib * inputSize + x1.size());
    }
 
-   auto result = RunInference(xinput.data(), id);
+   auto result = RunInference(modelName, xinput);
 
 
    // read reference value from test file
@@ -346,71 +330,71 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
 }
 
 
-TEST(SOFIE, Linear_B1) {
+TEST(ONNXToCpp, Linear_B1) {
    TestLinear(1);
 }
-TEST(SOFIE, Linear_B4)
+TEST(ONNXToCpp, Linear_B4)
 {
    // test batch =4 (equal output size)
    TestLinear(4);
 }
-TEST(SOFIE,Conv2d_B1) {
+TEST(ONNXToCpp,Conv2d_B1) {
    TestConv("2d", 1);
 }
-TEST(SOFIE, Conv2d_B4)
+TEST(ONNXToCpp, Conv2d_B4)
 {
    TestConv("2d",4);
 }
 // test with batch normalization
-TEST(SOFIE, Linear_BNORM_B8)
+TEST(ONNXToCpp, Linear_BNORM_B8)
 {
    TestLinear(8,true,5,4);
 }
-TEST(SOFIE, Conv2d_BNORM_B5)
+TEST(ONNXToCpp, Conv2d_BNORM_B5)
 {
    TestConv("2d",5,true);
 }
 // test with max pooling
-TEST(SOFIE, Conv2d_MAXPOOL_B2)
+TEST(ONNXToCpp, Conv2d_MAXPOOL_B2)
 {
    TestConv("2d",2,false,1,2,3,1,1);
 }
 // test with avg pooling
-TEST(SOFIE, Conv2d_AVGPOOL_B2)
+TEST(ONNXToCpp, Conv2d_AVGPOOL_B2)
 {
    TestConv("2d", 2, false, 1, 2, 4, 1, 2);
 }
 
 // test conv1d
-TEST(SOFIE, Conv1d_B1)
+TEST(ONNXToCpp, Conv1d_B1)
 {
    TestConv("1d", 1, false, 1, 2, 10, 1, 0);
 }
 
 // test conv3d
-TEST(SOFIE, Conv3d_B1)
+TEST(ONNXToCpp, Conv3d_B1)
 {
    TestConv("3d", 1, false, 3, 2, 3, 1, 0);
 }
 
 // Tets recurrent network
 // test with avg pooling
-TEST(SOFIE, RNN_B1)
+TEST(ONNXToCpp, RNN_B1)
 {
    TestRecurrent("RNN", 1, 3, 5, 4, 1);
 }
 
-TEST(SOFIE, LSTM_B1)
+TEST(ONNXToCpp, LSTM_B1)
 {
    TestRecurrent("LSTM", 1, 3, 5, 4, 1);
 }
 
-TEST(SOFIE, GRU_B1)
+TEST(ONNXToCpp, GRU_B1)
 {
    TestRecurrent("GRU", 1, 3, 5, 4, 1);
 }
 
-TEST(SOFIE, CONVTRANS2D_B1)
+TEST(ONNXToCpp, CONVTRANS2D_B1)
 {
    TestConvTranspose("2d", 1);
 }

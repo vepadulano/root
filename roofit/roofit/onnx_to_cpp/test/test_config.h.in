@@ -1,0 +1,16 @@
+// Configuration of the tests, filled in by CMake.
+#ifndef ONNX_TO_CPP_TESTS_TEST_CONFIG
+#define ONNX_TO_CPP_TESTS_TEST_CONFIG
+
+/// The compiler used to build the tests. It also compiles the drivers, the small
+/// programs that run the generated models.
+#define ONNXTOCPP_TEST_CXX "@CMAKE_CXX_COMPILER@"
+#define ONNXTOCPP_TEST_CXX_FLAGS "@ONNXTOCPP_TEST_CXX_FLAGS@"
+/// Extra flags to link the drivers (BLAS, which is used by the generated models)
+#define ONNXTOCPP_TEST_LINK_FLAGS "@ONNXTOCPP_TEST_LINK_FLAGS@"
+#define ONNXTOCPP_TEST_SOURCE_DIR "@CMAKE_CURRENT_SOURCE_DIR@"
+#define ONNXTOCPP_TEST_PYTHON "@Python3_EXECUTABLE@"
+/// Flags to differentiate the drivers with Clad, only set if a plugin was given
+#define ONNXTOCPP_TEST_CLAD_FLAGS "@ONNXTOCPP_TEST_CLAD_FLAGS@"
+
+#endif // ONNX_TO_CPP_TESTS_TEST_CONFIG

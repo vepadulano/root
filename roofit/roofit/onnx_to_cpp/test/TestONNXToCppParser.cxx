@@ -1,24 +1,24 @@
-// Unit tests for the SOFIE ONNX parser layer (RModelParser_ONNX).
+// Unit tests for the ONNXToCpp ONNX parser layer (RModelParser_ONNX).
 // The model files are hand-written protobuf wire format, so the tests need
 // neither the onnx Python package nor a protobuf dependency.
 
-#include <TMVA/RModel.hxx>
-#include <TMVA/RModelParser_ONNX.hxx>
+#include <ONNXToCpp/RModel.hxx>
+#include <ONNXToCpp/RModelParser_ONNX.hxx>
 
-#include <TSystem.h>
 
 #include <gtest/gtest.h>
 
 #include <cstdint>
 #include <cctype>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-using namespace TMVA::Experimental::SOFIE;
+using namespace ROOT::Internal::ONNXToCpp;
 
 namespace {
 
@@ -149,7 +149,7 @@ std::string FloatValueInfo(const TestTensor &tensor)
    return out;
 }
 
-// Write a model holding a single Gemm node and return the code SOFIE generates
+// Write a model holding a single Gemm node and return the code ONNXToCpp generates
 // for it. Every operand is a graph input, which keeps the model file tiny.
 std::string
 GenerateGemmCode(const std::string &fileName, const std::vector<TestTensor> &inputs, const TestTensor &output)
@@ -190,9 +190,9 @@ GenerateGemmCode(const std::string &fileName, const std::vector<TestTensor> &inp
 
 // The "location" key of a tensor's external_data names the data file relative
 // to the model directory; different tensors can point to different files.
-TEST(SOFIEParser, ExternalDataLocationRelativeToModelDirectory)
+TEST(ONNXToCppParser, ExternalDataLocationRelativeToModelDirectory)
 {
-   gSystem->mkdir("extdata_models");
+   std::filesystem::create_directories("extdata_models");
    const std::vector<float> values1{1.f, 2.f, 3.f, 4.f};
    const std::vector<float> values2{-5.f, 6.5f};
    WriteDataFile("extdata_models/weights1.bin", values1, /*padding=*/8);
@@ -211,7 +211,7 @@ TEST(SOFIEParser, ExternalDataLocationRelativeToModelDirectory)
 // A tensor without a "location" entry falls back to the conventional
 // <model file>.data name, resolved per Parse call: reusing one parser
 // instance for several models must not read the first model's data file.
-TEST(SOFIEParser, ExternalDataFileResolvedPerParsedModel)
+TEST(ONNXToCppParser, ExternalDataFileResolvedPerParsedModel)
 {
    const std::vector<float> valuesA{10.f, 20.f, 30.f};
    const std::vector<float> valuesB{-1.f, -2.f, -3.f};
@@ -229,7 +229,7 @@ TEST(SOFIEParser, ExternalDataFileResolvedPerParsedModel)
 
 // A file set with SetExternalDataFile takes precedence over the stored
 // location, but only for the next Parse call.
-TEST(SOFIEParser, SetExternalDataFileTakesPrecedenceOnce)
+TEST(ONNXToCppParser, SetExternalDataFileTakesPrecedenceOnce)
 {
    const std::vector<float> valuesExplicit{5.f, 6.f};
    const std::vector<float> valuesLocation{7.f, 8.f};
@@ -248,7 +248,7 @@ TEST(SOFIEParser, SetExternalDataFileTakesPrecedenceOnce)
 }
 
 // A data file that cannot be opened is an error, not silently zeroed weights
-TEST(SOFIEParser, MissingExternalDataFileThrows)
+TEST(ONNXToCppParser, MissingExternalDataFileThrows)
 {
    WriteModelFile("extdataD.onnx", {ExternalFloatTensor("w", 2, /*offset=*/0, "extdata_does_not_exist.bin")}, "w");
 
@@ -261,7 +261,7 @@ TEST(SOFIEParser, MissingExternalDataFileThrows)
 // That is the form the Clad pullback of Gemm_Call is written for: handing the
 // bias to Gemm_Call instead makes it overwrite the output, which gives the same
 // values but a different derivative.
-TEST(SOFIEParser, GemmBroadcastsABiasThatDoesNotHaveTheOutputShape)
+TEST(ONNXToCppParser, GemmBroadcastsABiasThatDoesNotHaveTheOutputShape)
 {
    const std::string code = GenerateGemmCode(
       "gemm_static_bias.onnx", {{"x", {"1", "10"}}, {"w", {"10", "32"}}, {"b", {"32"}}}, {"y", {"1", "32"}});
@@ -272,7 +272,7 @@ TEST(SOFIEParser, GemmBroadcastsABiasThatDoesNotHaveTheOutputShape)
 
 // A bias that already has the shape of the output needs no broadcasting, which
 // a number of rows known only at run time must not hide.
-TEST(SOFIEParser, GemmDoesNotBroadcastABiasThatHasTheOutputShape)
+TEST(ONNXToCppParser, GemmDoesNotBroadcastABiasThatHasTheOutputShape)
 {
    const std::string code = GenerateGemmCode(
       "gemm_dynamic_bias.onnx", {{"a", {"N", "3"}}, {"w", {"3", "4"}}, {"c", {"N", "4"}}}, {"y", {"N", "4"}});

@@ -6,8 +6,8 @@
 // checks that the operator acted on that answer, matching with a regex that
 // ignores the spacing.
 
-#include <TMVA/RModel.hxx>
-#include <TMVA/RModelParser_ONNX.hxx>
+#include <ONNXToCpp/RModel.hxx>
+#include <ONNXToCpp/RModelParser_ONNX.hxx>
 
 #include <gtest/gtest.h>
 
@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
-#ifndef SOFIE_ONNX_MODELS_DIR
-#define SOFIE_ONNX_MODELS_DIR "."
+#ifndef ONNXTOCPP_ONNX_MODELS_DIR
+#define ONNXTOCPP_ONNX_MODELS_DIR "."
 #endif
 
-using namespace TMVA::Experimental::SOFIE;
+using namespace ROOT::Internal::ONNXToCpp;
 
 namespace {
 
@@ -27,7 +27,7 @@ namespace {
 RModel generate(std::string const &modelName, OptimizationLevel level)
 {
    RModelParser_ONNX parser;
-   RModel model = parser.Parse(std::string(SOFIE_ONNX_MODELS_DIR) + "/" + modelName + ".onnx");
+   RModel model = parser.Parse(std::string(ONNXTOCPP_ONNX_MODELS_DIR) + "/" + modelName + ".onnx");
    model.SetOptimizationLevel(level);
    model.Generate(Options::kNoWeightFile);
    return model;
@@ -82,7 +82,7 @@ bool matches(std::string const &code, std::regex const &pattern)
 } // namespace
 
 /// An alias is granted exactly where the tensor it refers to has memory to share.
-TEST(SofieAlias, GrantedAtExtended)
+TEST(ONNXToCppAlias, GrantedAtExtended)
 {
    for (auto const &c : aliasCases) {
       SCOPED_TRACE(std::string(c.model) + ": " + c.tensor);
@@ -92,7 +92,7 @@ TEST(SofieAlias, GrantedAtExtended)
 }
 
 /// At kBasic every tensor keeps a buffer of its own, as Clad requires.
-TEST(SofieAlias, RefusedAtBasic)
+TEST(ONNXToCppAlias, RefusedAtBasic)
 {
    for (auto const &c : aliasCases) {
       SCOPED_TRACE(std::string(c.model) + ": " + c.tensor);
@@ -103,7 +103,7 @@ TEST(SofieAlias, RefusedAtBasic)
 
 /// The operator emits the pointer where the alias is granted and the copy where
 /// it is refused.
-TEST(SofieAlias, EmittedCodeFollowsDecision)
+TEST(ONNXToCppAlias, EmittedCodeFollowsDecision)
 {
    for (auto const &c : aliasCases) {
       SCOPED_TRACE(std::string(c.model) + ": " + c.tensor);
@@ -124,7 +124,7 @@ TEST(SofieAlias, EmittedCodeFollowsDecision)
 /// Every link has to resolve to the tensor that owns the memory: a link pointing
 /// at the previous alias instead leaves that memory reserved to the end, since
 /// the tensor it names owns no chunk to release.
-TEST(SofieAlias, ChainCostsNoExtraMemory)
+TEST(ONNXToCppAlias, ChainCostsNoExtraMemory)
 {
    const RModel chain = generate("AliasChain", OptimizationLevel::kExtended);
    const RModel single = generate("AliasChainSingle", OptimizationLevel::kExtended);

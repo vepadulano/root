@@ -20,8 +20,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   endif()
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   include(GNUInstallDirs)
+  option(ONNXTOCPP_BUILD_TESTS "Build the tests of ONNXToCpp" OFF)
 else()
   set(ONNXTOCPP_STANDALONE FALSE)
+  set(ONNXTOCPP_BUILD_TESTS ${testing})
 endif()
 
 # The library target keeps the name ROOT for now, if this is moved outside of the repository it can be dropped.
@@ -119,4 +121,17 @@ else()
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries)
+
+  # The tests of the differentiation of the generated code with Clad need the
+  # interpreter and ROOT's testing infrastructure
+  if(testing AND clad)
+    ROOT_ADD_TEST_SUBDIRECTORY(test_clad)
+  endif()
+endif()
+
+if(ONNXTOCPP_BUILD_TESTS)
+  if(ONNXTOCPP_STANDALONE)
+    enable_testing()
+  endif()
+  add_subdirectory(test)
 endif()

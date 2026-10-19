@@ -1,0 +1,39 @@
+// Generates the inference code of the ONNX models of the tests of the
+// differentiation of the generated code with Clad. This program is run by the
+// ONNXToCppCladCompileModels test, which these tests depend on.
+
+#include "ONNXToCpp/RModel.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
+
+#include <iostream>
+#include <string>
+
+int EmitModel(std::string const &filename, std::string const &outname)
+{
+   using namespace ROOT::Internal::ONNXToCpp;
+
+   std::cout << "parsing file ..." << filename << std::endl;
+
+   // Generate code without memory re-use for intermediate tensors.
+   //
+   // When memory re-use is enabled, intermediate tensors can share a memory
+   // buffer, so that values produced earlier in the forward pass are
+   // overwritten by later operations. This is safe for inference, but the
+   // backward pass of reverse-mode automatic differentiation needs the original
+   // intermediate values (e.g. the inputs of the activations). Since Clad
+   // operates on the generated source code and is not aware of the re-use, the
+   // memory re-use has to be disabled for the differentiated code to be correct.
+   RModelParser_ONNX parser;
+   RModel model = parser.Parse(filename);
+   model.SetOptimizationLevel(OptimizationLevel::kBasic);
+   model.Generate();
+   model.OutputGenerated(outname + "_FromONNX_unoptimized.hxx");
+   return 0;
+}
+
+int main()
+{
+   EmitModel("@CLAD_MODELS_DIR@/Linear_16.onnx", "Linear_16");
+   EmitModel("@CLAD_MODELS_DIR@/LinearWithSigmoid.onnx", "LinearWithSigmoid");
+   return 0;
+}

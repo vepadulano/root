@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generator for the ONNX input models of the SOFIE tests.
+"""Generator for the ONNX input models of the ONNXToCpp tests.
 
 Each make_<Name>() function below builds one of the models in a
 human-readable way with the onnx helper API. Large weight tensors whose
@@ -8,11 +8,11 @@ seeded-random via _random_tensor().
 
 The script also computes the expected outputs for the value-based unit tests
 (see TEST_INPUTS further below) and writes them to references/<Name>.ref in
-the output directory, from where TestCustomModelsFromONNX.cxx reads them at
+the output directory, from where TestONNXToCppCustomModelsFromONNX.cxx reads them at
 runtime.
 
-This script is run as the SofieGenerateModels_ONNX unit test, which the
-other SOFIE ONNX tests depend on (see CMakeLists.txt). To (re)generate the
+This script is run as the ONNXToCppGenerateModels_ONNX unit test, which the
+other ONNXToCpp ONNX tests depend on (see CMakeLists.txt). To (re)generate the
 models and reference files manually:
 
     python3 generate_input_models.py --outdir <dir> [model names...]
@@ -5824,7 +5824,7 @@ def make_BatchNormEpsilon():
 
 
 def make_BatchNormReluEpsilon():
-    """Ops: BatchNormalization, Relu. BatchNormEpsilon followed by a Relu, which SOFIE
+    """Ops: BatchNormalization, Relu. BatchNormEpsilon followed by a Relu, which ONNXToCpp
     fuses into the batch normalization."""
     nodes = [
         helper.make_node(
@@ -6361,8 +6361,8 @@ MODELS = {
 # Reference data for the value-based unit tests
 # ===========================================================================
 #
-# TEST_INPUTS defines the inputs that TestCustomModelsFromONNX.cxx (and
-# TestCladAutodiff.cxx) feed to each model, one numpy array per graph input.
+# TEST_INPUTS defines the inputs that TestONNXToCppCustomModelsFromONNX.cxx feeds
+# to each model, one numpy array per graph input.
 # The expected outputs are computed here with onnx's ReferenceEvaluator (or
 # with the numpy fallbacks in EXPECTED_OVERRIDES below) and written next to
 # the generated models as references/<Name>.ref, from where the tests read
@@ -7979,7 +7979,7 @@ def _mean_reference(model, feeds):
 def _convtranspose_outputshape_reference(model, feeds):
     """The ReferenceEvaluator crashes if output_shape is set but pads is not.
     We temporarily add the correct inferred pads to evaluate it, then remove
-    them so the saved model strictly tests SOFIE's inference logic."""
+    them so the saved model strictly tests ONNXToCpp's inference logic."""
     from onnx import helper
 
     for node in model.graph.node:
@@ -8023,7 +8023,7 @@ def _batchnorm_reference(model, feeds):
     y = scale.reshape(shape) * (x - mean.reshape(shape)) / np.sqrt(var.reshape(shape) + eps)
     y = y + bias.reshape(shape)
     if any(n.op_type == "Relu" for n in model.graph.node):
-        # BatchNormalization followed by a Relu, which SOFIE fuses
+        # BatchNormalization followed by a Relu, which ONNXToCpp fuses
         y = np.maximum(y, 0)
     return [y.astype(np.float32)]
 

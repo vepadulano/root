@@ -6,7 +6,7 @@ constexpr auto modelDataSuffix = "_FromONNX.dat";
 
 TEST(ONNX, Linear16)
 {
-   SofieReference ref = readReference("Linear_16");
+   ONNXToCppReference ref = readReference("Linear_16");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Linear_16", ref.f32("input0"));
 
@@ -15,7 +15,7 @@ TEST(ONNX, Linear16)
 
 /*TEST(ONNX, Linear32RootFeature)
 {
-   SofieReference ref = readReference("Linear_32");
+   ONNXToCppReference ref = readReference("Linear_32");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Linear_32", ref.f32("input0"));
 
@@ -24,7 +24,7 @@ TEST(ONNX, Linear16)
 
 TEST(ONNX, Linear32)
 {
-   SofieReference ref = readReference("Linear_32");
+   ONNXToCppReference ref = readReference("Linear_32");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Linear_32", ref.f32("input0"));
 
@@ -33,7 +33,7 @@ TEST(ONNX, Linear32)
 
 TEST(ONNX, Sub)
 {
-   SofieReference ref = readReference("Sub");
+   ONNXToCppReference ref = readReference("Sub");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Sub", ref.f32("input0"), ref.f32("input1"));
 
@@ -42,7 +42,7 @@ TEST(ONNX, Sub)
 
 TEST(ONNX, Add)
 {
-   SofieReference ref = readReference("Add");
+   ONNXToCppReference ref = readReference("Add");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Add", ref.f32("input0"), ref.f32("input1"));
 
@@ -51,7 +51,7 @@ TEST(ONNX, Add)
 
 TEST(ONNX, Mul)
 {
-   SofieReference ref = readReference("Mul");
+   ONNXToCppReference ref = readReference("Mul");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Mul", ref.f32("input0"), ref.f32("input1"));
 
@@ -60,7 +60,7 @@ TEST(ONNX, Mul)
 
 TEST(ONNX, Div)
 {
-   SofieReference ref = readReference("Div");
+   ONNXToCppReference ref = readReference("Div");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Div", ref.f32("input0"), ref.f32("input1"));
 
@@ -69,7 +69,7 @@ TEST(ONNX, Div)
 
 TEST(ONNX, Neg)
 {
-   SofieReference ref = readReference("Neg");
+   ONNXToCppReference ref = readReference("Neg");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Neg", ref.f32("input0"));
 
@@ -78,7 +78,7 @@ TEST(ONNX, Neg)
 
 TEST(ONNX, Elu)
 {
-   SofieReference ref = readReference("Elu");
+   ONNXToCppReference ref = readReference("Elu");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Elu", ref.f32("input0"));
 
@@ -86,7 +86,7 @@ TEST(ONNX, Elu)
 }
 TEST(ONNX, EluAlpha)
 {
-   SofieReference ref = readReference("EluAlpha");
+   ONNXToCppReference ref = readReference("EluAlpha");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "EluAlpha", ref.f32("input0"));
 
@@ -95,7 +95,7 @@ TEST(ONNX, EluAlpha)
 
 TEST(ONNX, Constant)
 {
-   SofieReference ref = readReference("Constant");
+   ONNXToCppReference ref = readReference("Constant");
 
    ASSERT_INCLUDE_AND_RUN_0(std::vector<float>, "Constant");
 
@@ -104,7 +104,7 @@ TEST(ONNX, Constant)
 
 TEST(ONNX, ComplexTopK)
 {
-   SofieReference ref = readReference("ComplexTopK");
+   ONNXToCppReference ref = readReference("ComplexTopK");
 
    ASSERT_INCLUDE_AND_RUN(TupleFloatInt64_t, "ComplexTopK", ref.f32("input0"));
 
@@ -113,7 +113,7 @@ TEST(ONNX, ComplexTopK)
 }
 TEST(ONNX, TopK)
 {
-   SofieReference ref = readReference("TopK");
+   ONNXToCppReference ref = readReference("TopK");
 
    ASSERT_INCLUDE_AND_RUN(TupleFloatInt64_t, "TopK", ref.f32("input0"));
 
@@ -122,7 +122,7 @@ TEST(ONNX, TopK)
 }
    TEST(ONNX, EyeLike)
 {
-   SofieReference ref = readReference("EyeLike");
+   ONNXToCppReference ref = readReference("EyeLike");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "EyeLike", ref.f32("input0"));
 
@@ -131,7 +131,7 @@ TEST(ONNX, TopK)
 
 TEST(ONNX, Cast)
 {
-   SofieReference ref = readReference("Cast");
+   ONNXToCppReference ref = readReference("Cast");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<double>, "Cast", ref.i64("input0"));
 
@@ -140,7 +140,7 @@ TEST(ONNX, Cast)
 
 TEST(ONNX, Linear64)
 {
-   SofieReference ref = readReference("Linear_64");
+   ONNXToCppReference ref = readReference("Linear_64");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Linear_64", ref.f32("input0"));
 
@@ -150,7 +150,7 @@ TEST(ONNX, Linear64)
 
 TEST(ONNX, LinearWithSelu)
 {
-   SofieReference ref = readReference("LinearWithSelu");
+   ONNXToCppReference ref = readReference("LinearWithSelu");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LinearWithSelu", ref.f32("input0"));
 
@@ -159,7 +159,7 @@ TEST(ONNX, LinearWithSelu)
 
 TEST(ONNX, Tanh)
 {
-   SofieReference ref = readReference("Tanh");
+   ONNXToCppReference ref = readReference("Tanh");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Tanh", ref.f32("input0"));
 
@@ -168,7 +168,7 @@ TEST(ONNX, Tanh)
 
 TEST(ONNX, Erf)
 {
-   SofieReference ref = readReference("Erf");
+   ONNXToCppReference ref = readReference("Erf");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Erf", ref.f32("input0"));
 
@@ -177,7 +177,7 @@ TEST(ONNX, Erf)
 
 TEST(ONNX, Log)
 {
-   SofieReference ref = readReference("Log");
+   ONNXToCppReference ref = readReference("Log");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Log", ref.f32("input0"));
 
@@ -186,7 +186,7 @@ TEST(ONNX, Log)
 
 TEST(ONNX, LinearWithLeakyRelu)
 {
-   SofieReference ref = readReference("LinearWithLeakyRelu");
+   ONNXToCppReference ref = readReference("LinearWithLeakyRelu");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LinearWithLeakyRelu", ref.f32("input0"));
 
@@ -196,7 +196,7 @@ TEST(ONNX, LinearWithLeakyRelu)
 
 TEST(ONNX, LinearWithSigmoid)
 {
-   SofieReference ref = readReference("LinearWithSigmoid");
+   ONNXToCppReference ref = readReference("LinearWithSigmoid");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LinearWithSigmoid", ref.f32("input0"));
 
@@ -206,7 +206,7 @@ TEST(ONNX, LinearWithSigmoid)
 
 TEST(ONNX, ConvWithPadding)
 {
-   SofieReference ref = readReference("ConvWithPadding");
+   ONNXToCppReference ref = readReference("ConvWithPadding");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithPadding", ref.f32("input0"));
 
@@ -216,7 +216,7 @@ TEST(ONNX, ConvWithPadding)
 
 TEST(ONNX, ConvWithoutPadding)
 {
-   SofieReference ref = readReference("ConvWithoutPadding");
+   ONNXToCppReference ref = readReference("ConvWithoutPadding");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithoutPadding", ref.f32("input0"));
 
@@ -226,7 +226,7 @@ TEST(ONNX, ConvWithoutPadding)
 
 TEST(ONNX, ConvWithAutopadSameLower)
 {
-   SofieReference ref = readReference("ConvWithAutopadSameLower");
+   ONNXToCppReference ref = readReference("ConvWithAutopadSameLower");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithAutopadSameLower", ref.f32("input0"));
 
@@ -235,7 +235,7 @@ TEST(ONNX, ConvWithAutopadSameLower)
 
 TEST(ONNX, ConvWithAutopadSameUpper)
 {
-   SofieReference ref = readReference("ConvWithAutopadSameUpper");
+   ONNXToCppReference ref = readReference("ConvWithAutopadSameUpper");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithAutopadSameUpper", ref.f32("input0"));
 
@@ -244,7 +244,7 @@ TEST(ONNX, ConvWithAutopadSameUpper)
 
 TEST(ONNX, ConvWithStridesPadding)
 {
-   SofieReference ref = readReference("ConvWithStridesPadding");
+   ONNXToCppReference ref = readReference("ConvWithStridesPadding");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithStridesPadding", ref.f32("input0"));
 
@@ -254,7 +254,7 @@ TEST(ONNX, ConvWithStridesPadding)
 
 TEST(ONNX, ConvWithDilation)
 {
-   SofieReference ref = readReference("ConvWithDilation");
+   ONNXToCppReference ref = readReference("ConvWithDilation");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithDilation", ref.f32("input0"));
 
@@ -264,7 +264,7 @@ TEST(ONNX, ConvWithDilation)
 
 TEST(ONNX, ConvWithStridesNoPadding)
 {
-   SofieReference ref = readReference("ConvWithStridesNoPadding");
+   ONNXToCppReference ref = readReference("ConvWithStridesNoPadding");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithStridesNoPadding", ref.f32("input0"));
 
@@ -273,7 +273,7 @@ TEST(ONNX, ConvWithStridesNoPadding)
 
 TEST(ONNX, ConvAddRelu)
 {
-   SofieReference ref = readReference("ConvAddRelu");
+   ONNXToCppReference ref = readReference("ConvAddRelu");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvAddRelu", ref.f32("input0"));
 
@@ -301,7 +301,7 @@ TEST(ONNX, ConvWithDynShapeStride)
 
 TEST(ONNX, ConvWithAsymmetricPadding)
 {
-   SofieReference ref = readReference("ConvWithAsymmetricPadding");
+   ONNXToCppReference ref = readReference("ConvWithAsymmetricPadding");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvWithAsymmetricPadding", ref.f32("input0"));
 
@@ -314,7 +314,7 @@ TEST(ONNX, ConvWithAsymmetricPadding)
 
 TEST(ONNX, ConvSameUpperEvenKernel)
 {
-   SofieReference ref = readReference("ConvSameUpperEvenKernel");
+   ONNXToCppReference ref = readReference("ConvSameUpperEvenKernel");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvSameUpperEvenKernel", ref.f32("input0"));
 
@@ -323,7 +323,7 @@ TEST(ONNX, ConvSameUpperEvenKernel)
 
 TEST(ONNX, ConvSameLowerEvenKernel)
 {
-   SofieReference ref = readReference("ConvSameLowerEvenKernel");
+   ONNXToCppReference ref = readReference("ConvSameLowerEvenKernel");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvSameLowerEvenKernel", ref.f32("input0"));
 
@@ -332,7 +332,7 @@ TEST(ONNX, ConvSameLowerEvenKernel)
 
 TEST(ONNX, ConvAsymmetricPads1d)
 {
-   SofieReference ref = readReference("ConvAsymmetricPads1d");
+   ONNXToCppReference ref = readReference("ConvAsymmetricPads1d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvAsymmetricPads1d", ref.f32("input0"));
 
@@ -341,7 +341,7 @@ TEST(ONNX, ConvAsymmetricPads1d)
 
 TEST(ONNX, ConvAsymmetricPads2d)
 {
-   SofieReference ref = readReference("ConvAsymmetricPads2d");
+   ONNXToCppReference ref = readReference("ConvAsymmetricPads2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvAsymmetricPads2d", ref.f32("input0"));
 
@@ -350,7 +350,7 @@ TEST(ONNX, ConvAsymmetricPads2d)
 
 TEST(ONNX, ConvAsymmetricPads3d)
 {
-   SofieReference ref = readReference("ConvAsymmetricPads3d");
+   ONNXToCppReference ref = readReference("ConvAsymmetricPads3d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvAsymmetricPads3d", ref.f32("input0"));
 
@@ -359,7 +359,7 @@ TEST(ONNX, ConvAsymmetricPads3d)
 
 TEST(ONNX, ConvAsymmetricPadsGrouped)
 {
-   SofieReference ref = readReference("ConvAsymmetricPadsGrouped");
+   ONNXToCppReference ref = readReference("ConvAsymmetricPadsGrouped");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvAsymmetricPadsGrouped", ref.f32("input0"));
 
@@ -368,7 +368,7 @@ TEST(ONNX, ConvAsymmetricPadsGrouped)
 
 TEST(ONNX, MaxPool1d)
 {
-   SofieReference ref = readReference("MaxPool1d");
+   ONNXToCppReference ref = readReference("MaxPool1d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool1d", ref.f32("input0"));
 
@@ -377,7 +377,7 @@ TEST(ONNX, MaxPool1d)
 
 TEST(ONNX, MaxPool2d)
 {
-   SofieReference ref = readReference("MaxPool2d");
+   ONNXToCppReference ref = readReference("MaxPool2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool2d", ref.f32("input0"));
 
@@ -386,7 +386,7 @@ TEST(ONNX, MaxPool2d)
 
 TEST(ONNX, MaxPool2d_AsymPad)
 {
-   SofieReference ref = readReference("MaxPool2d_AsymPad");
+   ONNXToCppReference ref = readReference("MaxPool2d_AsymPad");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool2d_AsymPad", ref.f32("input0"));
 
@@ -395,7 +395,7 @@ TEST(ONNX, MaxPool2d_AsymPad)
 
 TEST(ONNX, MaxPool2d_CeilMode)
 {
-   SofieReference ref = readReference("MaxPool2d_CeilMode");
+   ONNXToCppReference ref = readReference("MaxPool2d_CeilMode");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool2d_CeilMode", ref.f32("input0"));
 
@@ -404,7 +404,7 @@ TEST(ONNX, MaxPool2d_CeilMode)
 
 TEST(ONNX, MaxPool1d_CeilMode_Overhang)
 {
-   SofieReference ref = readReference("MaxPool1d_CeilMode_Overhang");
+   ONNXToCppReference ref = readReference("MaxPool1d_CeilMode_Overhang");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool1d_CeilMode_Overhang", ref.f32("input0"));
 
@@ -413,7 +413,7 @@ TEST(ONNX, MaxPool1d_CeilMode_Overhang)
 
 TEST(ONNX, MaxPool2d_CeilMode_Pads)
 {
-   SofieReference ref = readReference("MaxPool2d_CeilMode_Pads");
+   ONNXToCppReference ref = readReference("MaxPool2d_CeilMode_Pads");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool2d_CeilMode_Pads", ref.f32("input0"));
 
@@ -422,7 +422,7 @@ TEST(ONNX, MaxPool2d_CeilMode_Pads)
 
 TEST(ONNX, MaxPool3d)
 {
-   SofieReference ref = readReference("MaxPool3d");
+   ONNXToCppReference ref = readReference("MaxPool3d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxPool3d", ref.f32("input0"));
 
@@ -431,7 +431,7 @@ TEST(ONNX, MaxPool3d)
 
 TEST(ONNX, AveragePool1d_CeilMode)
 {
-   SofieReference ref = readReference("AveragePool1d_CeilMode");
+   ONNXToCppReference ref = readReference("AveragePool1d_CeilMode");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool1d_CeilMode", ref.f32("input0"));
 
@@ -440,7 +440,7 @@ TEST(ONNX, AveragePool1d_CeilMode)
 
 TEST(ONNX, AveragePool1d_CeilMode_Overhang)
 {
-   SofieReference ref = readReference("AveragePool1d_CeilMode_Overhang");
+   ONNXToCppReference ref = readReference("AveragePool1d_CeilMode_Overhang");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool1d_CeilMode_Overhang", ref.f32("input0"));
 
@@ -449,7 +449,7 @@ TEST(ONNX, AveragePool1d_CeilMode_Overhang)
 
 TEST(ONNX, AveragePool2d_CeilMode)
 {
-   SofieReference ref = readReference("AveragePool2d_CeilMode");
+   ONNXToCppReference ref = readReference("AveragePool2d_CeilMode");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool2d_CeilMode", ref.f32("input0"));
 
@@ -458,7 +458,7 @@ TEST(ONNX, AveragePool2d_CeilMode)
 
 TEST(ONNX, AveragePool2d_CeilMode_Pads)
 {
-   SofieReference ref = readReference("AveragePool2d_CeilMode_Pads");
+   ONNXToCppReference ref = readReference("AveragePool2d_CeilMode_Pads");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool2d_CeilMode_Pads", ref.f32("input0"));
 
@@ -467,7 +467,7 @@ TEST(ONNX, AveragePool2d_CeilMode_Pads)
 
 TEST(ONNX, AveragePool2d_CeilMode_CountIncludePad)
 {
-   SofieReference ref = readReference("AveragePool2d_CeilMode_CountIncludePad");
+   ONNXToCppReference ref = readReference("AveragePool2d_CeilMode_CountIncludePad");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool2d_CeilMode_CountIncludePad", ref.f32("input0"));
 
@@ -476,7 +476,7 @@ TEST(ONNX, AveragePool2d_CeilMode_CountIncludePad)
 
 TEST(ONNX, AveragePool2d_Pads_CountIncludePad)
 {
-   SofieReference ref = readReference("AveragePool2d_Pads_CountIncludePad");
+   ONNXToCppReference ref = readReference("AveragePool2d_Pads_CountIncludePad");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool2d_Pads_CountIncludePad", ref.f32("input0"));
 
@@ -485,7 +485,7 @@ TEST(ONNX, AveragePool2d_Pads_CountIncludePad)
 
 TEST(ONNX, AveragePool3d_CeilMode)
 {
-   SofieReference ref = readReference("AveragePool3d_CeilMode");
+   ONNXToCppReference ref = readReference("AveragePool3d_CeilMode");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AveragePool3d_CeilMode", ref.f32("input0"));
 
@@ -494,7 +494,7 @@ TEST(ONNX, AveragePool3d_CeilMode)
 
 TEST(ONNX, AvgPool)
 {
-   SofieReference ref = readReference("AvgPool");
+   ONNXToCppReference ref = readReference("AvgPool");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AvgPool", ref.f32("input0"));
 
@@ -503,7 +503,7 @@ TEST(ONNX, AvgPool)
 
 TEST(ONNX, Pow)
 {
-   SofieReference ref = readReference("Pow");
+   ONNXToCppReference ref = readReference("Pow");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Pow", ref.f32("input0"), ref.f32("input1"));
 
@@ -512,7 +512,7 @@ TEST(ONNX, Pow)
 
 TEST(ONNX, Pow_broadcast)
 {
-   SofieReference ref = readReference("Pow_broadcast");
+   ONNXToCppReference ref = readReference("Pow_broadcast");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Pow_broadcast", ref.f32("input0"), ref.f32("input1"));
 
@@ -521,7 +521,7 @@ TEST(ONNX, Pow_broadcast)
 
 TEST(ONNX, FMod_ConstantFolding)
 {
-   // Both inputs are Constant nodes, so SOFIE constant-folds via Func().
+   // Both inputs are Constant nodes, so ONNXToCpp constant-folds via Func().
    // fmod([10, 7, 5], [3, 3, 3]) = [1, 1, 2]
    std::vector<float> correct_output = {1, 1, 2};
    ASSERT_INCLUDE_AND_RUN_0(std::vector<float>, "FMod_ConstantFolding");
@@ -530,7 +530,7 @@ TEST(ONNX, FMod_ConstantFolding)
 
 TEST(ONNX, Mod_ConstantFolding)
 {
-   // Both inputs are Constant nodes, so SOFIE constant-folds via Func().
+   // Both inputs are Constant nodes, so ONNXToCpp constant-folds via Func().
    // [10, 7, 5] % [3, 3, 3] = [1, 1, 2]
    std::vector<int64_t> correct_output = {1, 1, 2};
    ASSERT_INCLUDE_AND_RUN_0(std::vector<int64_t>, "Mod_ConstantFolding");
@@ -566,7 +566,7 @@ TEST(ONNX, Gemm_ConstantFolding_Shared)
 
    TEST(ONNX, ReduceMean)
 {
-   SofieReference ref = readReference("ReduceMean");
+   ONNXToCppReference ref = readReference("ReduceMean");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ReduceMean", ref.f32("input0"));
 
@@ -652,7 +652,7 @@ TEST(ONNX, ReduceMean_kMiddle_DynShape)
 }
 
 // largest=1 with sorted=0 used to return the K smallest elements. ONNX leaves the
-// order unspecified for sorted=0; SOFIE returns them ordered, as for sorted=1.
+// order unspecified for sorted=0; ONNXToCpp returns them ordered, as for sorted=1.
 TEST(ONNX, TopKLargestUnsorted)
 {
    std::vector<float> input({1, 6, 3, 2, 5, 4, 10, 40, 20, 60, 30, 50});
@@ -667,7 +667,7 @@ TEST(ONNX, TopKLargestUnsorted)
 
    TEST(ONNX, ReduceProd)
 {
-   SofieReference ref = readReference("ReduceProd");
+   ONNXToCppReference ref = readReference("ReduceProd");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ReduceProd", ref.f32("input0"));
 
@@ -710,7 +710,7 @@ TEST(ONNX, ReduceSumSquare){
 
 TEST(ONNX, Max)
 {
-   SofieReference ref = readReference("Max");
+   ONNXToCppReference ref = readReference("Max");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Max", ref.f32("input0"), ref.f32("input1"));
 
@@ -743,7 +743,7 @@ TEST(ONNX, MaxInt64)
 
 TEST(ONNX, MaxMultidirectionalBroadcast)
 {
-   SofieReference ref = readReference("MaxMultidirectionalBroadcast");
+   ONNXToCppReference ref = readReference("MaxMultidirectionalBroadcast");
 
    ASSERT_INCLUDE_AND_RUN(
       std::vector<float>,
@@ -757,7 +757,7 @@ TEST(ONNX, MaxMultidirectionalBroadcast)
 
 TEST(ONNX, MinMultidirectionalBroadcast)
 {
-   SofieReference ref = readReference("MinMultidirectionalBroadcast");
+   ONNXToCppReference ref = readReference("MinMultidirectionalBroadcast");
 
    ASSERT_INCLUDE_AND_RUN(
       std::vector<float>,
@@ -771,7 +771,7 @@ TEST(ONNX, MinMultidirectionalBroadcast)
 
 TEST(ONNX, MeanMultidirectionalBroadcast)
 {
-   SofieReference ref = readReference("MeanMultidirectionalBroadcast");
+   ONNXToCppReference ref = readReference("MeanMultidirectionalBroadcast");
 
    ASSERT_INCLUDE_AND_RUN(
       std::vector<float>,
@@ -785,7 +785,7 @@ TEST(ONNX, MeanMultidirectionalBroadcast)
 
 TEST(ONNX, SumMultidirectionalBroadcast)
 {
-   SofieReference ref = readReference("SumMultidirectionalBroadcast");
+   ONNXToCppReference ref = readReference("SumMultidirectionalBroadcast");
 
    ASSERT_INCLUDE_AND_RUN(
       std::vector<float>,
@@ -799,7 +799,7 @@ TEST(ONNX, SumMultidirectionalBroadcast)
 
 TEST(ONNX, Shape)
 {
-   SofieReference ref = readReference("Shape");
+   ONNXToCppReference ref = readReference("Shape");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Shape", ref.f32("input0"));
 
@@ -808,7 +808,7 @@ TEST(ONNX, Shape)
 
 TEST(ONNX, RNNBatchwise)
 {
-   SofieReference ref = readReference("RNNBatchwise");
+   ONNXToCppReference ref = readReference("RNNBatchwise");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNBatchwise", ref.f32("input0"));
 
@@ -818,7 +818,7 @@ TEST(ONNX, RNNBatchwise)
 
 TEST(ONNX, RNNBidirectional)
 {
-   SofieReference ref = readReference("RNNBidirectional");
+   ONNXToCppReference ref = readReference("RNNBidirectional");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNBidirectional", ref.f32("input0"));
 
@@ -828,7 +828,7 @@ TEST(ONNX, RNNBidirectional)
 
 TEST(ONNX, RNNBidirectionalBatchwise)
 {
-   SofieReference ref = readReference("RNNBidirectionalBatchwise");
+   ONNXToCppReference ref = readReference("RNNBidirectionalBatchwise");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNBidirectionalBatchwise", ref.f32("input0"));
 
@@ -838,7 +838,7 @@ TEST(ONNX, RNNBidirectionalBatchwise)
 
 TEST(ONNX, RNNDefaults)
 {
-   SofieReference ref = readReference("RNNDefaults");
+   ONNXToCppReference ref = readReference("RNNDefaults");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNDefaults", ref.f32("input0"));
 
@@ -848,7 +848,7 @@ TEST(ONNX, RNNDefaults)
 
 TEST(ONNX, RNNClip)
 {
-   SofieReference ref = readReference("RNNClip");
+   ONNXToCppReference ref = readReference("RNNClip");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNClip", ref.f32("input0"));
 
@@ -858,7 +858,7 @@ TEST(ONNX, RNNClip)
 
 TEST(ONNX, RNNSeqLength)
 {
-   SofieReference ref = readReference("RNNSeqLength");
+   ONNXToCppReference ref = readReference("RNNSeqLength");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNSeqLength", ref.f32("input0"));
 
@@ -868,7 +868,7 @@ TEST(ONNX, RNNSeqLength)
 
 TEST(ONNX, RNNSequence)
 {
-   SofieReference ref = readReference("RNNSequence");
+   ONNXToCppReference ref = readReference("RNNSequence");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNSequence", ref.f32("input0"));
 
@@ -878,7 +878,7 @@ TEST(ONNX, RNNSequence)
 
 TEST(ONNX, RNNSequenceBatchwise)
 {
-   SofieReference ref = readReference("RNNSequenceBatchwise");
+   ONNXToCppReference ref = readReference("RNNSequenceBatchwise");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "RNNSequenceBatchwise", ref.f32("input0"));
 
@@ -888,7 +888,7 @@ TEST(ONNX, RNNSequenceBatchwise)
 
 TEST(ONNX, LSTMBatchwise)
 {
-   SofieReference ref = readReference("LSTMBatchwise");
+   ONNXToCppReference ref = readReference("LSTMBatchwise");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "LSTMBatchwise", ref.f32("input0"));
 
@@ -898,7 +898,7 @@ TEST(ONNX, LSTMBatchwise)
 
 TEST(ONNX, LSTMBidirectional)
 {
-   SofieReference ref = readReference("LSTMBidirectional");
+   ONNXToCppReference ref = readReference("LSTMBidirectional");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "LSTMBidirectional", ref.f32("input0"));
 
@@ -909,7 +909,7 @@ TEST(ONNX, LSTMBidirectional)
 
 TEST(ONNX, LSTMDefaults)
 {
-   SofieReference ref = readReference("LSTMDefaults");
+   ONNXToCppReference ref = readReference("LSTMDefaults");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "LSTMDefaults", ref.f32("input0"));
 
@@ -919,7 +919,7 @@ TEST(ONNX, LSTMDefaults)
 
 TEST(ONNX, LSTMInitialBias)
 {
-   SofieReference ref = readReference("LSTMInitialBias");
+   ONNXToCppReference ref = readReference("LSTMInitialBias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "LSTMInitialBias", ref.f32("input0"));
 
@@ -929,7 +929,7 @@ TEST(ONNX, LSTMInitialBias)
 
 TEST(ONNX, LSTMPeepholes)
 {
-   SofieReference ref = readReference("LSTMPeepholes");
+   ONNXToCppReference ref = readReference("LSTMPeepholes");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "LSTMPeepholes", ref.f32("input0"));
 
@@ -940,7 +940,7 @@ TEST(ONNX, LSTMPeepholes)
 // GRU tests
 TEST(ONNX, GRUBatchwise)
 {
-   SofieReference ref = readReference("GRUBatchwise");
+   ONNXToCppReference ref = readReference("GRUBatchwise");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "GRUBatchwise", ref.f32("input0"));
 
@@ -950,7 +950,7 @@ TEST(ONNX, GRUBatchwise)
 
 TEST(ONNX, GRUBidirectional)
 {
-   SofieReference ref = readReference("GRUBidirectional");
+   ONNXToCppReference ref = readReference("GRUBidirectional");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "GRUBidirectional", ref.f32("input0"));
 
@@ -960,7 +960,7 @@ TEST(ONNX, GRUBidirectional)
 
 TEST(ONNX, GRUDefaults)
 {
-   SofieReference ref = readReference("GRUDefaults");
+   ONNXToCppReference ref = readReference("GRUDefaults");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "GRUDefaults", ref.f32("input0"));
 
@@ -970,7 +970,7 @@ TEST(ONNX, GRUDefaults)
 
 TEST(ONNX, GRUInitialBias)
 {
-   SofieReference ref = readReference("GRUInitialBias");
+   ONNXToCppReference ref = readReference("GRUInitialBias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "GRUInitialBias", ref.f32("input0"));
 
@@ -980,7 +980,7 @@ TEST(ONNX, GRUInitialBias)
 
 TEST(ONNX, GRUSeqLength)
 {
-   SofieReference ref = readReference("GRUSeqLength");
+   ONNXToCppReference ref = readReference("GRUSeqLength");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "GRUSeqLength", ref.f32("input0"));
 
@@ -990,7 +990,7 @@ TEST(ONNX, GRUSeqLength)
 
 TEST(ONNX, Softmax1d)
 {
-   SofieReference ref = readReference("Softmax1d");
+   ONNXToCppReference ref = readReference("Softmax1d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Softmax1d", ref.f32("input0"));
 
@@ -999,7 +999,7 @@ TEST(ONNX, Softmax1d)
 
 TEST(ONNX, Softmax2d)
 {
-   SofieReference ref = readReference("Softmax2d");
+   ONNXToCppReference ref = readReference("Softmax2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Softmax2d", ref.f32("input0"));
 
@@ -1008,7 +1008,7 @@ TEST(ONNX, Softmax2d)
 
 TEST(ONNX, Softmax3d)
 {
-   SofieReference ref = readReference("Softmax3d");
+   ONNXToCppReference ref = readReference("Softmax3d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Softmax3d", ref.f32("input0"));
 
@@ -1017,7 +1017,7 @@ TEST(ONNX, Softmax3d)
 
 TEST(ONNX, Softmax4d)
 {
-   SofieReference ref = readReference("Softmax4d");
+   ONNXToCppReference ref = readReference("Softmax4d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Softmax4d", ref.f32("input0"));
 
@@ -1026,7 +1026,7 @@ TEST(ONNX, Softmax4d)
 
 TEST(ONNX, LogSoftmaxLargeRange)
 {
-   SofieReference ref = readReference("LogSoftmaxLargeRange");
+   ONNXToCppReference ref = readReference("LogSoftmaxLargeRange");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LogSoftmaxLargeRange", ref.f32("input0"));
 
@@ -1035,7 +1035,7 @@ TEST(ONNX, LogSoftmaxLargeRange)
 
 TEST(ONNX, LogSoftmaxLargeRangeAxis0)
 {
-   SofieReference ref = readReference("LogSoftmaxLargeRangeAxis0");
+   ONNXToCppReference ref = readReference("LogSoftmaxLargeRangeAxis0");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LogSoftmaxLargeRangeAxis0", ref.f32("input0"));
 
@@ -1044,7 +1044,7 @@ TEST(ONNX, LogSoftmaxLargeRangeAxis0)
 
 TEST(ONNX, ConvTranspose1d)
 {
-   SofieReference ref = readReference("ConvTranspose1d");
+   ONNXToCppReference ref = readReference("ConvTranspose1d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTranspose1d", ref.f32("input0"));
 
@@ -1053,7 +1053,7 @@ TEST(ONNX, ConvTranspose1d)
 
 TEST(ONNX, ConvTranspose2d)
 {
-   SofieReference ref = readReference("ConvTranspose2d");
+   ONNXToCppReference ref = readReference("ConvTranspose2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTranspose2d", ref.f32("input0"));
 
@@ -1062,7 +1062,7 @@ TEST(ONNX, ConvTranspose2d)
 
 TEST(ONNX, ConvTranspose2dOutputShape)
 {
-   SofieReference ref = readReference("ConvTranspose2dOutputShape");
+   ONNXToCppReference ref = readReference("ConvTranspose2dOutputShape");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTranspose2dOutputShape", ref.f32("input0"));
 
@@ -1073,7 +1073,7 @@ TEST(ONNX, ConvTranspose2dOutputShape)
    to be added to generate_input_models.py to enable this test.
 TEST(ONNX, ConvTranspose3d)
 {
-   SofieReference ref = readReference("ConvTranspose3d");
+   ONNXToCppReference ref = readReference("ConvTranspose3d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTranspose3d", ref.f32("input0"));
 
@@ -1083,7 +1083,7 @@ TEST(ONNX, ConvTranspose3d)
 
 TEST(ONNX, ConvTransposeBias2d)
 {
-   SofieReference ref = readReference("ConvTransposeBias2d");
+   ONNXToCppReference ref = readReference("ConvTransposeBias2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTransposeBias2d", ref.f32("input0"));
 
@@ -1092,7 +1092,7 @@ TEST(ONNX, ConvTransposeBias2d)
 
 TEST(ONNX, ConvTransposeBias2dBatched)
 {
-   SofieReference ref = readReference("ConvTransposeBias2dBatched");
+   ONNXToCppReference ref = readReference("ConvTransposeBias2dBatched");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTransposeBias2dBatched", ref.f32("input0"));
 
@@ -1101,7 +1101,7 @@ TEST(ONNX, ConvTransposeBias2dBatched)
 
 TEST(ONNX, Sqrt)
 {
-   SofieReference ref = readReference("Sqrt");
+   ONNXToCppReference ref = readReference("Sqrt");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Sqrt", ref.f32("input0"));
 
@@ -1110,7 +1110,7 @@ TEST(ONNX, Sqrt)
 
 TEST(ONNX, Reciprocal)
 {
-   SofieReference ref = readReference("Reciprocal");
+   ONNXToCppReference ref = readReference("Reciprocal");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Reciprocal", ref.f32("input0"));
 
@@ -1119,7 +1119,7 @@ TEST(ONNX, Reciprocal)
 
 TEST(ONNX, Exp)
 {
-   SofieReference ref = readReference("Exp");
+   ONNXToCppReference ref = readReference("Exp");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Exp", ref.f32("input0"));
 
@@ -1128,7 +1128,7 @@ TEST(ONNX, Exp)
 
 TEST(ONNX, AddBroadcast1)
 {
-   SofieReference ref = readReference("AddBroadcast1");
+   ONNXToCppReference ref = readReference("AddBroadcast1");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast1", ref.f32("input0"), ref.f32("input1"));
 
@@ -1137,7 +1137,7 @@ TEST(ONNX, AddBroadcast1)
 
 TEST(ONNX, AddBroadcast2)
 {
-   SofieReference ref = readReference("AddBroadcast2");
+   ONNXToCppReference ref = readReference("AddBroadcast2");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast2", ref.f32("input0"), ref.f32("input1"));
 
@@ -1146,7 +1146,7 @@ TEST(ONNX, AddBroadcast2)
 
 TEST(ONNX, AddBroadcast3)
 {
-   SofieReference ref = readReference("AddBroadcast3");
+   ONNXToCppReference ref = readReference("AddBroadcast3");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast3", ref.f32("input0"), ref.f32("input1"));
 
@@ -1155,7 +1155,7 @@ TEST(ONNX, AddBroadcast3)
 
 TEST(ONNX, AddBroadcast4)
 {
-   SofieReference ref = readReference("AddBroadcast4");
+   ONNXToCppReference ref = readReference("AddBroadcast4");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast4", ref.f32("input0"), ref.f32("input1"));
 
@@ -1164,7 +1164,7 @@ TEST(ONNX, AddBroadcast4)
 
 TEST(ONNX, AddBroadcast5)
 {
-   SofieReference ref = readReference("AddBroadcast5");
+   ONNXToCppReference ref = readReference("AddBroadcast5");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast5", ref.f32("input0"), ref.f32("input1"));
 
@@ -1173,7 +1173,7 @@ TEST(ONNX, AddBroadcast5)
 
 TEST(ONNX, AddBroadcast6)
 {
-   SofieReference ref = readReference("AddBroadcast6");
+   ONNXToCppReference ref = readReference("AddBroadcast6");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast6", ref.f32("input0"), ref.f32("input1"));
 
@@ -1182,7 +1182,7 @@ TEST(ONNX, AddBroadcast6)
 
 TEST(ONNX, AddBroadcast7)
 {
-   SofieReference ref = readReference("AddBroadcast7");
+   ONNXToCppReference ref = readReference("AddBroadcast7");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AddBroadcast7", ref.f32("input0"), ref.f32("input1"));
 
@@ -1200,7 +1200,7 @@ TEST(ONNX, Concat0D) {
 
 TEST(ONNX, LayerNormalization2d)
 {
-   SofieReference ref = readReference("LayerNormalization2d");
+   ONNXToCppReference ref = readReference("LayerNormalization2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LayerNormalization2d", ref.f32("input0"));
 
@@ -1209,7 +1209,7 @@ TEST(ONNX, LayerNormalization2d)
 
 TEST(ONNX, LayerNormalization4d)
 {
-   SofieReference ref = readReference("LayerNormalization4d");
+   ONNXToCppReference ref = readReference("LayerNormalization4d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "LayerNormalization4d", ref.f32("input0"));
 
@@ -1218,7 +1218,7 @@ TEST(ONNX, LayerNormalization4d)
 
 TEST(ONNX, InstanceNormalization)
 {
-   SofieReference ref = readReference("InstanceNormalization");
+   ONNXToCppReference ref = readReference("InstanceNormalization");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "InstanceNormalization", ref.f32("input0"));
 
@@ -1227,7 +1227,7 @@ TEST(ONNX, InstanceNormalization)
 
 TEST(ONNX, InstanceNormalization3d)
 {
-   SofieReference ref = readReference("InstanceNormalization3d");
+   ONNXToCppReference ref = readReference("InstanceNormalization3d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "InstanceNormalization3d", ref.f32("input0"));
 
@@ -1236,7 +1236,7 @@ TEST(ONNX, InstanceNormalization3d)
 
 TEST(ONNX, InstanceNormalizationEpsilon)
 {
-   SofieReference ref = readReference("InstanceNormalizationEpsilon");
+   ONNXToCppReference ref = readReference("InstanceNormalizationEpsilon");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "InstanceNormalizationEpsilon", ref.f32("input0"));
 
@@ -1245,7 +1245,7 @@ TEST(ONNX, InstanceNormalizationEpsilon)
 
 TEST(ONNX, Equal)
 {
-   SofieReference ref = readReference("Equal");
+   ONNXToCppReference ref = readReference("Equal");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::uint8_t>, "Equal", ref.f32("input0"), ref.f32("input1"));
 
@@ -1254,7 +1254,7 @@ TEST(ONNX, Equal)
 
 TEST(ONNX, LessOrEqual)
 {
-   SofieReference ref = readReference("LessOrEqual");
+   ONNXToCppReference ref = readReference("LessOrEqual");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::uint8_t>, "LessOrEqual", ref.f32("input0"), ref.f32("input1"));
 
@@ -1263,7 +1263,7 @@ TEST(ONNX, LessOrEqual)
 
 TEST(ONNX, GreaterOrEqual)
 {
-   SofieReference ref = readReference("GreaterOrEqual");
+   ONNXToCppReference ref = readReference("GreaterOrEqual");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::uint8_t>, "GreaterOrEqual", ref.f32("input0"), ref.f32("input1"));
 
@@ -1272,7 +1272,7 @@ TEST(ONNX, GreaterOrEqual)
 
 TEST(ONNX, Greater)
 {
-   SofieReference ref = readReference("Greater");
+   ONNXToCppReference ref = readReference("Greater");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::uint8_t>, "Greater", ref.f32("input0"), ref.f32("input1"));
 
@@ -1281,7 +1281,7 @@ TEST(ONNX, Greater)
 
 TEST(ONNX, Less)
 {
-   SofieReference ref = readReference("Less");
+   ONNXToCppReference ref = readReference("Less");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::uint8_t>, "Less", ref.f32("input0"), ref.f32("input1"));
 
@@ -1290,7 +1290,7 @@ TEST(ONNX, Less)
 
 TEST(ONNX, ExpandSameSize)
 {
-   SofieReference ref = readReference("ExpandSameSize");
+   ONNXToCppReference ref = readReference("ExpandSameSize");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ExpandSameSize", ref.f32("input0"));
 
@@ -1299,7 +1299,7 @@ TEST(ONNX, ExpandSameSize)
 
 TEST(ONNX, ExpandDiffSize)
 {
-   SofieReference ref = readReference("ExpandDiffSize");
+   ONNXToCppReference ref = readReference("ExpandDiffSize");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ExpandDiffSize", ref.f32("input0"));
 
@@ -1308,7 +1308,7 @@ TEST(ONNX, ExpandDiffSize)
 
 TEST(ONNX, GatherAxis0)
 {
-   SofieReference ref = readReference("GatherAxis0");
+   ONNXToCppReference ref = readReference("GatherAxis0");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherAxis0", ref.f32("input0"));
 
@@ -1317,7 +1317,7 @@ TEST(ONNX, GatherAxis0)
 
 TEST(ONNX, GatherAxis1)
 {
-   SofieReference ref = readReference("GatherAxis1");
+   ONNXToCppReference ref = readReference("GatherAxis1");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherAxis1", ref.f32("input0"));
 
@@ -1326,7 +1326,7 @@ TEST(ONNX, GatherAxis1)
 
 TEST(ONNX, GatherAxis2)
 {
-   SofieReference ref = readReference("GatherAxis2");
+   ONNXToCppReference ref = readReference("GatherAxis2");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherAxis2", ref.f32("input0"));
 
@@ -1335,7 +1335,7 @@ TEST(ONNX, GatherAxis2)
 
 TEST(ONNX, GatherAxis3)
 {
-   SofieReference ref = readReference("GatherAxis3");
+   ONNXToCppReference ref = readReference("GatherAxis3");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherAxis3", ref.f32("input0"));
 
@@ -1344,7 +1344,7 @@ TEST(ONNX, GatherAxis3)
 
 TEST(ONNX, Gather2d)
 {
-   SofieReference ref = readReference("Gather2d");
+   ONNXToCppReference ref = readReference("Gather2d");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Gather2d", ref.f32("input0"));
 
@@ -1353,7 +1353,7 @@ TEST(ONNX, Gather2d)
 
 TEST(ONNX, GatherNegativeIndices)
 {
-   SofieReference ref = readReference("GatherNegativeIndices");
+   ONNXToCppReference ref = readReference("GatherNegativeIndices");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherNegativeIndices", ref.f32("input0"));
 
@@ -1365,7 +1365,7 @@ TEST(ONNX, GatherNegativeIndices)
 // back into the indices tensor, otherwise the model does not even compile.
 TEST(ONNX, GatherRuntimeNegativeIndices)
 {
-   SofieReference ref = readReference("GatherRuntimeNegativeIndices");
+   ONNXToCppReference ref = readReference("GatherRuntimeNegativeIndices");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherRuntimeNegativeIndices", ref.f32("input0"), ref.i64("input1"));
 
@@ -1374,7 +1374,7 @@ TEST(ONNX, GatherRuntimeNegativeIndices)
 
 TEST(ONNX, Slice)
 {
-   SofieReference ref = readReference("Slice");
+   ONNXToCppReference ref = readReference("Slice");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Slice", ref.f32("input0"));
 
@@ -1383,7 +1383,7 @@ TEST(ONNX, Slice)
 
 TEST(ONNX, Slice_Default_Axis)
 {
-   SofieReference ref = readReference("Slice_Default_Axis");
+   ONNXToCppReference ref = readReference("Slice_Default_Axis");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Slice_Default_Axis", ref.f32("input0"));
 
@@ -1392,7 +1392,7 @@ TEST(ONNX, Slice_Default_Axis)
 
 TEST(ONNX, Slice_Default_Steps)
 {
-   SofieReference ref = readReference("Slice_Default_Steps");
+   ONNXToCppReference ref = readReference("Slice_Default_Steps");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Slice_Default_Steps", ref.f32("input0"));
 
@@ -1401,7 +1401,7 @@ TEST(ONNX, Slice_Default_Steps)
 
 TEST(ONNX, Slice_Neg)
 {
-   SofieReference ref = readReference("Slice_Neg");
+   ONNXToCppReference ref = readReference("Slice_Neg");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Slice_Neg", ref.f32("input0"));
 
@@ -1409,7 +1409,7 @@ TEST(ONNX, Slice_Neg)
 }
 TEST(ONNX, RangeFloat)
 {
-   SofieReference ref = readReference("RangeFloat");
+   ONNXToCppReference ref = readReference("RangeFloat");
 
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(
       std::vector<float>,
@@ -1424,7 +1424,7 @@ TEST(ONNX, RangeFloat)
 
 TEST(ONNX, RangeInt)
 {
-   SofieReference ref = readReference("RangeInt");
+   ONNXToCppReference ref = readReference("RangeInt");
 
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(
       std::vector<int64_t>,
@@ -1485,7 +1485,7 @@ TEST(ONNX, RangeWithDynShapeStartDelta)
 }
 TEST(ONNX, Tile5D)
 {
-   SofieReference ref = readReference("Tile5D");
+   ONNXToCppReference ref = readReference("Tile5D");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Tile5D", ref.f32("input0"));
 
@@ -1712,7 +1712,8 @@ TEST(ONNX, Einsum_4)
 }
 TEST(ONNX, RandomUniform)
 {
-   // output of gRandom->Uniform(10,20) with seed 111 - > shape(2,3)
+   // output of std::uniform_real_distribution(10,20) with seed 111 -> shape(2,3), with the
+   // std::mt19937 engine seeded as TRandom3 (which gives the same values as gRandom->Uniform(10,20))
    std::vector<float> correct_output = {16.1217, 11.2076, 11.6907, 13.0179, 14.3606, 18.5391};
 
    ASSERT_INCLUDE_AND_RUN_0(std::vector<float>, "RandomUniform");
@@ -1722,12 +1723,19 @@ TEST(ONNX, RandomUniform)
 
 TEST(ONNX, RandomNormal)
 {
-    // output of gRandom->Gaus(1,3) with seed 111 - > shape(2,3)
-   std::vector<float> correct_output = {-0.808389, -0.985581, 0.616354, 2.1887, 1.13927, -0.228048};
+   // The generated code samples std::normal_distribution(1,3) with seed 111 -> shape(2,3).
+   // The exact values depend on the implementation of the standard library, so
+   // only check the shape and that the values are compatible with the distribution.
+   const float mean = 1.f;
+   const float scale = 3.f;
 
    ASSERT_INCLUDE_AND_RUN_0(std::vector<float>, "RandomNormal");
 
-   expectNear(output, correct_output, DEFAULT_TOLERANCE);
+   ASSERT_EQ(output.size(), 6u);
+   for (float x : output) {
+      EXPECT_TRUE(std::isfinite(x));
+      EXPECT_NEAR(x, mean, 5.f * scale);
+   }
 }
 
 TEST(ONNX, Split_0)
@@ -1957,7 +1965,7 @@ TEST(ONNX, Clip)
 
 TEST(ONNX, Gelu)
 {
-   SofieReference ref = readReference("Gelu");
+   ONNXToCppReference ref = readReference("Gelu");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Gelu", ref.f32("input0"));
 
@@ -1966,7 +1974,7 @@ TEST(ONNX, Gelu)
 
 TEST(ONNX, Swish)
 {
-   SofieReference ref = readReference("Swish");
+   ONNXToCppReference ref = readReference("Swish");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Swish", ref.f32("input0"));
 
@@ -1975,7 +1983,7 @@ TEST(ONNX, Swish)
 
 TEST(ONNX, HardSigmoid)
 {
-   SofieReference ref = readReference("HardSigmoid");
+   ONNXToCppReference ref = readReference("HardSigmoid");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "HardSigmoid", ref.f32("input0"));
 
@@ -1984,7 +1992,7 @@ TEST(ONNX, HardSigmoid)
 
 TEST(ONNX, HardSwish)
 {
-   SofieReference ref = readReference("HardSwish");
+   ONNXToCppReference ref = readReference("HardSwish");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "HardSwish", ref.f32("input0"));
 
@@ -2059,7 +2067,7 @@ TEST(ONNX, ComparisonBroadcast3d)
 // Two convolutions reading the same input: their private workspaces must not collide.
 TEST(ONNX, ConvSharedInput)
 {
-   SofieReference ref = readReference("ConvSharedInput");
+   ONNXToCppReference ref = readReference("ConvSharedInput");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvSharedInput", ref.f32("input0"));
 
@@ -2069,7 +2077,7 @@ TEST(ONNX, ConvSharedInput)
 // The same for the transposed convolution.
 TEST(ONNX, ConvTransposeSharedInput)
 {
-   SofieReference ref = readReference("ConvTransposeSharedInput");
+   ONNXToCppReference ref = readReference("ConvTransposeSharedInput");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvTransposeSharedInput", ref.f32("input0"));
 
@@ -2080,7 +2088,7 @@ TEST(ONNX, ConvTransposeSharedInput)
 // convolution, and must not be fused into it.
 TEST(ONNX, ConvResidualAdd)
 {
-   SofieReference ref = readReference("ConvResidualAdd");
+   ONNXToCppReference ref = readReference("ConvResidualAdd");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ConvResidualAdd", ref.f32("input0"));
 
@@ -2105,7 +2113,7 @@ TEST(ONNX, NonZeroTwice)
 // index tensor unchanged.
 TEST(ONNX, GatherNDNegativeIndicesTwice)
 {
-   SofieReference ref = readReference("GatherNDNegativeIndicesTwice");
+   ONNXToCppReference ref = readReference("GatherNDNegativeIndicesTwice");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherNDNegativeIndicesTwice", ref.f32("input0"), ref.f32("input1"));
 
@@ -2116,7 +2124,7 @@ TEST(ONNX, GatherNDNegativeIndicesTwice)
 // still be resolvable when the code is generated.
 TEST(ONNX, IdentityWeightBatchNorm)
 {
-   SofieReference ref = readReference("IdentityWeightBatchNorm");
+   ONNXToCppReference ref = readReference("IdentityWeightBatchNorm");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "IdentityWeightBatchNorm", ref.f32("input0"));
 
@@ -2125,7 +2133,7 @@ TEST(ONNX, IdentityWeightBatchNorm)
 
 TEST(ONNX, BatchNormEpsilon)
 {
-   SofieReference ref = readReference("BatchNormEpsilon");
+   ONNXToCppReference ref = readReference("BatchNormEpsilon");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "BatchNormEpsilon", ref.f32("input0"));
 
@@ -2134,7 +2142,7 @@ TEST(ONNX, BatchNormEpsilon)
 
 TEST(ONNX, BatchNormReluEpsilon)
 {
-   SofieReference ref = readReference("BatchNormReluEpsilon");
+   ONNXToCppReference ref = readReference("BatchNormReluEpsilon");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "BatchNormReluEpsilon", ref.f32("input0"));
 
@@ -2155,7 +2163,7 @@ TEST(ONNX, ClipInt)
 // Tanh of a tensor whose first dimension is only known at run time.
 TEST(ONNX, TanhDynShape)
 {
-   SofieReference ref = readReference("TanhDynShape");
+   ONNXToCppReference ref = readReference("TanhDynShape");
 
    // model is dynamic in N, use N = 2
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "TanhDynShape", "\"TanhDynShape_FromONNX.dat\", 2", 2,
@@ -2183,7 +2191,7 @@ TEST(ONNX, RangeCleanName)
 // which Initialize cannot see while the output is dynamic.
 TEST(ONNX, GemmDynBias)
 {
-   SofieReference ref = readReference("GemmDynBias");
+   ONNXToCppReference ref = readReference("GemmDynBias");
 
    // model is dynamic in N, use N = 2
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "GemmDynBias", "\"GemmDynBias_FromONNX.dat\", 2", 2,
@@ -2196,7 +2204,7 @@ TEST(ONNX, GemmDynBias)
 // time, so the model has to copy it into the output buffer.
 TEST(ONNX, IdentityWeightOutput)
 {
-   SofieReference ref = readReference("IdentityWeightOutput");
+   ONNXToCppReference ref = readReference("IdentityWeightOutput");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "IdentityWeightOutput", ref.f32("input0"));
 
@@ -2208,12 +2216,12 @@ TEST(ONNX, IdentityWeightOutput)
 // ---------------------------------------------------------------------------
 // Memory shared between an operator that only reinterprets its input and that
 // input. An alias and a copy have to compute the same values; whether the alias
-// was granted at all is checked in TestSofieAlias.cxx.
+// was granted at all is checked in TestONNXToCppAlias.cxx.
 // ---------------------------------------------------------------------------
 
 TEST(ONNX, ReshapeAlias)
 {
-   SofieReference ref = readReference("ReshapeAlias");
+   ONNXToCppReference ref = readReference("ReshapeAlias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ReshapeAlias", ref.f32("input0"));
 
@@ -2222,7 +2230,7 @@ TEST(ONNX, ReshapeAlias)
 
 TEST(ONNX, ReshapeAliasGraphOutput)
 {
-   SofieReference ref = readReference("ReshapeAliasGraphOutput");
+   ONNXToCppReference ref = readReference("ReshapeAliasGraphOutput");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ReshapeAliasGraphOutput", ref.f32("input0"));
 
@@ -2231,7 +2239,7 @@ TEST(ONNX, ReshapeAliasGraphOutput)
 
 TEST(ONNX, SliceIdentityAlias)
 {
-   SofieReference ref = readReference("SliceIdentityAlias");
+   ONNXToCppReference ref = readReference("SliceIdentityAlias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "SliceIdentityAlias", ref.f32("input0"));
 
@@ -2240,7 +2248,7 @@ TEST(ONNX, SliceIdentityAlias)
 
 TEST(ONNX, IdentityAlias)
 {
-   SofieReference ref = readReference("IdentityAlias");
+   ONNXToCppReference ref = readReference("IdentityAlias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "IdentityAlias", ref.f32("input0"));
 
@@ -2253,7 +2261,7 @@ TEST(ONNX, IdentityAlias)
 
 TEST(ONNX, AliasAcrossNewTensor)
 {
-   SofieReference ref = readReference("AliasAcrossNewTensor");
+   ONNXToCppReference ref = readReference("AliasAcrossNewTensor");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AliasAcrossNewTensor", ref.f32("input0"), ref.f32("input1"));
 
@@ -2262,7 +2270,7 @@ TEST(ONNX, AliasAcrossNewTensor)
 
 TEST(ONNX, AliasOwnerReadAfterAlias)
 {
-   SofieReference ref = readReference("AliasOwnerReadAfterAlias");
+   ONNXToCppReference ref = readReference("AliasOwnerReadAfterAlias");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "AliasOwnerReadAfterAlias", ref.f32("input0"),
                           ref.f32("input1"));
@@ -2274,7 +2282,7 @@ TEST(ONNX, AliasOwnerReadAfterAlias)
 
 TEST(ONNX, AliasChain)
 {
-   SofieReference ref = readReference("AliasChain");
+   ONNXToCppReference ref = readReference("AliasChain");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AliasChain", ref.f32("input0"));
 
@@ -2283,7 +2291,7 @@ TEST(ONNX, AliasChain)
 
 TEST(ONNX, AliasChainSingle)
 {
-   SofieReference ref = readReference("AliasChainSingle");
+   ONNXToCppReference ref = readReference("AliasChainSingle");
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "AliasChainSingle", ref.f32("input0"));
 
@@ -2292,7 +2300,7 @@ TEST(ONNX, AliasChainSingle)
 
 TEST(ONNX, AliasDynShape)
 {
-   SofieReference ref = readReference("AliasDynShape");
+   ONNXToCppReference ref = readReference("AliasDynShape");
 
    // model is dynamic in N, use N = 2
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "AliasDynShape", "\"AliasDynShape_FromONNX.dat\", 2", 2,
@@ -2303,7 +2311,7 @@ TEST(ONNX, AliasDynShape)
 
 TEST(ONNX, AliasDynShapeAcrossNewTensor)
 {
-   SofieReference ref = readReference("AliasDynShapeAcrossNewTensor");
+   ONNXToCppReference ref = readReference("AliasDynShapeAcrossNewTensor");
 
    // model is dynamic in N, use N = 2
    ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "AliasDynShapeAcrossNewTensor",

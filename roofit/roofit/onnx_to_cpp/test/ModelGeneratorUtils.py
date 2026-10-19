@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-### Helpers shared by the PyTorch model generators used in TestSofieModels.
+### Helpers shared by the PyTorch model generators used in TestONNXToCppModels.
 ###
 ### The generators (Conv1d/Conv2d/Conv3d/ConvTrans2d/Linear/Recurrent) only
 ### differ in the network they build and in the shape of the input tensor;
@@ -40,7 +40,7 @@ def make_parser(params_help, pooling=False, recurrent=False):
 
 
 def model_name(base, bsize, use_bn=False, use_maxpool=False, use_avgpool=False):
-    """The naming convention TestSofieModels expects, e.g. Conv2dModel_BN_B5."""
+    """The naming convention TestONNXToCppModels expects, e.g. Conv2dModel_BN_B5."""
     name = base
     if use_bn:
         name += "_BN"

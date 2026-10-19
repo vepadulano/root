@@ -1,16 +1,16 @@
 constexpr auto modelHeaderSuffix = "_FromONNX_unoptimized.hxx";
 constexpr auto modelDataSuffix = "_FromONNX_unoptimized.dat";
-#include "test_helpers.h"
+#include "clad_test_helpers.h"
 
 #include "gtest/gtest.h"
 
 // Test differentiating a fully-connected neural network with Clad.
-// Extension of the ONNX.Linear16 test in TestCustomModelsFromONNX.cxx
+// Extension of the ONNX.Linear16 test in TestONNXToCppCustomModelsFromONNX.cxx
 TEST(ONNXClad, Linear16)
 {
    constexpr float TOLERANCE = DEFAULT_TOLERANCE;
 
-   SofieReference ref = readReference("Linear_16");
+   ONNXToCppReference ref = readReference("Linear_16");
    // Mutable copy: the numeric differentiation below perturbs the input values
    std::vector<float> input = ref.f32("input0");
 
@@ -19,12 +19,12 @@ TEST(ONNXClad, Linear16)
    gInterpreter->Declare(R"(
 #include <Math/CladDerivator.h>
 
-float Linear_16_wrapper(TMVA_SOFIE_Linear_16::Session const &session, float const *input)
+float Linear_16_wrapper(ROOT::Internal::ONNXToCpp_Linear_16::Session const &session, float const *input)
 {
    float out[160]{};
    float output_sum = 0.0;
 
-   TMVA_SOFIE_Linear_16::doInfer(session, input, out);
+   ROOT::Internal::ONNXToCpp_Linear_16::doInfer(session, input, out);
 
    for (std::size_t i = 0; i < std::size(out); ++i) {
       output_sum += out[i];
@@ -32,7 +32,7 @@ float Linear_16_wrapper(TMVA_SOFIE_Linear_16::Session const &session, float cons
    return output_sum;
 }
 
-float Linear_16_outer_wrapper(TMVA_SOFIE_Linear_16::Session const &session, float const *input)
+float Linear_16_outer_wrapper(ROOT::Internal::ONNXToCpp_Linear_16::Session const &session, float const *input)
 {
    return Linear_16_wrapper(session, input);
 }
@@ -42,12 +42,12 @@ float Linear_16_outer_wrapper(TMVA_SOFIE_Linear_16::Session const &session, floa
 // output sum is comparable to the eps-induced change that the central
 // difference measures, so the numeric derivative would be dominated by
 // cancellation noise.
-double Linear_16_num_eval(TMVA_SOFIE_Linear_16::Session const &session, float const *input)
+double Linear_16_num_eval(ROOT::Internal::ONNXToCpp_Linear_16::Session const &session, float const *input)
 {
    float out[160]{};
    double output_sum = 0.0;
 
-   TMVA_SOFIE_Linear_16::doInfer(session, input, out);
+   ROOT::Internal::ONNXToCpp_Linear_16::doInfer(session, input, out);
 
    for (std::size_t i = 0; i < std::size(out); ++i) {
       output_sum += out[i];
@@ -55,7 +55,7 @@ double Linear_16_num_eval(TMVA_SOFIE_Linear_16::Session const &session, float co
    return output_sum;
 }
 
-float Linear_16_wrapper_num_diff(TMVA_SOFIE_Linear_16::Session const &session, float *input, std::size_t i)
+float Linear_16_wrapper_num_diff(ROOT::Internal::ONNXToCpp_Linear_16::Session const &session, float *input, std::size_t i)
 {
    const float origVal = input[i];
 
@@ -83,8 +83,8 @@ float Linear_16_wrapper_num_diff(TMVA_SOFIE_Linear_16::Session const &session, f
    gInterpreter->ProcessLine("clad::gradient(Linear_16_outer_wrapper, \"input\");");
 
    // Create two session data structures: one for the forward, and one for the backward pass
-   gInterpreter->ProcessLine("TMVA_SOFIE_Linear_16::Session session_linear_16{\"Linear_16_FromONNX.dat\"};");
-   gInterpreter->ProcessLine("TMVA_SOFIE_Linear_16::Session _d_session_linear_16{\"Linear_16_FromONNX.dat\"};");
+   gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::Session session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
+   gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::Session _d_session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
 
    gInterpreter->ProcessLine("float grad_output[1600]{};");
    gInterpreter->ProcessLine(
@@ -93,10 +93,10 @@ float Linear_16_wrapper_num_diff(TMVA_SOFIE_Linear_16::Session const &session, f
 
    // If you want to see the gradient code:
    // clang-format off
-   // gInterpreter->ProcessLine("static_cast<void (*)(TMVA_SOFIE_Linear_16::Session const &, float const *, float *)>(Linear_16_outer_wrapper_grad_1)");
+   // gInterpreter->ProcessLine("static_cast<void (*)(ROOT::Internal::ONNXToCpp_Linear_16::Session const &, float const *, float *)>(Linear_16_outer_wrapper_grad_1)");
    // gInterpreter->ProcessLine("Linear_16_wrapper_pullback");
-   // gInterpreter->ProcessLine("TMVA_SOFIE_Linear_16::doInfer_reverse_forw");
-   // gInterpreter->ProcessLine("TMVA_SOFIE_Linear_16::doInfer_pullback");
+   // gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::doInfer_reverse_forw");
+   // gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::doInfer_pullback");
    // clang-format on
 
    gInterpreter->ProcessLine((R"(
@@ -135,7 +135,7 @@ TEST(ONNXClad, LinearWithSigmoidForwardAndHessian)
    constexpr float TOLERANCE = DEFAULT_TOLERANCE;
    constexpr int nInputs = 48; // input tensor shape { 2, 24 }; the output shape is { 2, 12 }
 
-   SofieReference ref = readReference("LinearWithSigmoid");
+   ONNXToCppReference ref = readReference("LinearWithSigmoid");
    std::vector<float> input = ref.f32("input0");
    ASSERT_EQ(input.size(), nInputs);
 
@@ -145,12 +145,12 @@ TEST(ONNXClad, LinearWithSigmoidForwardAndHessian)
    gInterpreter->Declare(R"(
 #include <Math/CladDerivator.h>
 
-float sig_w(TMVA_SOFIE_LinearWithSigmoid::Session const &session, float const *input)
+float sig_w(ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &session, float const *input)
 {
    float out[24]{};
    float output_sum = 0.0;
 
-   TMVA_SOFIE_LinearWithSigmoid::doInfer(session, input, out);
+   ROOT::Internal::ONNXToCpp_LinearWithSigmoid::doInfer(session, input, out);
 
    for (std::size_t i = 0; i < std::size(out); ++i) {
       output_sum += out[i];
@@ -158,7 +158,7 @@ float sig_w(TMVA_SOFIE_LinearWithSigmoid::Session const &session, float const *i
    return output_sum;
 }
 
-float sig_outer(TMVA_SOFIE_LinearWithSigmoid::Session const &session, float const *input)
+float sig_outer(ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &session, float const *input)
 {
    return sig_w(session, input);
 }
@@ -176,14 +176,14 @@ float sig_outer(TMVA_SOFIE_LinearWithSigmoid::Session const &session, float cons
 // argument clad would look up the custom Gemm_Call pullback with a
 // reduced signature, not find it, and silently fall back to differentiating
 // the BLAS call, which yields zero.
-float sig_dir(TMVA_SOFIE_LinearWithSigmoid::Session const &session,
-              TMVA_SOFIE_LinearWithSigmoid::Session const &zeroSession, float const *input, float const *dinput)
+float sig_dir(ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &session,
+              ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &zeroSession, float const *input, float const *dinput)
 {
    return sig_w_pushforward(session, input, zeroSession, dinput).pushforward;
 }
 
-float sig_dir_outer(TMVA_SOFIE_LinearWithSigmoid::Session const &session,
-                    TMVA_SOFIE_LinearWithSigmoid::Session const &zeroSession, float const *input, float const *dinput)
+float sig_dir_outer(ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &session,
+                    ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session const &zeroSession, float const *input, float const *dinput)
 {
    return sig_dir(session, zeroSession, input, dinput);
 }
@@ -197,9 +197,9 @@ float sig_dir_outer(TMVA_SOFIE_LinearWithSigmoid::Session const &session,
    // (its weight values are irrelevant: adjoints are accumulated and
    // discarded), and the zero-weight tangent session.
    gInterpreter->Declare(R"(
-TMVA_SOFIE_LinearWithSigmoid::Session sig_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
-TMVA_SOFIE_LinearWithSigmoid::Session sig_d_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
-TMVA_SOFIE_LinearWithSigmoid::Session sig_zero_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session sig_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session sig_d_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session sig_zero_session{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
 
 std::vector<float> sig_grad(48, 0.0f);
 std::vector<float> sig_fwd(48, 0.0f);
@@ -249,8 +249,8 @@ float sig_hvp_dev = 0.0f;
    // code path.
    gInterpreter->ProcessLine((R"(
    for (int j = 0; j < 48; ++j) {
-      TMVA_SOFIE_LinearWithSigmoid::Session dSession{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
-      TMVA_SOFIE_LinearWithSigmoid::Session dSession2{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+      ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session dSession{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+      ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session dSession2{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
       std::fill(sig_dinput.begin(), sig_dinput.end(), 0.0f);
       std::fill(sig_hvp_grad.begin(), sig_hvp_grad.end(), 0.0f);
       sig_dinput[j] = 1.0f;
@@ -282,8 +282,8 @@ void sig_fd_hessian(float *input)
       // first-order pullback consuming-and-zeroing the adjoint state left
       // behind by previous calls (see the Hessian loop above for why copies
       // are not an option).
-      TMVA_SOFIE_LinearWithSigmoid::Session dp{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
-      TMVA_SOFIE_LinearWithSigmoid::Session dm{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+      ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session dp{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
+      ROOT::Internal::ONNXToCpp_LinearWithSigmoid::Session dm{"LinearWithSigmoid_FromONNX_unoptimized.dat"};
       const float orig = input[j];
       std::fill(gp.begin(), gp.end(), 0.0f);
       std::fill(gm.begin(), gm.end(), 0.0f);

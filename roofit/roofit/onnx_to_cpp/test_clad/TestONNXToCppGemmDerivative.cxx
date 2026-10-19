@@ -1,6 +1,6 @@
 #include <TInterpreter.h>
 
-#include "TMVA/SOFIE_common.hxx"
+#include "ONNXToCpp/common.hxx"
 
 #include "gtest/gtest.h"
 
@@ -74,23 +74,23 @@ TEST_P(GemmTest, GemmTestDerivative)
 {
    static bool declared = false;
    if (declared == false) {
-      // Test the *emitted* helper code: ask SOFIE for the standalone Gemm_Call
+      // Test the *emitted* helper code: ask ONNXToCpp for the standalone Gemm_Call
       // source (and its Clad pullback) exactly as it is dumped into generated
       // inference headers, then differentiate that with Clad. This exercises the
       // helper and the pullback that ship inside generated models, without
-      // relying on TMVA/SOFIE_common.hxx or Math/CladDerivator.h at inference
+      // relying on ONNXToCpp/common.hxx or Math/CladDerivator.h at inference
       // time.
-      using namespace TMVA::Experimental::SOFIE;
-      HelperFunctionsCode code = GenerateHelperFunctionsCode({"Gemm_Call"}, "TMVA_SOFIE_GemmTest");
-      std::string src = code.includes + "namespace TMVA_SOFIE_GemmTest {\n" + code.definitions + "}\n" +
+      using namespace ROOT::Internal::ONNXToCpp;
+      HelperFunctionsCode code = GenerateHelperFunctionsCode({"Gemm_Call"}, "ROOT::Internal::ONNXToCpp_GemmTest");
+      std::string src = code.includes + "namespace ROOT::Internal::ONNXToCpp_GemmTest {\n" + code.definitions + "}\n" +
                         code.cladDefinitions;
 
       if (!gInterpreter->Declare(src.c_str())) {
-         throw std::runtime_error("TestGemmDerivative: failed to declare emitted SOFIE helper code");
+         throw std::runtime_error("TestONNXToCppGemmDerivative: failed to declare emitted ONNXToCpp helper code");
       }
 
       gInterpreter->Declare(R"cpp(
-            // Clad differentiation machinery only (no SOFIE custom derivatives):
+            // Clad differentiation machinery only (no ONNXToCpp custom derivatives):
             // the pullback used below comes from the emitted code declared above.
             #include <plugins/include/clad/Differentiator/Differentiator.h>
 
@@ -109,7 +109,7 @@ TEST_P(GemmTest, GemmTestDerivative)
 
                 float output[n_out];
 
-                TMVA_SOFIE_GemmTest::Gemm_Call(output, false, false, m, n, k, alpha, matA, matB, beta, matC);
+                ROOT::Internal::ONNXToCpp_GemmTest::Gemm_Call(output, false, false, m, n, k, alpha, matA, matB, beta, matC);
 
                 float ret = 0;
                 for (int i = 0; i < m*n; ++i) {

@@ -1,20 +1,20 @@
 // Author: Federico Sossai
 // Last modified: 2021/07/30
 // Description:
-//    SOFIE command line compiler.
-//    This program is automatically run when the target 'TestCustomModelsFromONNX' is built.
-//    Usage example: $./sofiec indir/mymodel.onnx outdir/myname.hxx
+//    Generates the inference code of all the ONNX models of the tests. This
+//    program is run by the ONNXToCppCompileModels_ONNX test, which the tests of
+//    the generated code depend on.
 
-#include "TMVA/RModel.hxx"
-#include "TMVA/RModelParser_ONNX.hxx"
+#include "ONNXToCpp/RModel.hxx"
+#include "ONNXToCpp/RModelParser_ONNX.hxx"
 
 int EmitModel(std::string filename, std::string outname)
 {
-   using namespace TMVA::Experimental::SOFIE;
+   using namespace ROOT::Internal::ONNXToCpp;
 
    std::cout << "parsing file ..." << filename << std::endl;
    {
-      // The generated code with all optimizations. Used for most SOFIE tests.
+      // The generated code with all optimizations. Used for most ONNXToCpp tests.
       RModelParser_ONNX parser;
       RModel model = parser.Parse(filename);
       model.Generate();
@@ -24,7 +24,7 @@ int EmitModel(std::string filename, std::string outname)
       // Generate code without memory re-use for intermediate tensors.
       //
       // IMPORTANT:
-      // When memory re-use is enabled, SOFIE may assign multiple intermediate
+      // When memory re-use is enabled, ONNXToCpp may assign multiple intermediate
       // tensors to the same memory buffer. This means that values produced earlier
       // in the forward pass can be overwritten by later operations.
       //
