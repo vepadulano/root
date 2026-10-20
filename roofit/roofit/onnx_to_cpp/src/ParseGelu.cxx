@@ -28,7 +28,7 @@ ParserFuncSignature ParseGelu = [](RModelParser_ONNX &parser, const onnx::NodePr
 
    std::string output_name = nodeproto.output(0);
 
-   auto  op = std::make_unique<ROperator_Gelu>(input_name, output_name, approximate);
+   auto op = std::make_unique<ROperator_Gelu>(input_name, output_name, approximate);
 
    if (!parser.IsRegisteredTensorType(output_name)) {
       parser.RegisterTensorType(output_name, input_type);

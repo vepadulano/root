@@ -10,37 +10,39 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-enum class EBasicIsOperator { kIsInf, kIsInfPos, kIsInfNeg, kIsNaN };
+enum class EBasicIsOperator {
+   kIsInf,
+   kIsInfPos,
+   kIsInfNeg,
+   kIsNaN
+};
 
 template <EBasicIsOperator Op>
-struct IsOpTraits {
-};
-template<>
+struct IsOpTraits {};
+template <>
 struct IsOpTraits<EBasicIsOperator::kIsInf> {
    static std::string Name() { return "IsInf"; }
    static std::string Op(const std::string &x) { return "std::isinf(" + x + ")"; }
-   static bool Impl(float x) { return std::isinf(x);}
+   static bool Impl(float x) { return std::isinf(x); }
 };
-template<>
+template <>
 struct IsOpTraits<EBasicIsOperator::kIsInfPos> {
    static std::string Name() { return "IsInfPos"; }
    static std::string Op(const std::string &x) { return "(std::isinf(" + x + ") && " + x + "> 0)"; }
-   static bool Impl(float x) { return std::isinf(x) && x > 0;}
+   static bool Impl(float x) { return std::isinf(x) && x > 0; }
 };
-template<>
+template <>
 struct IsOpTraits<EBasicIsOperator::kIsInfNeg> {
    static std::string Name() { return "IsInfNeg"; }
    static std::string Op(const std::string &x) { return "(std::isinf(" + x + ") && " + x + "< 0)"; }
-   static bool Impl(float x) { return std::isinf(x) && x < 0;}
+   static bool Impl(float x) { return std::isinf(x) && x < 0; }
 };
-template<>
+template <>
 struct IsOpTraits<EBasicIsOperator::kIsNaN> {
    static std::string Name() { return "IsInf"; }
    static std::string Op(const std::string &x) { return "std::isnan(" + x + ")"; }
-   static bool Impl(float x) { return std::isnan(x);}
+   static bool Impl(float x) { return std::isnan(x); }
 };
-
-
 
 template <EBasicIsOperator Op>
 class ROperator_Basic_Is final : public ROperator {
@@ -57,11 +59,12 @@ public:
    ROperator_Basic_Is(std::string nameX, std::string nameY)
       : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
    {
-         fInputTensorNames =  { fNX };
-         fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          throw std::runtime_error("Internal::ONNXToCpp - Tensor " + fNX + " not found.");
       }
@@ -83,9 +86,7 @@ public:
       return out.str();
    }
 
-   std::vector<std::string> GetStdLibs() override {
-      return { std::string("cmath") };
-   }
+   std::vector<std::string> GetStdLibs() override { return {std::string("cmath")}; }
 };
 
 } // namespace ONNXToCpp

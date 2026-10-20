@@ -13,8 +13,8 @@ ParserFuncSignature ParseInstanceNormalization = [](RModelParser_ONNX &parser,
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
    } else {
-      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser InstanceNormalization op has input tensor " + input_name +
-                               " but its type is not yet registered");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser InstanceNormalization op has input tensor " +
+                               input_name + " but its type is not yet registered");
    }
 
    float epsilon = 1e-5;
@@ -35,8 +35,8 @@ ParserFuncSignature ParseInstanceNormalization = [](RModelParser_ONNX &parser,
       op.reset(new ROperator_InstanceNormalization<float>(epsilon, input_name, name_scale, name_bias, output_name));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp ONNX parser Operator with input type " + ConvertTypeToString(input_type) +
-                               " not supported.");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX parser Operator with input type " +
+                               ConvertTypeToString(input_type) + " not supported.");
       break;
    }
 

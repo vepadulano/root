@@ -7,35 +7,32 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-
-class ROperator_Cast final : public ROperator
-{
+class ROperator_Cast final : public ROperator {
 
 private:
-
    std::string fNX;
    std::string fNY;
    std::vector<Dim> fShape;
    ETensorType fType;
 
 public:
-   ROperator_Cast(){}
-   ROperator_Cast(ETensorType type,std::string nameX, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)),
-      fType(type)
+   ROperator_Cast() {}
+   ROperator_Cast(ETensorType type, std::string nameX, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)), fType(type)
    {
-      fInputTensorNames = { fNX };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
-       //input must be a graph input, or already initialized intermediate tensor
-      if (model.CheckIfTensorAlreadyExist(fNX) == false){
-        throw std::runtime_error("Internal::ONNXToCpp Cast Op Input Tensor is not found in model");
+   void Initialize(RModel &model) override
+   {
+      // input must be a graph input, or already initialized intermediate tensor
+      if (model.CheckIfTensorAlreadyExist(fNX) == false) {
+         throw std::runtime_error("Internal::ONNXToCpp Cast Op Input Tensor is not found in model");
       }
       fShape = model.GetDimTensorShape(fNX);
       // should we add a check if the same type
@@ -44,10 +41,9 @@ public:
          fIsOutputConstant = true;
          auto inputData = model.GetInitializedTensorData(fNX);
          if (fType == ETensorType::INT64) {
-            model.AddConstantTensor<int64_t>(fNY, ConvertShapeToInt(fShape), static_cast<int64_t*>(inputData.get()));
+            model.AddConstantTensor<int64_t>(fNY, ConvertShapeToInt(fShape), static_cast<int64_t *>(inputData.get()));
             model.SetNotWritableInitializedTensor(fNX);
-         }
-         else
+         } else
             fIsOutputConstant = false;
       } else if (model.IsShapeTensor(fNX) && fType == ETensorType::INT64) {
          auto shapeData = model.GetShapeTensorValues(fNX);
@@ -58,15 +54,17 @@ public:
          model.AddIntermediateTensor(fNY, fType, fShape);
       if (model.Verbose()) {
          std::cout << "Cast : " << ConvertTypeToString(inputType) << " " << fNX << " -> " << ConvertTypeToString(fType);
-         if (fType == ETensorType::BOOL) std::cout << " (converted from BOOL) ";
+         if (fType == ETensorType::BOOL)
+            std::cout << " (converted from BOOL) ";
          std::cout << " for " << fNY << " shape " << ConvertDimShapeToString(fShape);
-         if (fIsOutputConstant) std::cout << " (constant) ";
+         if (fIsOutputConstant)
+            std::cout << " (constant) ";
          std::cout << std::endl;
       }
    }
 
-
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
 
       // output shape can be empty if is a scalar
 
@@ -74,8 +72,9 @@ public:
       auto length = ConvertDimShapeToLength(fShape);
 
       out << "\n//------ CAST " << opName << " ---> " << fNY << "  " << ConvertDimShapeToString(fShape) << "\n";
-       // no generated code for constant outputs
-      if (fIsOutputConstant) return out.str();
+      // no generated code for constant outputs
+      if (fIsOutputConstant)
+         return out.str();
 
       out << SP << "for (int id = 0; id < " << length << " ; id++){\n";
 
@@ -83,17 +82,16 @@ public:
       if (fType == ETensorType::BOOL)
          out << SP << SP << "tensor_" << fNY << "[id] = (tensor_" << fNX << "[id] != 0) ? 1 : 0;\n";
       else
-         out << SP << SP << "tensor_" << fNY << "[id] = static_cast<"<< ConvertTypeToString(fType) << ">(tensor_" << fNX << "[id]);\n";
+         out << SP << SP << "tensor_" << fNY << "[id] = static_cast<" << ConvertTypeToString(fType) << ">(tensor_"
+             << fNX << "[id]);\n";
 
       out << SP << "}\n";
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_Cast
+#endif // ONNXTOCPP_ROPERATOR_Cast

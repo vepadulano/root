@@ -9,14 +9,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-class ROperator_Gather final : public ROperator
-{
+class ROperator_Gather final : public ROperator {
 private:
-
    int64_t fAttrAxis = 0;
 
    std::string fNX;
@@ -28,46 +26,49 @@ private:
    std::vector<Dim> fShapeY;
    std::vector<Dim> fOutputShapeData;
 
-   std::vector<int64_t> fIndices;  // indices vector in case they are known at initialization
+   std::vector<int64_t> fIndices; // indices vector in case they are known at initialization
 
    std::string fType;
 
-
 public:
-   ROperator_Gather(){}
-   ROperator_Gather(int64_t attrAxis, std::string nameX, std::string nameIndices, std::string nameY):
-      fAttrAxis(attrAxis), fNX(UTILITY::Clean_name(nameX)), fNIndices(UTILITY::Clean_name(nameIndices)), fNY(UTILITY::Clean_name(nameY)) {
-         fInputTensorNames = { fNX, fNIndices };
-         fOutputTensorNames = { fNY };
+   ROperator_Gather() {}
+   ROperator_Gather(int64_t attrAxis, std::string nameX, std::string nameIndices, std::string nameY)
+      : fAttrAxis(attrAxis),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNIndices(UTILITY::Clean_name(nameIndices)),
+        fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX, fNIndices};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          throw std::runtime_error("Internal::ONNXToCpp Gather Op Input Tensor " + fNX + " is not found in model");
       }
       fShapeX = model.GetDimTensorShape(fNX);
       if (model.Verbose())
          std::cout << "Gather - initial shape " << ConvertDimShapeToString(fShapeX) << " shape of indices "
-               << ConvertDimShapeToString(model.GetDimTensorShape(fNIndices)) << std::endl;
+                   << ConvertDimShapeToString(model.GetDimTensorShape(fNIndices)) << std::endl;
       //  fShapeIndices can be  dynamic
       fShapeIndices = model.GetDimTensorShape(fNIndices);
       size_t q = fShapeIndices.size();
       // Axis in range [0, r) where r=rank(X)
       size_t r = fShapeX.size();
-       // Set the axis
+      // Set the axis
       if (fAttrAxis < 0) {
          fAttrAxis = fAttrAxis + int64_t(r);
       }
 
-
       // case indices tensor is initialized
       if (model.IsInitializedTensor(fNIndices)) {
-          // empty shape Indices is a scalar value for the indices
+         // empty shape Indices is a scalar value for the indices
          bool hasNegativeIndex = false;
          size_t indicesLength = ConvertShapeToLength(model.GetTensorShape(fNIndices));
-         int64_t* data = static_cast<int64_t*>(model.GetInitializedTensorData(fNIndices).get());
+         int64_t *data = static_cast<int64_t *>(model.GetInitializedTensorData(fNIndices).get());
          // copy in a vector since we may need to update the values in case of negative indices
-         fIndices =std::vector<int64_t>(data, data + indicesLength);
+         fIndices = std::vector<int64_t>(data, data + indicesLength);
          // update indices data in case of negative dim values
          for (size_t i = 0; i < indicesLength; i++) {
             // move this at generation time?
@@ -87,7 +88,8 @@ public:
       }
       // Output shape
       if (model.Verbose())
-         std::cout << "Gather: q and r " << q << " " << r << " shape indices " << ConvertDimShapeToString(fShapeIndices) << std::endl;
+         std::cout << "Gather: q and r " << q << " " << r << " shape indices " << ConvertDimShapeToString(fShapeIndices)
+                   << std::endl;
 
       if (fShapeY.empty()) {
          fShapeY.resize(q + r - 1);
@@ -97,29 +99,30 @@ public:
          }
          // Set shape of Y[axis, ..., axis + q)
          for (size_t i = 0; i < q; i++) {
-            fShapeY[fAttrAxis + i] = Dim{ fShapeIndices[i]};
+            fShapeY[fAttrAxis + i] = Dim{fShapeIndices[i]};
          }
          // Copy shape of X[axis + 1, ..., r) to shape of Y[axis + q, ... q + r - 1)
          std::copy(fShapeX.begin() + fAttrAxis + 1, fShapeX.end(), fShapeY.begin() + fAttrAxis + q);
       }
       // case input is known (type is an integer) and input indices is a scalar (or vector of size 1)
       if (model.IsInitializedTensor(fNX) && q <= 1 && r == 1 && fIndices.size() > 0) {
-         auto shapeX = ConvertShapeToInt(fShapeX);  // we assume model is not dynamic
+         auto shapeX = ConvertShapeToInt(fShapeX); // we assume model is not dynamic
          auto shapeY = ConvertShapeToInt(fShapeY);
          if (model.GetTensorType(fNX) == ETensorType::INT64) {
-            auto inputData = static_cast<int64_t*>(model.GetInitializedTensorData(fNX).get());
+            auto inputData = static_cast<int64_t *>(model.GetInitializedTensorData(fNX).get());
             // if q <=1 and r = 1 output length = 1 (it is a scalar)
-            std::vector<int64_t> outputData(1); //ConvertShapeToLength(shapeY));
+            std::vector<int64_t> outputData(1); // ConvertShapeToLength(shapeY));
             outputData[0] = inputData[fIndices[0]];
             model.AddConstantTensor(fNY, shapeY, outputData.data());
             if (model.Verbose())
-               std::cout << "Gather: " << fNX << " " << ConvertShapeToString(shapeX) << " -> " << fNY << " with shape " << ConvertShapeToString(shapeY)
-                   << " and values " << ConvertValuesToString(outputData) << " (constant) " << std::endl;
+               std::cout << "Gather: " << fNX << " " << ConvertShapeToString(shapeX) << " -> " << fNY << " with shape "
+                         << ConvertShapeToString(shapeY) << " and values " << ConvertValuesToString(outputData)
+                         << " (constant) " << std::endl;
             fIsOutputConstant = true;
          }
       }
       // case input is a shape tensor  (r is == 1 by definition) and indices are known
-      else if (model.IsShapeTensor(fNX) && q <=1  && fIndices.size() > 0) {
+      else if (model.IsShapeTensor(fNX) && q <= 1 && fIndices.size() > 0) {
          auto inputData = model.GetShapeTensorValues(fNX);
          // if r == 1 and q<=1 then output length is 1 (is a scalar or tensor of size1)
          fOutputShapeData.resize(1);
@@ -129,16 +132,18 @@ public:
             // shapeY can be scalar or vector of size1
             model.AddShapeTensor(fNY, fOutputShapeData, fShapeY.size() == 0);
             if (model.Verbose())
-               std::cout << "Gather: " << fNX << " " << ConvertDimShapeToString(fShapeX) << " -> " << fNY << " with shape " << ConvertDimShapeToString(fShapeY)
-                   << " and values " << ConvertDimShapeToString(fOutputShapeData) << " (shape) " << std::endl;
+               std::cout << "Gather: " << fNX << " " << ConvertDimShapeToString(fShapeX) << " -> " << fNY
+                         << " with shape " << ConvertDimShapeToString(fShapeY) << " and values "
+                         << ConvertDimShapeToString(fOutputShapeData) << " (shape) " << std::endl;
          } else {
             int64_t value = static_cast<int64_t>(fOutputShapeData[0].dim);
             auto shapeY = ConvertShapeToInt(fShapeY);
             model.AddConstantTensor(fNY, shapeY, &value);
             fIsOutputConstant = true;
             if (model.Verbose())
-               std::cout << "Gather: " << fNX << " " << ConvertDimShapeToString(fShapeX) << " -> " << fNY << " with shape " << ConvertDimShapeToString(fShapeY)
-                   << " and values {" << value <<  "} (constant) " << std::endl;
+               std::cout << "Gather: " << fNX << " " << ConvertDimShapeToString(fShapeX) << " -> " << fNY
+                         << " with shape " << ConvertDimShapeToString(fShapeY) << " and values {" << value
+                         << "} (constant) " << std::endl;
          }
       }
       if (!fIsOutputConstant && !fIsOutputParamShape) {
@@ -146,12 +151,14 @@ public:
          model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShapeY);
          fType = ConvertTypeToString(model.GetTensorType(fNX));
          if (model.Verbose())
-               std::cout <<  "Gather: input " << fNX << " " << ConvertDimShapeToString(fShapeX) << " indices " << fNIndices << ConvertDimShapeToString(fShapeIndices)
-                         << " -> " << fNY << " with shape " << ConvertDimShapeToString(fShapeY) << std::endl;
+            std::cout << "Gather: input " << fNX << " " << ConvertDimShapeToString(fShapeX) << " indices " << fNIndices
+                      << ConvertDimShapeToString(fShapeIndices) << " -> " << fNY << " with shape "
+                      << ConvertDimShapeToString(fShapeY) << std::endl;
       }
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       opName = "op_" + opName;
       std::stringstream out;
       out << "//--------- Gather " << opName << " --> " << fNY << "  " << ConvertDimShapeToString(fShapeY) << "\n";
@@ -184,19 +191,23 @@ public:
 
       for (size_t j = 0; j < size_t(fAttrAxis); j++) {
          std::string index = "j_" + std::to_string(j);
-         for (size_t k = 0; k <= j; k++) out << SP;
+         for (size_t k = 0; k <= j; k++)
+            out << SP;
          out << "for (size_t " << index << " = 0; " << index << " < " << fShapeY[j] << "; " << index << "++) {\n";
       }
       // for i_0, i_1, ..., i_{q - 1}
       for (size_t i = 0; i < q; i++) {
          std::string index = "i_" + std::to_string(i);
-         for (size_t k = 0; k <= i + fAttrAxis; k++) out << SP;
-         out << "for (size_t " << index << " = " << 0 << "; " << index << " < " << fShapeIndices[i] << "; " << index << "++) {\n";
+         for (size_t k = 0; k <= i + fAttrAxis; k++)
+            out << SP;
+         out << "for (size_t " << index << " = " << 0 << "; " << index << " < " << fShapeIndices[i] << "; " << index
+             << "++) {\n";
       }
       // for j_axis, j_{axis + 1}, ..., j_{r - 1}
       for (size_t j = fAttrAxis; j + 1 < r; j++) {
-         std::string index = "j_" + std::to_string(q+j); // annotate index using output axis
-         for (size_t k = 0; k <= q + j; k++) out << SP;
+         std::string index = "j_" + std::to_string(q + j); // annotate index using output axis
+         for (size_t k = 0; k <= q + j; k++)
+            out << SP;
          out << "for (size_t " << index << " = 0; " << index << " < " << fShapeY[q + j] << "; " << index << "++) {\n";
       }
 
@@ -205,22 +216,29 @@ public:
          out << SP << "{   // scalar case \n";
 
       // output index
-      for (size_t k = 0; k < q + r; k++) out << SP;
+      for (size_t k = 0; k < q + r; k++)
+         out << SP;
       out << "size_t y_index = ";
       for (size_t j = 0; j < size_t(fAttrAxis); j++) {
-         if (j > 0) out << " + ";
+         if (j > 0)
+            out << " + ";
          out << "j_" << j;
-         if (stridesY[j].dim != 1) out << " * " << stridesY[j];
+         if (stridesY[j].dim != 1)
+            out << " * " << stridesY[j];
       }
       for (size_t i = 0; i < q; i++) {
-         if (fAttrAxis + i > 0) out << " + ";
+         if (fAttrAxis + i > 0)
+            out << " + ";
          out << "i_" << i;
-         if (stridesY[fAttrAxis + i].dim != 1) out << " * " << stridesY[fAttrAxis + i];
+         if (stridesY[fAttrAxis + i].dim != 1)
+            out << " * " << stridesY[fAttrAxis + i];
       }
       for (size_t j = fAttrAxis; j + 1 < r; j++) {
-         if (j + q > 0) out << " + ";
-         out << "j_" << q+j;
-         if (stridesY[q+j].dim != 1) out << " * " << stridesY[q+j];
+         if (j + q > 0)
+            out << " + ";
+         out << "j_" << q + j;
+         if (stridesY[q + j].dim != 1)
+            out << " * " << stridesY[q + j];
       }
       // empty case
       if (fAttrAxis == 0 && q == 0 && r <= 1)
@@ -228,12 +246,15 @@ public:
       out << ";\n";
 
       // input Indices
-      for (size_t k = 0; k < q + r; k++) out << SP;
+      for (size_t k = 0; k < q + r; k++)
+         out << SP;
       out << "size_t i_index = ";
       for (size_t i = 0; i < q; i++) {
-         if (i > 0) out << " + ";
+         if (i > 0)
+            out << " + ";
          out << "i_" << i;
-         if (stridesIndices[i].dim != 1) out << " * " << stridesIndices[i];
+         if (stridesIndices[i].dim != 1)
+            out << " * " << stridesIndices[i];
       }
       // empty case
       if (q == 0)
@@ -243,52 +264,57 @@ public:
       // K
       // when the indices are not a known constant, correct at the read site for
       // possible negative values (the indices tensor may be a const model input)
-      for (size_t k = 0; k < q + r; k++) out << SP;
+      for (size_t k = 0; k < q + r; k++)
+         out << SP;
       if (fIndices.empty()) {
          out << "int64_t k_i = static_cast<int64_t>(tensor_" << fNIndices << "[i_index]);\n";
-         for (size_t k = 0; k < q + r; k++) out << SP;
+         for (size_t k = 0; k < q + r; k++)
+            out << SP;
          out << "size_t k = static_cast<size_t>(k_i < 0 ? k_i + " << fShapeX[fAttrAxis] << " : k_i);\n";
       } else {
          out << "size_t k = static_cast<size_t>(" << "tensor_" << fNIndices << "[i_index]" << ");\n";
       }
       // Input
-      for (size_t k = 0; k < q + r; k++) out << SP;
+      for (size_t k = 0; k < q + r; k++)
+         out << SP;
       out << "size_t x_index = k";
-      if (stridesX[fAttrAxis].dim != 1) out << " * " << stridesX[fAttrAxis];
+      if (stridesX[fAttrAxis].dim != 1)
+         out << " * " << stridesX[fAttrAxis];
       for (size_t j = 0; j < size_t(fAttrAxis); j++) {
          out << " + ";
          out << " j_" << j;
-         if (stridesX[j].dim != 1) out << " * " << stridesX[j];
+         if (stridesX[j].dim != 1)
+            out << " * " << stridesX[j];
       }
       // for input corresponding stride is axis+1,.... r
       // loop is on j from fAttrAxis, so consider stridesX[j+1]
-      for (size_t j = fAttrAxis; j+1 < r; j++) {
+      for (size_t j = fAttrAxis; j + 1 < r; j++) {
          out << " + ";
-         out << " j_" << q+j;
-         if (stridesX[j+1].dim != 1) out << " * " << stridesX[j+1];
+         out << " j_" << q + j;
+         if (stridesX[j + 1].dim != 1)
+            out << " * " << stridesX[j + 1];
       }
       out << ";\n";
-      for (size_t k = 0; k < q + r; k++) out << SP;
+      for (size_t k = 0; k < q + r; k++)
+         out << SP;
       out << "tensor_" << fNY << "[y_index] = tensor_" << fNX << "[x_index];\n";
 
       // end loops j_k, j_{k + 1}, ..., j_{r - 2}
-      for (size_t j = q+r-1; j > 0; j--) {
-         for (size_t k = 0; k <j; k++) out << SP;
+      for (size_t j = q + r - 1; j > 0; j--) {
+         for (size_t k = 0; k < j; k++)
+            out << SP;
          out << "}\n";
       }
       // close empty scope if it was opened
       if (q == 0 && fAttrAxis == 0 && r <= 1)
          out << SP << "}   // close Gather scope for scalar case \n";
 
-
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_RELU
+#endif // ONNXTOCPP_ROPERATOR_RELU

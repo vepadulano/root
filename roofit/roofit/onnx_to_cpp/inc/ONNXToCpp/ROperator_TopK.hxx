@@ -30,19 +30,22 @@ private:
 
 public:
    ROperator_TopK() {}
-   ROperator_TopK(int attr_axis, int attr_largest, int attr_sorted, std::string nameK, std::string nameX, std::string nameVal, std::string nameInd)
+   ROperator_TopK(int attr_axis, int attr_largest, int attr_sorted, std::string nameK, std::string nameX,
+                  std::string nameVal, std::string nameInd)
       : fAttrAxis(attr_axis),
         fAttrLargest(attr_largest),
         fAttrSorted(attr_sorted),
         fNK(UTILITY::Clean_name(nameK)),
         fNX(UTILITY::Clean_name(nameX)),
         fNVal(UTILITY::Clean_name(nameVal)),
-        fNInd(UTILITY::Clean_name(nameInd)){
-            fInputTensorNames = { fNX, fNK };
-            fOutputTensorNames = { fNVal, fNInd };
-        }
+        fNInd(UTILITY::Clean_name(nameInd))
+   {
+      fInputTensorNames = {fNX, fNK};
+      fOutputTensorNames = {fNVal, fNInd};
+   }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (model.CheckIfTensorAlreadyExist(fNX) == false) {
          // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp TopK Op Input Tensor is not found in model");
@@ -70,9 +73,10 @@ public:
                                   " must be known at initialization time");
       }
       fAttrAxis = fAttrAxis < 0 ? fShapeX.size() + fAttrAxis : fAttrAxis;
-      if(static_cast<size_t>(fAttrAxis) >=  fShapeX.size()){
-         throw
-            std::runtime_error("Internal::ONNXToCpp ONNX TopK op axis = "+ std::to_string(fAttrAxis) +" value exeeds size of tensor " +fNX+" of size "+ std::to_string(fShapeX.size()) +" .");
+      if (static_cast<size_t>(fAttrAxis) >= fShapeX.size()) {
+         throw std::runtime_error("Internal::ONNXToCpp ONNX TopK op axis = " + std::to_string(fAttrAxis) +
+                                  " value exeeds size of tensor " + fNX + " of size " + std::to_string(fShapeX.size()) +
+                                  " .");
       }
       // fK cannot be larger that axis dimension
       if (kdim.isParam || fShapeX[fAttrAxis].isParam)
@@ -95,27 +99,29 @@ public:
       model.AddNeededStdLib("cstring");
 
       if (model.Verbose()) {
-         std::cout << "TopK " << fNX << "  " << ConvertDimShapeToString(fShapeX)
-                      << "---> " << fNVal << " " <<  ConvertDimShapeToString(fShapeY) << std::endl;
+         std::cout << "TopK " << fNX << "  " << ConvertDimShapeToString(fShapeX) << "---> " << fNVal << " "
+                   << ConvertDimShapeToString(fShapeY) << std::endl;
       }
    }
 
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       OpName = "op_" + OpName;
       if (fShapeX.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator TopK called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator TopK called to Generate without being initialized first");
       }
       std::stringstream out;
       size_t size = fShapeX.size();
       size_t axis = fAttrAxis < 0 ? size + fAttrAxis : fAttrAxis;
       out << "\n" << SP << "//------ TopK\n";
 
-      auto length=ConvertDimShapeToLength(fShapeX);
+      auto length = ConvertDimShapeToLength(fShapeX);
       auto strideX = UTILITY::ComputeStrideFromShape(fShapeX);
       auto strideY = UTILITY::ComputeStrideFromShape(fShapeY);
       // we perform loop on dimension before sorted axis and after sorted axis
-      std::vector<Dim> shape_before(fShapeX.begin(), fShapeX.begin() + axis);   // input shape before axis
-      std::string n_before = (axis>0) ? ConvertDimShapeToLength(shape_before) : "1";
+      std::vector<Dim> shape_before(fShapeX.begin(), fShapeX.begin() + axis); // input shape before axis
+      std::string n_before = (axis > 0) ? ConvertDimShapeToLength(shape_before) : "1";
       std::string n_after = strideX[axis].GetVal();
       std::string n_elements = fShapeX[axis].GetVal(); // number of elements to be sorted
 
@@ -158,14 +164,14 @@ public:
       // loop on elements before
       if (n_before != "1") {
          out << SP << "for (size_t i = 0; i < " << n_before << "; i++) {\n";
-         out << SP << SP << "size_t xoffset = i*" << strideX[axis-1] << ";\n";
-         out << SP << SP << "size_t yoffset = i*" << strideY[axis-1] << ";\n";
+         out << SP << SP << "size_t xoffset = i*" << strideX[axis - 1] << ";\n";
+         out << SP << SP << "size_t yoffset = i*" << strideY[axis - 1] << ";\n";
          out << SP;
       } else {
          out << SP << "size_t xoffset = 0;\n";
          out << SP << "size_t yoffset = 0;\n";
       }
-      if (n_after !=  "1")
+      if (n_after != "1")
          out << SP << "for (size_t j = 0; j < " << n_after << "; j++) {\n";
       else
          out << SP << "const size_t j = 0;\n";
@@ -214,8 +220,10 @@ public:
              << "*l + j] = elements[l].second;\n";
       }
       out << SP << SP << "}\n";
-      if (n_after != "1") out << SP << SP << "}\n";
-      if (n_before != "1") out << SP << "}\n";
+      if (n_after != "1")
+         out << SP << SP << "}\n";
+      if (n_before != "1")
+         out << SP << "}\n";
       out << SP << "}\n"; // end operator scope
       return out.str();
    }

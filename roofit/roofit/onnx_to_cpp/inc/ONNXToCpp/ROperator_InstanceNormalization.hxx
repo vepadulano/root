@@ -58,8 +58,9 @@ public:
 
       fShape = model.GetTensorShape(fNInput);
       if (fShape.size() < 3) {
-         throw std::runtime_error("Internal::ONNXToCpp - InstanceNormalization - Input tensor " + fNInput + " has rank " +
-                                  std::to_string(fShape.size()) + " but at least rank 3 (N, C, D1, ...) is required.");
+         throw std::runtime_error("Internal::ONNXToCpp - InstanceNormalization - Input tensor " + fNInput +
+                                  " has rank " + std::to_string(fShape.size()) +
+                                  " but at least rank 3 (N, C, D1, ...) is required.");
       }
 
       // scale and B are 1D tensors of length C
@@ -67,8 +68,8 @@ public:
       for (const std::string &name : {fNScale, fNBias}) {
          auto shape = model.GetTensorShape(name);
          if (shape.size() != 1 || shape[0] != channels) {
-            throw std::runtime_error("Internal::ONNXToCpp - InstanceNormalization - Tensor " + name + " has invalid shape " +
-                                     ConvertShapeToString(shape) + ", expected " +
+            throw std::runtime_error("Internal::ONNXToCpp - InstanceNormalization - Tensor " + name +
+                                     " has invalid shape " + ConvertShapeToString(shape) + ", expected " +
                                      ConvertShapeToString(std::vector<size_t>{channels}) + ".");
          }
       }
@@ -80,7 +81,8 @@ public:
    std::string Generate(std::string) override
    {
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp - InstanceNormalization called to generate without being initialized.");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp - InstanceNormalization called to generate without being initialized.");
       }
 
       const size_t batchSize = fShape[0];

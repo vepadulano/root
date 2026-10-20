@@ -54,7 +54,8 @@ public:
    {
       OpName = "op_" + OpName;
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator Elu called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator Elu called to Generate without being initialized first");
       }
       std::stringstream out;
       auto length = ConvertDimShapeToLength(fShape);

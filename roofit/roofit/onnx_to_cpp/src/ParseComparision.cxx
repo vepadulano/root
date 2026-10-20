@@ -17,17 +17,15 @@ std::unique_ptr<ROperator> ParseComparision(RModelParser_ONNX &parser, const onn
          // according to ONNX both inputs have same type
          if (i == 0)
             input_type = parser.GetTensorType(input_name);
-         else
-            if (input_type != parser.GetTensorType(input_name)) {
-               throw
-                  std::runtime_error("Internal::ONNXToCpp ONNX parser Comparision op has input tensors of different types");
-            }
+         else if (input_type != parser.GetTensorType(input_name)) {
+            throw std::runtime_error(
+               "Internal::ONNXToCpp ONNX parser Comparision op has input tensors of different types");
+         }
       } else {
          throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Comparision op has input tensor " + input_name +
                                   " but its type is not yet registered");
       }
    }
-
 
    std::string output_name = nodeproto.output(0);
 
@@ -43,8 +41,9 @@ std::unique_ptr<ROperator> ParseComparision(RModelParser_ONNX &parser, const onn
       op.reset(new ROperator_Comparision<int32_t, Op>(nodeproto.input(0), nodeproto.input(1), output_name));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Comparision Operator does not yet support input type " +
-                               ConvertTypeToString(input_type));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Comparision Operator does not yet support input type " +
+         ConvertTypeToString(input_type));
    }
 
    // Infer the output type

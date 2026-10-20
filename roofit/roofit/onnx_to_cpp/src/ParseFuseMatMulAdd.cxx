@@ -28,7 +28,8 @@ ParserFuseFuncSignature ParseFuseMatMulAdd = [](RModelParser_ONNX &parser, const
    else if (matmulnode.output(0) == addnode.input(1))
       nameBias = addnode.input(0);
    else
-      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser : cannot fuse MatMul and Add since have different inputs");
+      throw std::runtime_error(
+         "Internal::ONNXToCpp ONNX Parser : cannot fuse MatMul and Add since have different inputs");
 
    // we don't check input type of ADD since it is not be registered
    std::unique_ptr<ROperator> op;
@@ -41,12 +42,12 @@ ParserFuseFuncSignature ParseFuseMatMulAdd = [](RModelParser_ONNX &parser, const
    switch (input_type) {
    case ETensorType::FLOAT:
       op.reset(new ROperator_Gemm<float>(attr_alpha, attr_beta, attr_transA, attr_transB, matmulnode.input(0),
-                                          matmulnode.input(1), nameBias, addnode.output(0)));
+                                         matmulnode.input(1), nameBias, addnode.output(0)));
       break;
    default:
-      throw std::runtime_error(
-         "Internal::ONNXToCpp - Unsupported - Operator for fusing MatMul and Add to Gemm does not yet support input type " +
-         std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator for fusing MatMul and Add to Gemm does "
+                               "not yet support input type " +
+                               std::to_string(static_cast<int>(input_type)));
    }
 
    std::string output_name = addnode.output(0);

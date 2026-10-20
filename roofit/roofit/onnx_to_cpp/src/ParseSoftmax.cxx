@@ -28,14 +28,11 @@ ParserFuncSignature ParseSoftmax = [](RModelParser_ONNX &parser, const onnx::Nod
 
    op.reset(new ROperator_Softmax(attr_axis, input_name, output_name, logSoftmax));
 
-
    if (!parser.IsRegisteredTensorType(output_name)) {
       parser.RegisterTensorType(output_name, input_type);
    }
    return op;
 };
-
-
 
 } // namespace ONNXToCpp
 } // namespace Internal

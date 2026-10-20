@@ -9,76 +9,71 @@
 #include <sstream>
 #include <numeric>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 // slice operator
 
 template <typename IType>
-class ROperator_Slice final : public ROperator
-{
+class ROperator_Slice final : public ROperator {
 
 private:
-
    // flags to indicate if start/end and steps are not defined at compiled time
    bool fIsStartUndef = false;
    bool fIsEndUndef = false;
    bool fIsStepUndef = false;
    bool fIdentitySlice = false;
-   bool fIsAlias = false;     // identity slice whose output shares the memory of the input
-   std::string fNData;        // input data tensor name
-   std::string fNOutput;      // output data name
-   std::vector<std::string> fNames;       // tensor names for meta(axis) information
-   std::vector<Dim> fShapeInput;     // input shape
-   std::vector<Dim> fShapeOutput;   // output shape
-   std::vector<Dim> fOutputShapeData;   // output shape data in case output is a shape param tensor
+   bool fIsAlias = false;             // identity slice whose output shares the memory of the input
+   std::string fNData;                // input data tensor name
+   std::string fNOutput;              // output data name
+   std::vector<std::string> fNames;   // tensor names for meta(axis) information
+   std::vector<Dim> fShapeInput;      // input shape
+   std::vector<Dim> fShapeOutput;     // output shape
+   std::vector<Dim> fOutputShapeData; // output shape data in case output is a shape param tensor
 
    // saved Start/End.Steps are corrected from initial ONNX for negative/default values
    // and are available for each axis
-   std::vector<Dim> fStart;         // starting values of slices for all axes
-   std::vector<Dim> fEnd;           // End values of slices for all axes
-   std::vector<Dim> fSteps;         // step values of slices for all axes
-   std::vector<Dim> fStartDims;         // input starting values of slices
-   std::vector<Dim> fEndDims;           // input End values of slices
-   std::vector<Dim> fStepDims;         // input step values of slices
-   std::vector<IType> fAxes;           // axes for input start/emd/step values
+   std::vector<Dim> fStart;     // starting values of slices for all axes
+   std::vector<Dim> fEnd;       // End values of slices for all axes
+   std::vector<Dim> fSteps;     // step values of slices for all axes
+   std::vector<Dim> fStartDims; // input starting values of slices
+   std::vector<Dim> fEndDims;   // input End values of slices
+   std::vector<Dim> fStepDims;  // input step values of slices
+   std::vector<IType> fAxes;    // axes for input start/emd/step values
 
    std::vector<std::vector<IType>> fAttributes; // attributes for the version <=10 case
 
-
 public:
-
-   ROperator_Slice(){}
+   ROperator_Slice() {}
 
    // ctor for versions >= 10
    ROperator_Slice(std::string nameData, std::vector<std::string> names, std::string nameOutput)
-      : fNData(UTILITY::Clean_name(nameData)),
-      fNOutput(UTILITY::Clean_name(nameOutput))
+      : fNData(UTILITY::Clean_name(nameData)), fNOutput(UTILITY::Clean_name(nameOutput))
    {
-    fNames.resize(4);
-    // axes and steps can be optional
-    for (size_t i = 0; i < names.size(); ++i) {
-        fNames[i] = UTILITY::Clean_name(names[i]);
-    }
+      fNames.resize(4);
+      // axes and steps can be optional
+      for (size_t i = 0; i < names.size(); ++i) {
+         fNames[i] = UTILITY::Clean_name(names[i]);
+      }
 
-    fInputTensorNames = { fNData };
-    fOutputTensorNames = { fNOutput };
+      fInputTensorNames = {fNData};
+      fOutputTensorNames = {fNOutput};
    }
    // ctor for versions < 10
-   ROperator_Slice(std::string nameData, std::vector<IType> starts, std::vector<IType> ends, std::vector<IType> axes, std::string nameOutput)
-      : fNData(UTILITY::Clean_name(nameData)),
-      fNOutput(UTILITY::Clean_name(nameOutput))
+   ROperator_Slice(std::string nameData, std::vector<IType> starts, std::vector<IType> ends, std::vector<IType> axes,
+                   std::string nameOutput)
+      : fNData(UTILITY::Clean_name(nameData)), fNOutput(UTILITY::Clean_name(nameOutput))
    {
-     fAttributes.push_back(starts);
-     fAttributes.push_back(ends);
-     fAttributes.push_back(axes);
-    }
+      fAttributes.push_back(starts);
+      fAttributes.push_back(ends);
+      fAttributes.push_back(axes);
+   }
 
-
-
-   void Initialize(RModel& model) override {
-      if (model.CheckIfTensorAlreadyExist(fNData) == false){   //input must be a graph input, or already initialized intermediate tensor
+   void Initialize(RModel &model) override
+   {
+      if (model.CheckIfTensorAlreadyExist(fNData) ==
+          false) { // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp Slice Op Input Tensor is not found in model");
       }
 
@@ -88,7 +83,7 @@ public:
 
       std::vector<std::vector<IType>> itensors(4);
 
-      if (fNames.size() > 0) {  // size has to be equal to 4
+      if (fNames.size() > 0) { // size has to be equal to 4
          // loop on the extra 2 or 3 or 4 inputs
          for (size_t i = 0; i < 4; ++i) {
             if (!fNames[i].empty()) {
@@ -114,7 +109,7 @@ public:
                   size_t s = shape[0];
                   for (size_t k = 0; k < s; k++) {
                      if (i == 0) {
-                        fStartDims.push_back( Dim{std::string("start_") + fNOutput + "_" + std::to_string(k)});
+                        fStartDims.push_back(Dim{std::string("start_") + fNOutput + "_" + std::to_string(k)});
                         fIsStartUndef = true;
                      } else if (i == 1) {
                         fEndDims.push_back(Dim{std::string("end_") + fNOutput + "_" + std::to_string(k)});
@@ -149,44 +144,46 @@ public:
          fAxes = itensors[2];
          for (size_t i = 0; i < fAxes.size(); i++) {
             // negative axes - they count from the back
-            if (fAxes[i] < 0) fAxes[i] = dim + fAxes[i];
+            if (fAxes[i] < 0)
+               fAxes[i] = dim + fAxes[i];
             if (fAxes[i] < 0 || fAxes[i] >= static_cast<IType>(dim))
-               throw std::runtime_error("Internal::ONNXToCpp Slice Op : invalid axis value " + std::to_string(fAxes[i]) +
-                  " for  " + std::to_string(i));
+               throw std::runtime_error("Internal::ONNXToCpp Slice Op : invalid axis value " +
+                                        std::to_string(fAxes[i]) + " for  " + std::to_string(i));
          }
       }
       // Loop on axis to get start/end/step values
       for (size_t i = 0; i < fAxes.size(); i++) {
-         if (!itensors[0].empty() )
-            fStartDims.push_back(Dim{ static_cast<size_t>(itensors[0][i])});
+         if (!itensors[0].empty())
+            fStartDims.push_back(Dim{static_cast<size_t>(itensors[0][i])});
          if (fStartDims.empty())
             throw std::runtime_error("Internal::ONNXToCpp Slice Op : Missing start input tensor");
 
          if (!itensors[1].empty())
-            fEndDims.push_back(Dim{ static_cast<size_t>(itensors[1][i])});
+            fEndDims.push_back(Dim{static_cast<size_t>(itensors[1][i])});
          else if (fEndDims.empty())
             throw std::runtime_error("Internal::ONNXToCpp Slice Op : Missing end input tensor");
 
          if (!itensors[3].empty()) {
-            fStepDims.push_back(Dim{ static_cast<size_t>(itensors[3][i])});
-         }
-         else if (fStepDims.size() < fAxes.size())  // this can happen since it is optional
+            fStepDims.push_back(Dim{static_cast<size_t>(itensors[3][i])});
+         } else if (fStepDims.size() < fAxes.size()) // this can happen since it is optional
             fStepDims.push_back(Dim{size_t(1)});
 
          if (!fShapeInput[fAxes[i]].isParam) {
             size_t iAxisDim = fShapeInput[fAxes[i]].dim;
-            //correct values if too large or too small
+            // correct values if too large or too small
             IType istart = 0;
             if (!fStartDims[i].isParam) {
                istart = static_cast<IType>(fStartDims[i].dim);
-               if (istart < 0) istart = iAxisDim + istart;
+               if (istart < 0)
+                  istart = iAxisDim + istart;
             }
             IType iend = static_cast<IType>(iAxisDim);
             if (!fEndDims[i].isParam) {
                iend = static_cast<IType>(fEndDims[i].dim);
-               if (iend < 0) iend = iAxisDim + iend;
+               if (iend < 0)
+                  iend = iAxisDim + iend;
             }
-            //steps
+            // steps
             IType istep = 1;
             if (!fStepDims[i].isParam) {
                istep = static_cast<IType>(fStepDims[i].dim);
@@ -196,18 +193,25 @@ public:
             // clamp start end values depending on steps
             // start must be [0,N] for positive steps or [0,N-1] for negative
             // end   must be [0,N] for positive steps or [-1, N-1] for negative
-            if (istart < 0) istart = 0;
+            if (istart < 0)
+               istart = 0;
             if (istep > 0) {
-               if (istart > static_cast<IType>(iAxisDim)) istart = static_cast<IType>(iAxisDim);
-               if (iend < 0) iend = 0;
-               if (iend > static_cast<IType>(iAxisDim)) iend = static_cast<IType>(iAxisDim);
+               if (istart > static_cast<IType>(iAxisDim))
+                  istart = static_cast<IType>(iAxisDim);
+               if (iend < 0)
+                  iend = 0;
+               if (iend > static_cast<IType>(iAxisDim))
+                  iend = static_cast<IType>(iAxisDim);
             } else if (istep < 0) {
-               if (istart > static_cast<IType>(iAxisDim)-1) istart = static_cast<IType>(iAxisDim) -1;
-               if (iend < -1) iend = -1;
-               if (iend > static_cast<IType>(iAxisDim)-1) iend = static_cast<IType>(iAxisDim) -1;
+               if (istart > static_cast<IType>(iAxisDim) - 1)
+                  istart = static_cast<IType>(iAxisDim) - 1;
+               if (iend < -1)
+                  iend = -1;
+               if (iend > static_cast<IType>(iAxisDim) - 1)
+                  iend = static_cast<IType>(iAxisDim) - 1;
             } else {
                throw std::runtime_error("Internal::ONNXToCpp Slice Op : invalid step value " + std::to_string(istep) +
-                  " for  " + std::to_string(i));
+                                        " for  " + std::to_string(i));
             }
             // for parametric values clamping we will done at run time
             if (fStartDims[i].isParam)
@@ -221,15 +225,16 @@ public:
 
             fSteps[fAxes[i]] = Dim{size_t(istep)};
          } else {
-            //std::cout << i << " Param dim for " << fAxes[i] << "  " <<  fShapeInput[fAxes[i]] << std::endl;
-            // correct only negative values
+            // std::cout << i << " Param dim for " << fAxes[i] << "  " <<  fShapeInput[fAxes[i]] << std::endl;
+            //  correct only negative values
             if (!fStartDims[i].isParam) {
                IType istart = static_cast<IType>(fStartDims[i].dim);
                if (istart < 0) {
-                  std::string sstart = std::string("(") + fShapeInput[fAxes[i]].param + "-" + std::to_string(-istart) +")";
-                  fStart[fAxes[i]] = Dim{sstart,size_t(-1)};
+                  std::string sstart =
+                     std::string("(") + fShapeInput[fAxes[i]].param + "-" + std::to_string(-istart) + ")";
+                  fStart[fAxes[i]] = Dim{sstart, size_t(-1)};
                } else {
-                 fStart[fAxes[i]] = Dim{size_t(istart)};
+                  fStart[fAxes[i]] = Dim{size_t(istart)};
                }
             } else {
                fStart[fAxes[i]] = fStartDims[i];
@@ -237,12 +242,12 @@ public:
             if (!fEndDims[i].isParam) {
                IType iend = static_cast<IType>(fEndDims[i].dim);
                if (iend < 0) {
-                  std::string send = std::string("(") + fShapeInput[fAxes[i]].param + "-" + std::to_string(-iend) +")";
-                  fEnd[fAxes[i]] = Dim{send,size_t(-1)};
-               } else if (iend == std::numeric_limits<IType>::max()){
+                  std::string send = std::string("(") + fShapeInput[fAxes[i]].param + "-" + std::to_string(-iend) + ")";
+                  fEnd[fAxes[i]] = Dim{send, size_t(-1)};
+               } else if (iend == std::numeric_limits<IType>::max()) {
                   fEnd[fAxes[i]] = fShapeInput[fAxes[i]];
                } else {
-                 fEnd[fAxes[i]] = Dim{size_t(iend)};
+                  fEnd[fAxes[i]] = Dim{size_t(iend)};
                }
             } else {
                fEnd[fAxes[i]] = fEndDims[i];
@@ -250,7 +255,6 @@ public:
 
             fSteps[fAxes[i]] = fStepDims[i];
          }
-
       }
       //  find output shape
       fShapeOutput.resize(dim);
@@ -258,8 +262,8 @@ public:
          if (!fEnd[i].isParam && !fStart[i].isParam && !fSteps[i].isParam) {
             int64_t istart = static_cast<int64_t>(fStart[i].dim);
             int64_t iend = static_cast<int64_t>(fEnd[i].dim);
-            int64_t istep= static_cast<int64_t>(fSteps[i].dim);
-            int64_t s = (iend-istart)/istep;
+            int64_t istep = static_cast<int64_t>(fSteps[i].dim);
+            int64_t s = (iend - istart) / istep;
             fShapeOutput[i] = Dim{static_cast<size_t>(s)};
          } else {
             std::string s;
@@ -268,43 +272,45 @@ public:
             else
                s = fEnd[i].GetVal();
             if (fSteps[i].GetVal() != "1") {
-               s.insert(0,"(");
+               s.insert(0, "(");
                s += ")/" + fSteps[i].GetVal() + ")";
             }
-            fShapeOutput[i] = Dim{s,size_t(-1)};
+            fShapeOutput[i] = Dim{s, size_t(-1)};
             // add also the shape parameters to RModel to declare them when
             // allocating output tensor
             if (fEnd[i].isParam && fEnd[i].dim != size_t(-1))
-               model.AddShapeParam(fEnd[i].param,fEnd[i].dim );
+               model.AddShapeParam(fEnd[i].param, fEnd[i].dim);
             if (fStart[i].isParam && fStart[i].dim != size_t(-1))
-               model.AddShapeParam(fStart[i].param,fStart[i].dim );
+               model.AddShapeParam(fStart[i].param, fStart[i].dim);
             if (fSteps[i].isParam && fSteps[i].dim != size_t(-1))
-               model.AddShapeParam(fSteps[i].param,fSteps[i].dim );
-
+               model.AddShapeParam(fSteps[i].param, fSteps[i].dim);
          }
       }
       // case input is a constant tensor and of int64 type
       if (model.IsInitializedTensor(fNData) && model.GetTensorType(fNData) == ETensorType::INT64) {
          fIsOutputConstant = true;
-         auto inputData = static_cast<int64_t*>(model.GetInitializedTensorData(fNData).get());
+         auto inputData = static_cast<int64_t *>(model.GetInitializedTensorData(fNData).get());
          size_t outputSize = ConvertShapeToLength(ConvertShapeToInt(fShapeOutput));
          std::vector<int64_t> outputData(outputSize);
          std::vector<size_t> inputStride = UTILITY::ComputeStrideFromShape(ConvertShapeToInt(fShapeInput));
          if (model.Verbose()) {
             std::cout << "Do slice for initialized input ..(start, end, step)\n";
-            for (size_t ii = 0; ii< fStart.size(); ii++)
-               std::cout << fStart [ii] << "  " << fEnd[ii] << "  " << fSteps[ii] << std::endl;
+            for (size_t ii = 0; ii < fStart.size(); ii++)
+               std::cout << fStart[ii] << "  " << fEnd[ii] << "  " << fSteps[ii] << std::endl;
          }
-          // perform slice using a recursive function- need to use two lambda functions for this
-         auto sliceRecursive = [&](size_t iaxis, size_t & outIdx, size_t & inOffset) {
-            auto slice_impl = [&](size_t iax, size_t & outputIdx, size_t & inputOffset, auto & sliceRecImpl) {
+         // perform slice using a recursive function- need to use two lambda functions for this
+         auto sliceRecursive = [&](size_t iaxis, size_t &outIdx, size_t &inOffset) {
+            auto slice_impl = [&](size_t iax, size_t &outputIdx, size_t &inputOffset, auto &sliceRecImpl) {
                if (fStart[iax].isParam || fEnd[iax].isParam || fSteps[iax].isParam)
-                  throw std::runtime_error("Internal::ONNXToCpp Slice Op : cannot have parametric values when input is constant");
+                  throw std::runtime_error(
+                     "Internal::ONNXToCpp Slice Op : cannot have parametric values when input is constant");
                // compute indices
                std::vector<IType> indices;
-               for (IType i = (IType) fStart[iax].dim; (IType(fSteps[iax].dim) > 0) ? i < IType(fEnd[iax].dim) : i > IType(fEnd[iax].dim); i += IType(fSteps[iax].dim) )
+               for (IType i = (IType)fStart[iax].dim;
+                    (IType(fSteps[iax].dim) > 0) ? i < IType(fEnd[iax].dim) : i > IType(fEnd[iax].dim);
+                    i += IType(fSteps[iax].dim))
                   indices.push_back(i);
-               if (iax == dim-1) { // last axis
+               if (iax == dim - 1) { // last axis
                   for (size_t i = 0; i < indices.size(); i++) {
                      outputData[outputIdx] = inputData[inputOffset + indices[i]];
                      outputIdx++;
@@ -312,12 +318,12 @@ public:
                   return;
                } else {
                   for (size_t i = 0; i < indices.size(); i++) {
-                     size_t offset = inputOffset + inputStride[iax]*indices[i];
-                     sliceRecImpl(iax+1, outputIdx, offset,sliceRecImpl);
+                     size_t offset = inputOffset + inputStride[iax] * indices[i];
+                     sliceRecImpl(iax + 1, outputIdx, offset, sliceRecImpl);
                   }
                }
             };
-            slice_impl(iaxis, outIdx, inOffset,slice_impl);
+            slice_impl(iaxis, outIdx, inOffset, slice_impl);
          };
          size_t idx = 0;
          size_t offset = 0;
@@ -326,23 +332,23 @@ public:
          model.AddConstantTensor<int64_t>(fNOutput, ConvertShapeToInt(fShapeOutput), outputData.data());
          if (model.Verbose()) {
             std::cout << "Slice: output is a constant tensor " << ConvertDimShapeToString(fShapeOutput) << " : "
-                     << ConvertValuesToString(outputData) << std::endl;
+                      << ConvertValuesToString(outputData) << std::endl;
          }
-      }
-      else if (model.IsShapeTensor(fNData) && !fStart[0].isParam && !fEnd[0].isParam) {
+      } else if (model.IsShapeTensor(fNData) && !fStart[0].isParam && !fEnd[0].isParam) {
          // case of input is a shape tensor. In this case rank=1 always, axis =0 and Slice is trivial
          auto inputData = model.GetShapeTensorValues(fNData);
          fOutputShapeData = std::vector<Dim>(inputData.begin() + fStart[0].dim, inputData.begin() + fEnd[0].dim);
          // try to convert to integer values if possible
          auto outputData = ConvertShapeToInt(fOutputShapeData);
-         fShapeOutput = { Dim{fOutputShapeData.size()}};
+         fShapeOutput = {Dim{fOutputShapeData.size()}};
          if (outputData.empty()) {
             // is a param shape tensor
             model.AddShapeTensor(fNOutput, fOutputShapeData);
             fIsOutputParamShape = true;
             if (model.Verbose()) {
-               std::cout << "Slice: output is a shape tensor -> " << fNOutput << "  " << ConvertDimShapeToString(fShapeOutput) << " with values "
-                        << ConvertDimShapeToString(fOutputShapeData) << " (shape)" << std::endl;
+               std::cout << "Slice: output is a shape tensor -> " << fNOutput << "  "
+                         << ConvertDimShapeToString(fShapeOutput) << " with values "
+                         << ConvertDimShapeToString(fOutputShapeData) << " (shape)" << std::endl;
             }
          } else {
             fIsOutputConstant = true;
@@ -350,19 +356,21 @@ public:
             std::copy(outputData.begin(), outputData.end(), data.begin());
             model.AddConstantTensor<int64_t>(fNOutput, {data.size()}, data.data());
             if (model.Verbose()) {
-               std::cout << "Slice: output is a constant tensor -> " << fNOutput << "  " << ConvertDimShapeToString(fShapeOutput) << " with values "
-                        << ConvertDimShapeToString(fOutputShapeData) << " constant " << std::endl;
+               std::cout << "Slice: output is a constant tensor -> " << fNOutput << "  "
+                         << ConvertDimShapeToString(fShapeOutput) << " with values "
+                         << ConvertDimShapeToString(fOutputShapeData) << " constant " << std::endl;
             }
          }
-      }
-      else {
+      } else {
          // check if Slice is just an Identity operator in case start = 0, end = input_shape and step=1
          size_t ndim = fShapeInput.size();
          fIdentitySlice = fShapeOutput.size() == ndim;
-         // check also if input data is not input to the model. In that case we copy the data since we cannot just copy from the input pointer
+         // check also if input data is not input to the model. In that case we copy the data since we cannot just copy
+         // from the input pointer
          fIdentitySlice &= (!model.IsReadyInputTensor(fNData) && !model.IsDimInputTensor(fNData));
          for (size_t idim = 0; idim < ndim; idim++) {
-            if (!fIdentitySlice) break;
+            if (!fIdentitySlice)
+               break;
             fIdentitySlice &= (fStart[idim].GetVal() == "0");
             fIdentitySlice &= (fSteps[idim].GetVal() == "1");
             fIdentitySlice &= (fEnd[idim].GetVal() == fShapeInput[idim].GetVal());
@@ -374,32 +382,34 @@ public:
             fIsAlias = model.AddAliasTensor(fNOutput, fNData);
 
          if (model.Verbose()) {
-            std::cout << "Slice " << fNData << "  " << ConvertDimShapeToString(fShapeInput)
-                      << "---> " << fNOutput << " " <<  ConvertDimShapeToString(fShapeOutput);
+            std::cout << "Slice " << fNData << "  " << ConvertDimShapeToString(fShapeInput) << "---> " << fNOutput
+                      << " " << ConvertDimShapeToString(fShapeOutput);
             if (fIsAlias)
                std::cout << " (using alias tensor since slice is an identity) ";
             std::cout << std::endl;
-
          }
       }
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
 
-      if (fShapeInput.empty() || fShapeOutput.empty()){
+      if (fShapeInput.empty() || fShapeOutput.empty()) {
          throw std::runtime_error("Internal::ONNXToCpp Slice Op called to Generate without being initialized first");
       }
 
       std::stringstream out;
 
       out << "///------- Slice operator " << opName << "---> " << fNOutput << " "
-          << ConvertDimShapeToString(fShapeOutput) << "\n" << std::endl;
-      if (fIsOutputConstant) return out.str();  //no op for constant tensors
+          << ConvertDimShapeToString(fShapeOutput) << "\n"
+          << std::endl;
+      if (fIsOutputConstant)
+         return out.str(); // no op for constant tensors
       if (fIsOutputParamShape) {
          out << "/// Slice output is a shape tensor with values : " << ConvertDimShapeToString(fShapeOutput) << "\n";
          // need to generate code assigning values to shape tensors
          for (int i = 0; i < static_cast<int>(fShapeOutput[0].dim); i++) {
-                  out << SP << "tensor_" << fNOutput << "[" << i << "] = " << fOutputShapeData[i] << ";\n";
+            out << SP << "tensor_" << fNOutput << "[" << i << "] = " << fOutputShapeData[i] << ";\n";
          }
          return out.str();
       }
@@ -421,7 +431,6 @@ public:
       // loop on the dimensions depending no the orders
       auto strides = UTILITY::ComputeStrideFromShape(fShapeInput);
 
-
       out << SP << "{\n"; // define operator scope
       for (size_t i = 0; i < fStepDims.size(); i++) {
          if (fStepDims[i].isParam) {
@@ -437,21 +446,24 @@ public:
                s_start = fStartDims[i].param;
                out << SP << "size_t " << s_start << " = tensor_" << fNames[0] << "[" << i << "];\n";
             } else {
-               out << SP << "size_t " << s_start << " = " <<  fStartDims[i] << ";\n";
+               out << SP << "size_t " << s_start << " = " << fStartDims[i] << ";\n";
                fStart[fAxes[i]] = s_start; // need to use this value later when slicing
             }
-            out << SP << "if (" << s_start << " < 0) " << s_start << " += " << fShapeInput[fAxes[i]] <<";\n";
+            out << SP << "if (" << s_start << " < 0) " << s_start << " += " << fShapeInput[fAxes[i]] << ";\n";
             out << SP << "if (" << s_start << " < 0) " << s_start << " = 0;\n";
             if (!fStepDims[i].isParam) {
-               if (static_cast<IType>(fStepDims[i].dim) > 0 )
-                  out << SP << "if (" << s_start << " > " << fShapeInput[fAxes[i]] << " ) " << s_start << " = " << fShapeInput[fAxes[i]] <<";\n";
+               if (static_cast<IType>(fStepDims[i].dim) > 0)
+                  out << SP << "if (" << s_start << " > " << fShapeInput[fAxes[i]] << " ) " << s_start << " = "
+                      << fShapeInput[fAxes[i]] << ";\n";
                else
-                  out << SP << "if (" << s_start << " > " << fShapeInput[fAxes[i]] << " - 1" << " ) " << s_start << " = " << fShapeInput[fAxes[i]] << " - 1;\n";
+                  out << SP << "if (" << s_start << " > " << fShapeInput[fAxes[i]] << " - 1" << " ) " << s_start
+                      << " = " << fShapeInput[fAxes[i]] << " - 1;\n";
             }
          }
          // special case if step is negative and shape are equal and step is negative
-         else if (fStartDims[i].isParam && fStartDims[i].param == fShapeInput[fAxes[i]].param && !fStepDims[i].isParam && static_cast<IType>(fStepDims[i].dim) < 0 ) {
-            fStart[fAxes[i]] = Dim{ fStartDims[i].param + "-1" };
+         else if (fStartDims[i].isParam && fStartDims[i].param == fShapeInput[fAxes[i]].param &&
+                  !fStepDims[i].isParam && static_cast<IType>(fStepDims[i].dim) < 0) {
+            fStart[fAxes[i]] = Dim{fStartDims[i].param + "-1"};
          }
       }
       // now to for end
@@ -462,53 +474,56 @@ public:
                s_end = fEndDims[i].param;
                out << SP << "size_t " << s_end << " = tensor_" << fNames[1] << "[" << i << "];\n";
             } else {
-               out << SP << "size_t " << s_end << " = " <<  fEndDims[i] << ";\n";
+               out << SP << "size_t " << s_end << " = " << fEndDims[i] << ";\n";
                fEnd[fAxes[i]] = s_end; // need to use this value later when slicing
             }
-            out << SP << "if (" << s_end << " < 0) " << s_end << " += " << fShapeInput[fAxes[i]] <<";\n";
+            out << SP << "if (" << s_end << " < 0) " << s_end << " += " << fShapeInput[fAxes[i]] << ";\n";
             if (!fStepDims[i].isParam) {
-               if (static_cast<IType>(fStepDims[i].dim) > 0 ) {
+               if (static_cast<IType>(fStepDims[i].dim) > 0) {
                   out << SP << "if (" << s_end << " < 0) " << s_end << " = 0;\n";
-                  out << SP << "if (" << s_end << " > " << fShapeInput[fAxes[i]] << " ) " << s_end << " = " << fShapeInput[fAxes[i]] <<";\n";
+                  out << SP << "if (" << s_end << " > " << fShapeInput[fAxes[i]] << " ) " << s_end << " = "
+                      << fShapeInput[fAxes[i]] << ";\n";
                } else {
                   out << SP << "if (" << s_end << " < -1) " << s_end << " = -1;\n";
-                  out << SP << "if (" << s_end << " > " << fShapeInput[fAxes[i]] << " - 1" << " ) " << s_end << " = " << fShapeInput[fAxes[i]] << " - 1;\n";
+                  out << SP << "if (" << s_end << " > " << fShapeInput[fAxes[i]] << " - 1" << " ) " << s_end << " = "
+                      << fShapeInput[fAxes[i]] << " - 1;\n";
                }
             }
          }
          // special case if step is negative and shape are equal and step is negative
-         else if (fEndDims[i].isParam && fEndDims[i].param == fShapeInput[fAxes[i]].param && !fStepDims[i].isParam && static_cast<IType>(fStepDims[i].dim) < 0 ) {
-            fEnd[fAxes[i]] = Dim{ fEndDims[i].param + "-1" };
+         else if (fEndDims[i].isParam && fEndDims[i].param == fShapeInput[fAxes[i]].param && !fStepDims[i].isParam &&
+                  static_cast<IType>(fStepDims[i].dim) < 0) {
+            fEnd[fAxes[i]] = Dim{fEndDims[i].param + "-1"};
          }
       }
 
       out << SP << "size_t iOut = 0;\n";
       std::string MSP = SP;
       for (size_t idim = 0; idim < ndim; idim++) {
-        out << MSP << "for (size_t i" << idim << " = " << fStart[idim] <<  "; i" << idim << " < " << fEnd[idim]
-            << "; i" << idim << "+= " << fSteps[idim] << ") {\n";
-        MSP += SP;
-        if (idim < ndim-1) out << MSP << "size_t stride" << idim << " = " << strides[idim] << "*i" << idim << ";\n";
+         out << MSP << "for (size_t i" << idim << " = " << fStart[idim] << "; i" << idim << " < " << fEnd[idim] << "; i"
+             << idim << "+= " << fSteps[idim] << ") {\n";
+         MSP += SP;
+         if (idim < ndim - 1)
+            out << MSP << "size_t stride" << idim << " = " << strides[idim] << "*i" << idim << ";\n";
       }
       out << MSP << "size_t iInput = ";
-      for (size_t idim = 0; idim < ndim-1; idim++) out << " stride" << idim << " + ";
+      for (size_t idim = 0; idim < ndim - 1; idim++)
+         out << " stride" << idim << " + ";
       // here should be step size ?
-      out << "i" << ndim-1 << ";\n";
-      out << MSP << "tensor_" << fNOutput << "[iOut++] = tensor_" <<fNData << "[iInput];\n";
+      out << "i" << ndim - 1 << ";\n";
+      out << MSP << "tensor_" << fNOutput << "[iOut++] = tensor_" << fNData << "[iInput];\n";
       for (size_t idim = 0; idim < ndim; idim++) {
-          MSP = MSP.replace(0,SP.length(),"");
-          out << MSP << "}\n";
+         MSP = MSP.replace(0, SP.length(), "");
+         out << MSP << "}\n";
       }
       out << SP << "}\n"; // end operator scope
 
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_SLICE
+#endif // ONNXTOCPP_ROPERATOR_SLICE

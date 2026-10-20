@@ -14,13 +14,14 @@
 namespace ROOT::Internal::ONNXToCpp {
 
 /*! \brief Gated Recurrent Unit operator
-  *
-  * Inference code generation for one-layer GRU. Supports forward, reverse and bidirectional GRU.
-  * See the <a href="https://github.com/onnx/onnx/blob/master/docs/Operators.md#GRU">ONNX documentation</a>
-  * for details about the supported GRU architectures.
-  */
-template <typename T> class ROperator_GRU final : public ROperator {
- private:
+ *
+ * Inference code generation for one-layer GRU. Supports forward, reverse and bidirectional GRU.
+ * See the <a href="https://github.com/onnx/onnx/blob/master/docs/Operators.md#GRU">ONNX documentation</a>
+ * for details about the supported GRU architectures.
+ */
+template <typename T>
+class ROperator_GRU final : public ROperator {
+private:
    std::vector<float> fAttrActivationAlpha;   ///< Scaling values used by some activation functions
    std::vector<float> fAttrActivationBeta;    ///< Scaling values used by some activation functions
    std::vector<std::string> fAttrActivations; ///< Activation functions
@@ -30,27 +31,27 @@ template <typename T> class ROperator_GRU final : public ROperator {
    size_t fAttrLayout;                        ///< Data layout
    size_t fAttrLinearBeforeReset;             ///< Linear layer before the reset gate
 
-   std::string fNX;                           ///< Name of the input
-   std::string fNW;                           ///< Name of the weights
-   std::string fNR;                           ///< Name of the recurrence
-   std::string fNB;                           ///< Name of the bias
-   std::string fNSequence_lens;               ///< Name of the length of the sequences
-   std::string fNInitial_h;                   ///< Name of the initial value of the hidden states
-   std::string fNY;                           ///< Name of the output
-   std::string fNY_h;                         ///< Name of the last sequence of the output
+   std::string fNX;             ///< Name of the input
+   std::string fNW;             ///< Name of the weights
+   std::string fNR;             ///< Name of the recurrence
+   std::string fNB;             ///< Name of the bias
+   std::string fNSequence_lens; ///< Name of the length of the sequences
+   std::string fNInitial_h;     ///< Name of the initial value of the hidden states
+   std::string fNY;             ///< Name of the output
+   std::string fNY_h;           ///< Name of the last sequence of the output
 
-   std::vector<size_t> fShapeX;               ///< Shape of the input
-   std::vector<size_t> fShapeW;               ///< Shape of the weights
-   std::vector<size_t> fShapeR;               ///< Shape of the recurrence
-   std::vector<size_t> fShapeB;               ///< Shape of the bias
-   std::vector<size_t> fShapeSequence_lens;   ///< Shape of the length of the sequences
-   std::vector<size_t> fShapeInitial_h;       ///< Shape of the initial value of hidden states
-   std::vector<size_t> fShapeY;               ///< Shape of the output
-   std::vector<size_t> fShapeY_h;             ///< Shape of the last sequence of the output
+   std::vector<size_t> fShapeX;             ///< Shape of the input
+   std::vector<size_t> fShapeW;             ///< Shape of the weights
+   std::vector<size_t> fShapeR;             ///< Shape of the recurrence
+   std::vector<size_t> fShapeB;             ///< Shape of the bias
+   std::vector<size_t> fShapeSequence_lens; ///< Shape of the length of the sequences
+   std::vector<size_t> fShapeInitial_h;     ///< Shape of the initial value of hidden states
+   std::vector<size_t> fShapeY;             ///< Shape of the output
+   std::vector<size_t> fShapeY_h;           ///< Shape of the last sequence of the output
 
-   std::string fType;                         ///< Type of the tensors
+   std::string fType; ///< Type of the tensors
 
- public:
+public:
    /*! Default constructor of ROperator_GRU */
    ROperator_GRU() {}
 
@@ -73,48 +74,52 @@ template <typename T> class ROperator_GRU final : public ROperator {
     * \param nameY name of the output
     * \param nameY_h name of the last sequence of the output
     */
-   ROperator_GRU(std::vector<float> activation_alpha,
-                 std::vector<float> activation_beta,
-                 std::vector<std::string> activations, float clip,
-                 std::string direction, size_t hidden_size,
-                 size_t layout, size_t linear_before_reset,
-                 std::string nameX, std::string nameW, std::string nameR,
-                 std::string nameB, std::string nameSequence_lens,
-                 std::string nameInitial_h, std::string nameY, std::string nameY_h)
-       : fAttrActivationAlpha(activation_alpha),
-         fAttrActivationBeta(activation_beta), fAttrActivations(activations),
-         fAttrClip(clip), fAttrDirection(direction), fAttrHiddenSize(hidden_size),
-         fAttrLayout(layout), fAttrLinearBeforeReset(linear_before_reset),
-         fNX(UTILITY::Clean_name(nameX)), fNW(UTILITY::Clean_name(nameW)),
-         fNR(UTILITY::Clean_name(nameR)), fNB(UTILITY::Clean_name(nameB)),
-         fNSequence_lens(UTILITY::Clean_name(nameSequence_lens)),
-         fNInitial_h(UTILITY::Clean_name(nameInitial_h)),
-         fNY(UTILITY::Clean_name(nameY)), fNY_h(UTILITY::Clean_name(nameY_h)) {
+   ROperator_GRU(std::vector<float> activation_alpha, std::vector<float> activation_beta,
+                 std::vector<std::string> activations, float clip, std::string direction, size_t hidden_size,
+                 size_t layout, size_t linear_before_reset, std::string nameX, std::string nameW, std::string nameR,
+                 std::string nameB, std::string nameSequence_lens, std::string nameInitial_h, std::string nameY,
+                 std::string nameY_h)
+      : fAttrActivationAlpha(activation_alpha),
+        fAttrActivationBeta(activation_beta),
+        fAttrActivations(activations),
+        fAttrClip(clip),
+        fAttrDirection(direction),
+        fAttrHiddenSize(hidden_size),
+        fAttrLayout(layout),
+        fAttrLinearBeforeReset(linear_before_reset),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNW(UTILITY::Clean_name(nameW)),
+        fNR(UTILITY::Clean_name(nameR)),
+        fNB(UTILITY::Clean_name(nameB)),
+        fNSequence_lens(UTILITY::Clean_name(nameSequence_lens)),
+        fNInitial_h(UTILITY::Clean_name(nameInitial_h)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fNY_h(UTILITY::Clean_name(nameY_h))
+   {
 
-      fInputTensorNames = { fNX, fNW, fNR };
-      if (!fNB.empty()){
-        fInputTensorNames.emplace_back(fNB);
+      fInputTensorNames = {fNX, fNW, fNR};
+      if (!fNB.empty()) {
+         fInputTensorNames.emplace_back(fNB);
       }
-      if (!fNSequence_lens.empty()){
-        fInputTensorNames.emplace_back(fNSequence_lens);
+      if (!fNSequence_lens.empty()) {
+         fInputTensorNames.emplace_back(fNSequence_lens);
       }
-      if (!fNInitial_h.empty()){
-        fInputTensorNames.emplace_back(fNInitial_h);
+      if (!fNInitial_h.empty()) {
+         fInputTensorNames.emplace_back(fNInitial_h);
       }
 
-      fOutputTensorNames = { };
-      if (!fNY.empty()){
-        fOutputTensorNames.emplace_back(fNY);
+      fOutputTensorNames = {};
+      if (!fNY.empty()) {
+         fOutputTensorNames.emplace_back(fNY);
       }
-      if (!fNY_h.empty()){
-        fOutputTensorNames.emplace_back(fNY_h);
+      if (!fNY_h.empty()) {
+         fOutputTensorNames.emplace_back(fNY_h);
       }
 
       if (std::is_same<T, float>::value) {
          fType = "float";
       } else {
-         throw std::runtime_error(
-             "Internal::ONNXToCpp Encountered unsupported type parsing a GRU operator");
+         throw std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a GRU operator");
       }
    }
 
@@ -138,7 +143,7 @@ template <typename T> class ROperator_GRU final : public ROperator {
 
    /*! \brief Returns the blas routines needed to compile the generated code
     */
-   std::vector<std::string> GetBlasRoutines() override { return { std::string("Gemm"), std::string("Axpy") }; }
+   std::vector<std::string> GetBlasRoutines() override { return {std::string("Gemm"), std::string("Axpy")}; }
 };
 
 template <typename T>
@@ -228,11 +233,13 @@ void ROperator_GRU<T>::Initialize(RModel &model)
    }
    if (!fNSequence_lens.empty()) {
       if (!model.CheckIfTensorAlreadyExist(fNSequence_lens)) {
-         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNSequence_lens + "is not found in model.");
+         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNSequence_lens +
+                                  "is not found in model.");
       }
       fShapeSequence_lens = model.GetTensorShape(fNSequence_lens);
       if (fShapeSequence_lens.size() != 1) {
-         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNSequence_lens + " is not of 1 dimension.");
+         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNSequence_lens +
+                                  " is not of 1 dimension.");
       }
    }
    if (!fNInitial_h.empty()) {
@@ -241,7 +248,8 @@ void ROperator_GRU<T>::Initialize(RModel &model)
       }
       fShapeInitial_h = model.GetTensorShape(fNInitial_h);
       if (fShapeInitial_h.size() != 3) {
-         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNInitial_h + " is not of 3 dimensions.");
+         throw std::runtime_error("Internal::ONNXToCpp GRU Op input tensor " + fNInitial_h +
+                                  " is not of 3 dimensions.");
       }
    }
    if (!fNY.empty()) {
@@ -271,7 +279,8 @@ void ROperator_GRU<T>::Initialize(RModel &model)
       throw std::runtime_error("Internal::ONNXToCpp - Invalid GRU direction fAttrDirection = " + fAttrDirection);
    }
    if (3 * fAttrHiddenSize != fShapeW[1]) {
-      throw std::runtime_error("Internal::ONNXToCpp - fAttrHiddenSize must be equal to " + std::to_string(fShapeW[1] / 3));
+      throw std::runtime_error("Internal::ONNXToCpp - fAttrHiddenSize must be equal to " +
+                               std::to_string(fShapeW[1] / 3));
    }
    if (fAttrLayout > 1) {
       throw std::runtime_error("Internal::ONNXToCpp - Layout fAttrLayout = " + std::to_string(fAttrLayout) +

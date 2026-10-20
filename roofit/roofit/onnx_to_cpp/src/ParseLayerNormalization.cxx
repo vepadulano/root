@@ -6,8 +6,8 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
--> std::unique_ptr<ROperator> {
+ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser,
+                                                 const onnx::NodeProto &nodeproto) -> std::unique_ptr<ROperator> {
    ETensorType input_type = ETensorType::UNDEFINED;
    const std::string input_name = nodeproto.input(0);
    if (parser.IsRegisteredTensorType(input_name)) {
@@ -58,8 +58,8 @@ ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, cons
                                                        output_name, name_mean, name_std));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp ONNX parser Operator with input type " + ConvertTypeToString(input_type) +
-                               " not supported.");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX parser Operator with input type " +
+                               ConvertTypeToString(input_type) + " not supported.");
       break;
    }
 
@@ -70,6 +70,6 @@ ParserFuncSignature ParseLayerNormalization = [](RModelParser_ONNX &parser, cons
    return op;
 };
 
-}
+} // namespace ONNXToCpp
 } // namespace Internal
 } // namespace ROOT

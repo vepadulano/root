@@ -6,8 +6,7 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-ParserFuncSignature ParseNot = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
-{
+ParserFuncSignature ParseNot = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type = ETensorType::UNDEFINED;
 
    if (nodeproto.input_size() != 1 || nodeproto.output_size() != 1)
@@ -17,12 +16,12 @@ ParserFuncSignature ParseNot = [](RModelParser_ONNX &parser, const onnx::NodePro
 
    if (parser.IsRegisteredTensorType(input_name)) {
       input_type = parser.GetTensorType(input_name);
-      if (input_type !=ETensorType::BOOL  && input_type !=ETensorType::UINT8 )
-         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Not op has invalid input type " + ConvertTypeToString(input_type));
+      if (input_type != ETensorType::BOOL && input_type != ETensorType::UINT8)
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Not op has invalid input type " +
+                                  ConvertTypeToString(input_type));
    } else {
-      throw
-         std::runtime_error("Internal::ONNXToCpp ONNX Parser Not op has input tensor " + input_name +
-                                  " but its type is not yet registered");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Not op has input tensor " + input_name +
+                               " but its type is not yet registered");
    }
 
    std::string output_name = nodeproto.output(0);
@@ -35,7 +34,6 @@ ParserFuncSignature ParseNot = [](RModelParser_ONNX &parser, const onnx::NodePro
 
    return op;
 };
-
 
 } // namespace ONNXToCpp
 } // namespace Internal

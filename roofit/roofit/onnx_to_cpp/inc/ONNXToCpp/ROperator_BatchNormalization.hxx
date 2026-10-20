@@ -5,20 +5,17 @@
 #include "ROperator.hxx"
 #include "RModel.hxx"
 
-
 #include <cmath>
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <typename T>
-class ROperator_BatchNormalization final : public ROperator
-{
+class ROperator_BatchNormalization final : public ROperator {
 
 private:
-
    /* Attributes */
    float fepsilon = 1e-05;
    float fmomentum = 0.9;
@@ -42,55 +39,60 @@ public:
    ROperator_BatchNormalization() = delete;
 
    /* Constructor */
-   ROperator_BatchNormalization( float epsilon, float momentum, std::size_t training_mode,
-   std::string nameX, std::string nameScale, std::string nameB,
-   std::string nameMean, std::string nameVar, std::string nameY, EActivationType activation=EActivationType::UNDEFINED):
-   fepsilon(epsilon), fmomentum(momentum), ftraining_mode(training_mode),
-   fNX(UTILITY::Clean_name(nameX)), fNScale(UTILITY::Clean_name(nameScale)),
-   fNB(UTILITY::Clean_name(nameB)), fNMean(UTILITY::Clean_name(nameMean)),
-   fNVar(UTILITY::Clean_name(nameVar)), fNY(UTILITY::Clean_name(nameY)), fActivation(activation)
+   ROperator_BatchNormalization(float epsilon, float momentum, std::size_t training_mode, std::string nameX,
+                                std::string nameScale, std::string nameB, std::string nameMean, std::string nameVar,
+                                std::string nameY, EActivationType activation = EActivationType::UNDEFINED)
+      : fepsilon(epsilon),
+        fmomentum(momentum),
+        ftraining_mode(training_mode),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNScale(UTILITY::Clean_name(nameScale)),
+        fNB(UTILITY::Clean_name(nameB)),
+        fNMean(UTILITY::Clean_name(nameMean)),
+        fNVar(UTILITY::Clean_name(nameVar)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fActivation(activation)
    {
-      fInputTensorNames = { fNX };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
       fNFusedScale = fNScale + "_fused_inv_std_dev";
 
-      if(std::is_same<T, float>::value){
+      if (std::is_same<T, float>::value) {
          fType = "float";
-      }
-      else{
-	      throw
-		      std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a BatchNormalization operator");
+      } else {
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Encountered unsupported type parsing a BatchNormalization operator");
       }
    }
 
-
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNX + " fnx is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNX +
+                                  " fnx is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNScale)) {
-	     throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNScale + " fns is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNScale +
+                                  " fns is not found in model");
       }
-	  if (!model.CheckIfTensorAlreadyExist(fNB)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNB + " fnb is not found in model");
+      if (!model.CheckIfTensorAlreadyExist(fNB)) {
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNB +
+                                  " fnb is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNMean)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNMean + " fnm is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNMean +
+                                  " fnm is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNVar)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNVar + " fnv is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization op Input Tensor " + fNVar +
+                                  " fnv is not found in model");
       }
 
       fShapeX = model.GetDimTensorShape(fNX);
 
-      if (fShapeX.size() <  2 || fShapeX.size() > 4) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp BatchNormalization Op input tensor " + fNX + " fnx has wrong shape : " + ConvertDimShapeToString(fShapeX));
+      if (fShapeX.size() < 2 || fShapeX.size() > 4) {
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization Op input tensor " + fNX +
+                                  " fnx has wrong shape : " + ConvertDimShapeToString(fShapeX));
       }
 
       fShapeY = fShapeX;
@@ -101,7 +103,7 @@ public:
 
       auto shape_S = model.GetTensorShape(fNScale);
       if (shape_S.size() != 1) {
-          throw std::runtime_error("Internal::ONNXToCpp BatchNormalization 'scale' tensor must be 1D (per-channel).");
+         throw std::runtime_error("Internal::ONNXToCpp BatchNormalization 'scale' tensor must be 1D (per-channel).");
       }
       size_t channels = shape_S[0];
 
@@ -120,10 +122,12 @@ public:
       }
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       opName = "op_" + opName;
-      if (fShapeX.empty()){
-         throw std::runtime_error("Internal::ONNXToCpp Batch Normalization called to Generate without being initialized first");
+      if (fShapeX.empty()) {
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Batch Normalization called to Generate without being initialized first");
       }
 
       std::stringstream out;
@@ -133,8 +137,8 @@ public:
       std::string spatial_dim = "1";
       if (fShapeX.size() > 2) {
          auto spatialShape = fShapeX;
-         spatialShape.erase(spatialShape.begin(), spatialShape.begin()+2);
-         spatial_dim = ConvertDimShapeToLength( spatialShape);
+         spatialShape.erase(spatialShape.begin(), spatialShape.begin() + 2);
+         spatial_dim = ConvertDimShapeToLength(spatialShape);
       }
 
       out << "\n\n//---- BatchNorm" << (fActivation == EActivationType::RELU ? " + ReLU " : " ") << opName << "\n";
@@ -165,9 +169,8 @@ public:
    std::vector<std::string> GetBlasRoutines() override { return {}; }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_BatchNormalization
+#endif // ONNXTOCPP_ROPERATOR_BatchNormalization

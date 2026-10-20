@@ -33,14 +33,16 @@ ParserFuncSignature ParseGemm = [](RModelParser_ONNX &parser, const onnx::NodePr
       } else if (attribute_name == "transA") {
          attr_transA = nodeproto.attribute(i).i();
          if (attr_transA != 0 && attr_transA != 1)
-            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transA in Operator Gemm not 0/1");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Error - Model Loading - attribute transA in Operator Gemm not 0/1");
       } else if (attribute_name == "transB") {
          attr_transB = nodeproto.attribute(i).i();
          if (attr_transB != 0 && attr_transB != 1)
-            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transB in Operator Gemm not 0/1");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Error - Model Loading - attribute transB in Operator Gemm not 0/1");
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
 

@@ -65,7 +65,6 @@ ParserFuncSignature ParseSlice = [](RModelParser_ONNX &parser, const onnx::NodeP
       throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Slice has invalid attribues");
    }
 
-
    if (!parser.IsRegisteredTensorType(output_name)) {
       parser.RegisterTensorType(output_name, input_type);
    }

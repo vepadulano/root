@@ -9,54 +9,59 @@
 #include <algorithm> // for std::all_of
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-enum EComparisionOperator { Eq, Less, LessEq, Greater, GreaterEq };
+enum EComparisionOperator {
+   Eq,
+   Less,
+   LessEq,
+   Greater,
+   GreaterEq
+};
 
 template <typename T, EComparisionOperator Op1>
-struct ComparisionTrait{};
+struct ComparisionTrait {};
 
 template <typename T>
 struct ComparisionTrait<T, Eq> {
    static const std::string Name() { return "Equal"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return t1 + " == " +  t2; }
-   static bool Result(T v1, T v2) { return v1 == v2;}
+   static std::string Op(const std::string &t1, const std::string t2) { return t1 + " == " + t2; }
+   static bool Result(T v1, T v2) { return v1 == v2; }
 };
 
 template <typename T>
 struct ComparisionTrait<T, Less> {
    static const std::string Name() { return "Less"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return t1 + " < " + t2; }
-   static bool Result(T v1, T v2) { return v1 < v2;}
+   static std::string Op(const std::string &t1, const std::string t2) { return t1 + " < " + t2; }
+   static bool Result(T v1, T v2) { return v1 < v2; }
 };
 
 template <typename T>
 struct ComparisionTrait<T, LessEq> {
    static const std::string Name() { return "LessOrEqual"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return t1 + " <= " +  t2;  }
-   static bool Result(T v1, T v2) { return v1 <= v2;}
+   static std::string Op(const std::string &t1, const std::string t2) { return t1 + " <= " + t2; }
+   static bool Result(T v1, T v2) { return v1 <= v2; }
 };
 
 template <typename T>
 struct ComparisionTrait<T, Greater> {
    static const std::string Name() { return "Greater"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return  t1 + " > " +  t2; }
-   static bool Result(T v1, T v2) { return v1 > v2;}
+   static std::string Op(const std::string &t1, const std::string t2) { return t1 + " > " + t2; }
+   static bool Result(T v1, T v2) { return v1 > v2; }
 };
 
 template <typename T>
 struct ComparisionTrait<T, GreaterEq> {
    static const std::string Name() { return "GreaterOrEqual"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return t1 + " >= " +  t2 ; }
-   static bool Result(T v1, T v2) { return v1 >= v2;}
+   static std::string Op(const std::string &t1, const std::string t2) { return t1 + " >= " + t2; }
+   static bool Result(T v1, T v2) { return v1 >= v2; }
 };
 
-template<typename T, EComparisionOperator Op>
-class ROperator_Comparision final : public ROperator{
+template <typename T, EComparisionOperator Op>
+class ROperator_Comparision final : public ROperator {
 private:
-
    std::string fNX1;
    std::string fNX2;
    std::string fNY;
@@ -70,24 +75,27 @@ private:
    ETensorType fTensorType2 = ETensorType::UNDEFINED;
    int fBroadcastFlag = 0;
 
-
 public:
-   ROperator_Comparision(){}
-   ROperator_Comparision(const std::string & nameX1, const std::string & nameX2, const std::string & nameY):
-      fNX1(UTILITY::Clean_name(nameX1)), fNX2(UTILITY::Clean_name(nameX2)), fNY(UTILITY::Clean_name(nameY)){
-         fInputTensorNames = { fNX1, fNX2 };
+   ROperator_Comparision() {}
+   ROperator_Comparision(const std::string &nameX1, const std::string &nameX2, const std::string &nameY)
+      : fNX1(UTILITY::Clean_name(nameX1)), fNX2(UTILITY::Clean_name(nameX2)), fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX1, fNX2};
 
-         // output will be a boolean vector so should not be considered for memory optimized pool
-         fOutputTensorNames = { fNY };
-      }
+      // output will be a boolean vector so should not be considered for memory optimized pool
+      fOutputTensorNames = {fNY};
+   }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       // input must be a graph input, or already initialized intermediate tensor
-      if (!model.CheckIfTensorAlreadyExist(fNX1)){
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Comparision Op Input Tensor ") + fNX1 + "is not found in model");
+      if (!model.CheckIfTensorAlreadyExist(fNX1)) {
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Comparision Op Input Tensor ") + fNX1 +
+                                  "is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNX2)) {
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Comparision Op Input Tensor ") + fNX2 + "is not found in model");
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Comparision Op Input Tensor ") + fNX2 +
+                                  "is not found in model");
       }
       if (model.IsDynamicTensor(fNX1))
          fDimShapeX1 = model.GetDynamicTensorShape(fNX1);
@@ -110,7 +118,7 @@ public:
          if (UTILITY::AreSameShape(fShapeX1, fShapeX2)) {
             // no broadcast needed
             fShapeY = fShapeX1;
-         } else  {
+         } else {
             // Y is the common shape of A and B
             auto ret = UTILITY::MultidirectionalBroadcastShape(fShapeX1, fShapeX2);
             fBroadcastFlag = ret.first;
@@ -118,7 +126,6 @@ public:
             broadcastX1 = !UTILITY::AreSameShape(fShapeX1, fShapeY);
             broadcastX2 = !UTILITY::AreSameShape(fShapeX2, fShapeY);
          }
-
 
          // analyze case of constant tensors or shape tensors (which have known shapes but data as Dim values
          // normal case with non-dynamic tensor is also here
@@ -134,8 +141,7 @@ public:
          if (model.IsInitializedTensor(fNX1)) {
             data1 = static_cast<T *>(model.GetInitializedTensorData(fNX1).get());
             if (broadcastX1) {
-               broadcastedData1 = std::unique_ptr<T>(
-                  UTILITY::UnidirectionalBroadcast(data1, fShapeX1, fShapeY));
+               broadcastedData1 = std::unique_ptr<T>(UTILITY::UnidirectionalBroadcast(data1, fShapeX1, fShapeY));
                data1 = broadcastedData1.get();
             }
 
@@ -145,8 +151,7 @@ public:
          if (model.IsInitializedTensor(fNX2)) {
             data2 = static_cast<T *>(model.GetInitializedTensorData(fNX2).get());
             if (broadcastX2) {
-               broadcastedData2 = std::unique_ptr<T>(
-                  UTILITY::UnidirectionalBroadcast(data2, fShapeX2, fShapeY));
+               broadcastedData2 = std::unique_ptr<T>(UTILITY::UnidirectionalBroadcast(data2, fShapeX2, fShapeY));
                data2 = broadcastedData2.get();
             }
          } else if (model.IsShapeTensor(fNX2)) {
@@ -228,7 +233,7 @@ public:
          }
       } else {
          // case of dynamic tensors
-          // case A or B have dynamic shapes. We need to broadcast if shape are not same
+         // case A or B have dynamic shapes. We need to broadcast if shape are not same
          auto ret = UTILITY::MultidirectionalBroadcastShape(fDimShapeX1, fDimShapeX2);
          fBroadcastFlag = ret.first;
          fDimShapeY = ret.second;
@@ -268,24 +273,28 @@ public:
 
          model.AddIntermediateTensor(fNY, ETensorType::BOOL, fDimShapeY);
          if (model.Verbose()) {
-            std::cout << ComparisionTrait<T, Op>::Name()  << " : " << fNX1 << "  " << ConvertDimShapeToString(fDimShapeX1) << " , "
-                                                          << fNX2 << "  " << ConvertDimShapeToString(fDimShapeX2) << " --> "
-                                                          << fNY  << "  " << ConvertDimShapeToString(fDimShapeY) << std::endl;
+            std::cout << ComparisionTrait<T, Op>::Name() << " : " << fNX1 << "  "
+                      << ConvertDimShapeToString(fDimShapeX1) << " , " << fNX2 << "  "
+                      << ConvertDimShapeToString(fDimShapeX2) << " --> " << fNY << "  "
+                      << ConvertDimShapeToString(fDimShapeY) << std::endl;
             model.PrintIntermediateTensors();
          }
       }
    }
 
-   std::string Generate(std::string opName) override {
-      if (fIsOutputConstant) return "";
+   std::string Generate(std::string opName) override
+   {
+      if (fIsOutputConstant)
+         return "";
       opName = "op_" + opName;
 
-     if (fDimShapeY.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Comparision Op called to Generate without being initialized first");
+      if (fDimShapeY.empty()) {
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Comparision Op called to Generate without being initialized first");
       }
       std::stringstream out;
-      out << SP << "\n//------ " << ComparisionTrait<T,Op>::Name() << "  " << opName
-                                 << " --> " << ConvertShapeToString(fShapeY) << "\n";
+      out << SP << "\n//------ " << ComparisionTrait<T, Op>::Name() << "  " << opName << " --> "
+          << ConvertShapeToString(fShapeY) << "\n";
 
       // need to add check if tensors are compatible as in binary operator
 
@@ -323,7 +332,7 @@ public:
                compute_idx_X2 += " * " + stridesB[i].GetVal();
             compute_idx_X2 += " + ";
          }
-          // remove last 3 character " + "
+         // remove last 3 character " + "
          for (int j = 0; j < 3; j++)
             compute_idx_X2.pop_back();
       }
@@ -335,9 +344,10 @@ public:
          for (size_t i = 0; i < fDimShapeY.size(); ++i) {
             if (fDimShapeY[i].dim != 1 && fDimShapeY[i].GetVal() != "1") {
                nloop++;
-               for (int j = 0; j < nloop; j++) out << SP;
-               out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i]
-                   << "; ++idx_" << i << "){\n";
+               for (int j = 0; j < nloop; j++)
+                  out << SP;
+               out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i] << "; ++idx_" << i
+                   << "){\n";
                compute_idx_Y += "idx_" + std::to_string(i);
                if (stridesY[i].GetVal() != "1")
                   compute_idx_Y += " * " + stridesY[i].GetVal();
@@ -348,26 +358,25 @@ public:
          for (int j = 0; j < 3; j++)
             compute_idx_Y.pop_back();
       }
-      for (int j = 0; j < nloop + 1; j++) out << SP;
+      for (int j = 0; j < nloop + 1; j++)
+         out << SP;
       out << "tensor_" << fNY << "[" << compute_idx_Y << "] = "
-          << ComparisionTrait<T,Op>::Op( "tensor_" + fNX1 + "[" + compute_idx_X1 + "]" ,
-                                         "tensor_" + fNX2 + "[" + compute_idx_X2 + "]") <<  " ;\n";
-
+          << ComparisionTrait<T, Op>::Op("tensor_" + fNX1 + "[" + compute_idx_X1 + "]",
+                                         "tensor_" + fNX2 + "[" + compute_idx_X2 + "]")
+          << " ;\n";
 
       for (int i = nloop; i > 0; i--) {
-         for (int j = 0; j < i; j++) out << SP;
+         for (int j = 0; j < i; j++)
+            out << SP;
          out << "}\n";
       }
 
-
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROperator_Comparision
+#endif // ONNXTOCPP_ROperator_Comparision

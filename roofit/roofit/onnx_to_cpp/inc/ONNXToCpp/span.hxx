@@ -14,13 +14,11 @@ namespace SpanDetail {
 
 /// True if a pointer to the elements of Container can be converted to T *.
 template <typename T, typename Container, typename = void>
-struct IsCompatibleContainer : std::false_type {
-};
+struct IsCompatibleContainer : std::false_type {};
 
 template <typename T, typename Container>
 struct IsCompatibleContainer<T, Container, std::void_t<decltype(std::data(std::declval<Container &>()))>>
-   : std::is_convertible<std::remove_pointer_t<decltype(std::data(std::declval<Container &>()))> (*)[], T (*)[]> {
-};
+   : std::is_convertible<std::remove_pointer_t<decltype(std::data(std::declval<Container &>()))> (*)[], T (*)[]> {};
 
 } // namespace SpanDetail
 

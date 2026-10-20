@@ -23,8 +23,7 @@ ParserFuncSignature ParseGather = [](RModelParser_ONNX &parser, const onnx::Node
    if (parser.IsRegisteredTensorType(indices_name)) {
       indices_type = parser.GetTensorType(indices_name);
       if (indices_type != ETensorType::INT64 && indices_type != ETensorType::INT32) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp ONNX Parser Gather op Indices tensor type not supported.");
+         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Gather op Indices tensor type not supported.");
       }
    }
 

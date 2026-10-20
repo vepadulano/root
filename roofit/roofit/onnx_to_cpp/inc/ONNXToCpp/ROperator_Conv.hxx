@@ -16,9 +16,8 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-template<typename T>
-class ROperator_Conv final : public ROperator
-{
+template <typename T>
+class ROperator_Conv final : public ROperator {
 private:
    bool fBroadcastBias = false;
 
@@ -44,59 +43,66 @@ private:
 
    std::string fType;
 
-   size_t fDim;   // dimension of the convolution
-
+   size_t fDim; // dimension of the convolution
 
 public:
-
    ROperator_Conv() {}
 
-   ROperator_Conv(std::string autopad, std::vector<size_t> dilations,
-      size_t group, std::vector<size_t> kernelShape, std::vector<size_t> pads,
-      std::vector<size_t> strides, std::string nameX, std::string nameW,
-      std::string nameB, std::string nameY):
-      fAttrAutopad(autopad), fAttrDilations(dilations), fAttrGroup(group), fAttrKernelShape(kernelShape),
-      fAttrPads(pads), fAttrStrides(strides),
-      fNX(UTILITY::Clean_name(nameX)), fNW(UTILITY::Clean_name(nameW)),
-      fNB(UTILITY::Clean_name(nameB)), fNY(UTILITY::Clean_name(nameY))
+   ROperator_Conv(std::string autopad, std::vector<size_t> dilations, size_t group, std::vector<size_t> kernelShape,
+                  std::vector<size_t> pads, std::vector<size_t> strides, std::string nameX, std::string nameW,
+                  std::string nameB, std::string nameY)
+      : fAttrAutopad(autopad),
+        fAttrDilations(dilations),
+        fAttrGroup(group),
+        fAttrKernelShape(kernelShape),
+        fAttrPads(pads),
+        fAttrStrides(strides),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNW(UTILITY::Clean_name(nameW)),
+        fNB(UTILITY::Clean_name(nameB)),
+        fNY(UTILITY::Clean_name(nameY))
    {
-      if(std::is_same<T, float>::value) {
+      if (std::is_same<T, float>::value) {
          fType = "float";
       } else {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Conv operator");
+         throw std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Conv operator");
       }
-      fInputTensorNames = { fNX, fNB };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX, fNB};
+      fOutputTensorNames = {fNY};
    }
 
-   ROperator_Conv(std::string autopad, std::vector<size_t> dilations,
-      size_t group, std::vector<size_t> kernelShape, std::vector<size_t> pads,
-      std::vector<size_t> strides, std::string nameX, std::string nameW,
-      std::string nameY):
-      fAttrAutopad(autopad), fAttrDilations(dilations), fAttrGroup(group), fAttrKernelShape(kernelShape),
-      fAttrPads(pads), fAttrStrides(strides),
-      fNX(UTILITY::Clean_name(nameX)), fNW(UTILITY::Clean_name(nameW)), fNY(UTILITY::Clean_name(nameY))
+   ROperator_Conv(std::string autopad, std::vector<size_t> dilations, size_t group, std::vector<size_t> kernelShape,
+                  std::vector<size_t> pads, std::vector<size_t> strides, std::string nameX, std::string nameW,
+                  std::string nameY)
+      : fAttrAutopad(autopad),
+        fAttrDilations(dilations),
+        fAttrGroup(group),
+        fAttrKernelShape(kernelShape),
+        fAttrPads(pads),
+        fAttrStrides(strides),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNW(UTILITY::Clean_name(nameW)),
+        fNY(UTILITY::Clean_name(nameY))
    {
-      if(std::is_same<T, float>::value) {
+      if (std::is_same<T, float>::value) {
          fType = "float";
       } else {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Conv operator");
+         throw std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Conv operator");
       }
-      fInputTensorNames = { fNX };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
    // function returning output shape given input
-   std::vector<Dim> DoShapeInference(const std::vector<Dim> & input, const std::vector<size_t> & weight) {
+   std::vector<Dim> DoShapeInference(const std::vector<Dim> &input, const std::vector<size_t> &weight)
+   {
       // shape of convolution input has to be (according to ONNX): N x C x H x W
       // Where N : batch size, C : input  channels, H : input height, W : input width
 
-      if (input.size() -2 != fDim) {
+      if (input.size() - 2 != fDim) {
          throw std::runtime_error("Internal::ONNXToCpp Conv Op Shape inference - invalid input ");
       }
-      if (weight.size() -2 != fDim) {
+      if (weight.size() - 2 != fDim) {
          throw std::runtime_error("Internal::ONNXToCpp Conv Op Shape inference - invalid weights ");
       }
       if (fAttrGroup == 0 && input[1].isParam)
@@ -111,10 +117,9 @@ public:
       }
 
       // kernel shape
-      size_t k1 = ((fAttrKernelShape.empty())? weight[2] : fAttrKernelShape[0]);
+      size_t k1 = ((fAttrKernelShape.empty()) ? weight[2] : fAttrKernelShape[0]);
       size_t k2 = (fDim > 1) ? ((fAttrKernelShape.empty()) ? weight[3] : fAttrKernelShape[1]) : 1;
       size_t k3 = (fDim > 2) ? ((fAttrKernelShape.empty()) ? weight[4] : fAttrKernelShape[2]) : 1;
-
 
       size_t i1 = (fDim > 1) ? ((fDim > 2) ? 3 : 2) : 1;
       size_t i2 = (fDim > 2) ? 4 : 3;
@@ -128,8 +133,7 @@ public:
          fAttrDilations.resize(3, 1);
       }
       // Shape of the kernel
-      fAttrKernelShape = {k1 + (fAttrDilations[0] - 1) * (k1 - 1),
-                          k2 + (fAttrDilations[1] - 1) * (k2 - 1),
+      fAttrKernelShape = {k1 + (fAttrDilations[0] - 1) * (k1 - 1), k2 + (fAttrDilations[1] - 1) * (k2 - 1),
                           k3 + (fAttrDilations[2] - 1) * (k3 - 1)};
 
       if (fAttrStrides.empty()) {
@@ -165,11 +169,11 @@ public:
             }
          }
       } else if (fAttrAutopad != "VALID") {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Conv Op invalid fAutopad");
+         throw std::runtime_error("Internal::ONNXToCpp Conv Op invalid fAutopad");
       }
       // to be sure pad is vector of size 6
-      if (fDim < 3) fAttrPads.resize(6, 0);
+      if (fDim < 3)
+         fAttrPads.resize(6, 0);
 
       Dim input1 = input[2];
       Dim input2 = (fDim > 1) ? input[3] : Dim{1};
@@ -182,22 +186,22 @@ public:
       auto computeOutput = [&](Dim inputDim, size_t kernel, size_t pad, size_t stride) {
          if (!inputDim.isParam) {
             size_t outSize = (inputDim.dim + pad - kernel) / stride + 1;
-            return  Dim{outSize};
+            return Dim{outSize};
          } else {
-            if (stride == 1){
-               if ((pad - kernel + 1) == 0 )
+            if (stride == 1) {
+               if ((pad - kernel + 1) == 0)
                   // output is same as input
                   return inputDim;
-               else  {
-                  int64_t v =  pad - kernel + 1;
+               else {
+                  int64_t v = pad - kernel + 1;
                   std::string outStr = "(" + inputDim.param + "+" + std::to_string(v) + ")";
-                  return Dim{ outStr, static_cast<size_t>(-1)};
+                  return Dim{outStr, static_cast<size_t>(-1)};
                }
             } else { // general case (stride not 1)
-               int64_t v =  pad - kernel;
+               int64_t v = pad - kernel;
                std::string outStr =
                   "((" + inputDim.param + "+" + std::to_string(v) + ")/" + std::to_string(stride) + "+1)";
-               return Dim{ outStr, static_cast<size_t>(-1)};
+               return Dim{outStr, static_cast<size_t>(-1)};
             }
          }
          throw std::runtime_error("Internal::ONNXToCpp Conv Op -  invalid values");
@@ -206,10 +210,10 @@ public:
 
       Dim output1 = computeOutput(input1, fAttrKernelShape[0], pad1, fAttrStrides[0]);
 
-      Dim batch_size = input[0];        // first element in input tensor
-      Dim output_channels = Dim{weight[0]};   // first element in weight tensor
+      Dim batch_size = input[0];            // first element in input tensor
+      Dim output_channels = Dim{weight[0]}; // first element in weight tensor
 
-      std::vector<Dim> ret({ batch_size, output_channels, output1 });
+      std::vector<Dim> ret({batch_size, output_channels, output1});
 
       if (fDim == 1)
          return ret;
@@ -230,38 +234,37 @@ public:
       return ret;
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Conv op Input Tensor " + fNX + " is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp Conv op Input Tensor " + fNX + " is not found in model");
       }
       fShapeX = model.GetDimTensorShape(fNX);
-      if (fShapeX.size() < 3 || fShapeX.size()  > 5) {
+      if (fShapeX.size() < 3 || fShapeX.size() > 5) {
          std::cout << fNX << " : " << ConvertDimShapeToString(fShapeX) << std::endl;
-         throw
-            std::runtime_error("Internal::ONNXToCpp Conv Op input data tensor" + fNX + " is not of 3,4 or 5 dimensions");
+         throw std::runtime_error("Internal::ONNXToCpp Conv Op input data tensor" + fNX +
+                                  " is not of 3,4 or 5 dimensions");
       }
       fDim = fShapeX.size() - 2;
       if (!model.CheckIfTensorAlreadyExist(fNW)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Conv op Input weight Tensor " + fNW + " is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp Conv op Input weight Tensor " + fNW + " is not found in model");
       }
       fShapeW = model.GetTensorShape(fNW);
-      if (fShapeW.size() < 3 || fShapeW.size()  > 5) {
+      if (fShapeW.size() < 3 || fShapeW.size() > 5) {
          std::cout << fNW << " : " << ConvertShapeToString(fShapeW) << std::endl;
-         throw std::runtime_error("Internal::ONNXToCpp Conv Op input weight tensor" + fNW + " is not of 3,4 or 5 dimensions");
+         throw std::runtime_error("Internal::ONNXToCpp Conv Op input weight tensor" + fNW +
+                                  " is not of 3,4 or 5 dimensions");
       }
       fShapeY = DoShapeInference(fShapeX, fShapeW);
       model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShapeY);
       if (fNB != "") {
          if (!model.CheckIfTensorAlreadyExist(fNB)) {
-            throw
-               std::runtime_error("Internal::ONNXToCpp Conv op Input Tensor " + fNB + " is not found in model");
+            throw std::runtime_error("Internal::ONNXToCpp Conv op Input Tensor " + fNB + " is not found in model");
          }
          fShapeB = model.GetTensorShape(fNB);
          if (fShapeB.size() != 1)
-            throw std::runtime_error("Internal::ONNXToCpp Conv op " + fNY + " : invalid shape for Bias tensor " + fNB + " : " +
-                                     ConvertShapeToString(fShapeB) + " is not 1D");
+            throw std::runtime_error("Internal::ONNXToCpp Conv op " + fNY + " : invalid shape for Bias tensor " + fNB +
+                                     " : " + ConvertShapeToString(fShapeB) + " is not 1D");
          std::vector<Dim> targetShape(fShapeY.begin() + 1, fShapeY.end());
          auto shapeDimB = model.GetDimTensorShape(fNB);
          bool broadcast_needed = !UTILITY::AreSameShape(shapeDimB, targetShape);
@@ -273,24 +276,25 @@ public:
             // the output tensor
             if (!(shapeDimB[0] == fShapeY[1]))
                throw std::runtime_error("Internal::ONNXToCpp Conv op: Bias Tensor has wrong shape: " +
-                                           ConvertShapeToString(fShapeB));
+                                        ConvertShapeToString(fShapeB));
             if (fType != "float")
-               throw std::runtime_error("Internal::ONNXToCpp Conv op: Broadcasting for non-float type tensors is not supported");
+               throw std::runtime_error(
+                  "Internal::ONNXToCpp Conv op: Broadcasting for non-float type tensors is not supported");
             // here is the actual broadcasting (done in the Session constructor via GenerateInitCode)
             fBroadcastBias = true;
          }
       }
       // output channel size can be parametric and is an expression
-      std::vector<Dim> outputDims = std::vector<Dim>(fShapeY.begin()+2, fShapeY.end());
-      //check if shape is not parametric
+      std::vector<Dim> outputDims = std::vector<Dim>(fShapeY.begin() + 2, fShapeY.end());
+      // check if shape is not parametric
       std::vector<size_t> outputInts = ConvertShapeToInt(outputDims);
       Dim channelDim;
       if (outputInts.empty()) {
          auto outputChannelSize = ConvertDimShapeToLength(outputDims); // size/channel = D * H * W
-         channelDim = Dim{ outputChannelSize, static_cast<size_t>(-1)};
+         channelDim = Dim{outputChannelSize, static_cast<size_t>(-1)};
       } else {
          size_t outputChannelSize = ConvertShapeToLength(outputInts);
-         channelDim = Dim{ outputChannelSize };
+         channelDim = Dim{outputChannelSize};
       }
       size_t kernelSize = fAttrKernelShape[0];
       for (size_t i = 1; i < fDim; i++) {
@@ -298,7 +302,7 @@ public:
       }
 
       std::vector<size_t> shape1 = {fShapeW[0], fShapeW[1], kernelSize};
-      std::vector<Dim> shape2 = {Dim{fShapeW[1]}, Dim{kernelSize}, channelDim };
+      std::vector<Dim> shape2 = {Dim{fShapeW[1]}, Dim{kernelSize}, channelDim};
 
       // private workspaces of this node, named after its output, which is unique: the reshaped
       // kernel depends on this node's weights and the im2col buffer on its attributes
@@ -312,8 +316,8 @@ public:
       fInputTensorNames.emplace_back(imcol);
 
       if (model.Verbose()) {
-         std::cout << "Conv - " << fDim << "  " << fNX << " : " << ConvertDimShapeToString(fShapeX)
-                  << " --> " << fNY << " : " << ConvertDimShapeToString(fShapeY) << std::endl;
+         std::cout << "Conv - " << fDim << "  " << fNX << " : " << ConvertDimShapeToString(fShapeX) << " --> " << fNY
+                   << " : " << ConvertDimShapeToString(fShapeY) << std::endl;
       }
 
       // register the inference helper functions used by the generated code
@@ -326,7 +330,8 @@ public:
          model.AddNeededHelperFunction("UnidirectionalBroadcast");
    }
 
-   std::string GenerateInitCode() override {
+   std::string GenerateInitCode() override
+   {
       std::stringstream out;
       // Generate initialization code for broadcasting of bias tensor
       if (fBroadcastBias) {
@@ -343,8 +348,8 @@ public:
             out << SP << "if (" << length << " > " << ConvertShapeToLength(shape) << ") {\n";
          else
             out << SP << "{\n";
-         out << SP << SP << "float * data = UTILITY::UnidirectionalBroadcast(tensor_"
-             << fNB << ", " << ConvertShapeToString(shape) << ", " << ConvertDimShapeToString(fShapeY) << ");\n";
+         out << SP << SP << "float * data = UTILITY::UnidirectionalBroadcast(tensor_" << fNB << ", "
+             << ConvertShapeToString(shape) << ", " << ConvertDimShapeToString(fShapeY) << ");\n";
          out << SP << SP << "fTensor_" << fNB << ".resize(" << length << ");\n";
          out << SP << SP << "std::copy(data, data + " << length << ", fTensor_" << fNB << ".begin());\n";
          out << SP << SP << "tensor_" << fNB << " = fTensor_" << fNB << ".data();\n";
@@ -354,31 +359,34 @@ public:
       return out.str();
    }
 
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       OpName = "op_" + OpName;
 
       if (fShapeX.empty() || fShapeW.empty() || (fNB != "" && fShapeB.empty()) || fShapeY.empty()) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Conv Op called to Generate without being initialized first");
+         throw std::runtime_error("Internal::ONNXToCpp Conv Op called to Generate without being initialized first");
       }
 
       std::stringstream out;
       auto bsize = fShapeX[0];
-      size_t kDepth = (fDim > 2) ?  fShapeW[2] : 1;  // kernel depth
-      size_t kHeight = (fDim > 1) ? fShapeW[fDim] : 1;  // kernel height
-      size_t kWidth = fShapeW[fDim+1]; // kernel width
-      auto iDepth = (fDim > 2) ?  fShapeX[2] : Dim{1};  // input depth
+      size_t kDepth = (fDim > 2) ? fShapeW[2] : 1;        // kernel depth
+      size_t kHeight = (fDim > 1) ? fShapeW[fDim] : 1;    // kernel height
+      size_t kWidth = fShapeW[fDim + 1];                  // kernel width
+      auto iDepth = (fDim > 2) ? fShapeX[2] : Dim{1};     // input depth
       auto iHeight = (fDim > 1) ? fShapeX[fDim] : Dim{1}; // input height
-      auto iWidth = fShapeX[fDim+1]; // input width
-      auto oDepth = (fDim > 2) ? fShapeY[2] : Dim{1}; // output depth
-      auto oHeight = (fDim > 1) ? fShapeY[fDim] : Dim{1};  // ouput height
-      auto oWidth = fShapeY[fDim+1]; // output width
+      auto iWidth = fShapeX[fDim + 1];                    // input width
+      auto oDepth = (fDim > 2) ? fShapeY[2] : Dim{1};     // output depth
+      auto oHeight = (fDim > 1) ? fShapeY[fDim] : Dim{1}; // ouput height
+      auto oWidth = fShapeY[fDim + 1];                    // output width
       // total output size for a channel
-      auto outputChannelStride = ConvertDimShapeToLength(std::vector<Dim>{oDepth, oHeight, oWidth}); // size of channel = D * H * W
-      auto outputBatchStride =  ConvertDimShapeToLength(std::vector<Dim>{fShapeY[1] , oDepth, oHeight, oWidth}); // size of C * D * H * W
+      auto outputChannelStride =
+         ConvertDimShapeToLength(std::vector<Dim>{oDepth, oHeight, oWidth}); // size of channel = D * H * W
+      auto outputBatchStride =
+         ConvertDimShapeToLength(std::vector<Dim>{fShapeY[1], oDepth, oHeight, oWidth}); // size of C * D * H * W
       // input size
       auto inputChannelStride = ConvertDimShapeToLength(std::vector<Dim>{iDepth, iHeight, iWidth});
-      auto inputBatchStride =  ConvertDimShapeToLength(std::vector<Dim>{fShapeX[1] , iDepth, iHeight, iWidth}); // size of C * D * H * W
+      auto inputBatchStride =
+         ConvertDimShapeToLength(std::vector<Dim>{fShapeX[1], iDepth, iHeight, iWidth}); // size of C * D * H * W
 
       out << "\n//----  operator Conv " << OpName << "\n";
 
@@ -386,13 +394,13 @@ public:
       // no need to transpose the matrix
       // to fix for 1d and 3d
 
-      size_t id = (fDim > 2) ? fDim-3 : 2;
-      size_t ih = (fDim > 1) ? fDim-2 : 1;
-      size_t iw = fDim-1;
+      size_t id = (fDim > 2) ? fDim - 3 : 2;
+      size_t ih = (fDim > 1) ? fDim - 2 : 1;
+      size_t iw = fDim - 1;
 
       size_t wstrideDil = fAttrDilations[iw];
       size_t hstride = kWidth;
-      size_t hstrideDil = fAttrDilations[ih] * fAttrKernelShape[iw];  // stride dilated in the height
+      size_t hstrideDil = fAttrDilations[ih] * fAttrKernelShape[iw]; // stride dilated in the height
       size_t dstride = kHeight * kWidth;
       size_t dstrideDil = fAttrDilations[id] * fAttrKernelShape[ih] * fAttrKernelShape[iw];
       size_t icstride = kHeight * kWidth * kDepth;
@@ -409,16 +417,22 @@ public:
       out << SP << SP << SP << SP << "for (std::size_t kw = 0; kw < " << kWidth << "; kw++) {\n";
 
       out << SP << SP << SP << SP << SP << "tensor_" << convK << "[oc * " << ocstrideDil << " + ic * " << icstrideDil;
-      if (fDim > 2) out << " + kd * " << dstrideDil;
-      if (fDim > 1) out << " + kh * " << hstrideDil;
-      out << " + kw * " << wstrideDil  << "  ] = tensor_" << fNW << "[oc * " << ocstride << " + ic * " << icstride;
-      if (fDim > 2) out << " + kd * " << dstride;
-      if (fDim > 1) out << " + kh * " << hstride;
-      out  << " + kw ];\n";
+      if (fDim > 2)
+         out << " + kd * " << dstrideDil;
+      if (fDim > 1)
+         out << " + kh * " << hstrideDil;
+      out << " + kw * " << wstrideDil << "  ] = tensor_" << fNW << "[oc * " << ocstride << " + ic * " << icstride;
+      if (fDim > 2)
+         out << " + kd * " << dstride;
+      if (fDim > 1)
+         out << " + kh * " << hstride;
+      out << " + kw ];\n";
 
       out << SP << SP << SP << SP << "}\n";
-      if (fDim > 1) out << SP << SP << SP << "}\n";
-      if (fDim > 2) out << SP << SP << SP << "}\n";
+      if (fDim > 1)
+         out << SP << SP << SP << "}\n";
+      if (fDim > 2)
+         out << SP << SP << SP << "}\n";
       out << SP << SP << "}\n";
       out << SP << "}\n";
 
@@ -426,20 +440,21 @@ public:
       // layout above, so the dense im2col below must use dilation 1 to avoid double-counting it.
       fAttrDilations = std::vector<size_t>(3, 1);
 
-      //out << SP << "char " << OpName << "_transA = 'T';\n";
+      // out << SP << "char " << OpName << "_transA = 'T';\n";
       out << SP << "char " << OpName << "_transA = 'N';\n";
       out << SP << "char " << OpName << "_transB = 'N';\n";
       out << SP << "int " << OpName << "_m = " << outputChannelStride << ";\n"; // output h*w
       assert(fShapeY[1] == fShapeW[0]);
-      //assert(fShapeW[1] == fShapeX[1] / fAttrGroup);
+      // assert(fShapeW[1] == fShapeX[1] / fAttrGroup);
       out << SP << "int " << OpName << "_n = " << fShapeW[0] << ";\n"; // output channels
-      out << SP << "int " << OpName << "_k = " << fShapeW[1] * fAttrKernelShape[0] * fAttrKernelShape[1] * fAttrKernelShape[2] << ";\n";
+      out << SP << "int " << OpName
+          << "_k = " << fShapeW[1] * fAttrKernelShape[0] * fAttrKernelShape[1] * fAttrKernelShape[2] << ";\n";
       out << SP << "float " << OpName << "_alpha = 1.0;\n";
       if (fNB != "")
          out << SP << "float " << OpName << "_beta = 1.0;\n";
-      else // when bias is not present beta needs to be equal to zero to avoid re-using previous results in output tensor
+      else // when bias is not present beta needs to be equal to zero to avoid re-using previous results in output
+           // tensor
          out << SP << "float " << OpName << "_beta = 0.0;\n";
-
 
       // Loop on batch size
       out << SP << "for (size_t n = 0; n < " << bsize << "; n++) {\n";
@@ -459,12 +474,12 @@ public:
          // the 1d case is emitted as a 2d one of height 1, for which stride_h is 1
          fAttrStrides[1] = 1;
       }
-      out << SP << SP << "size_t out_offset = n * " << outputBatchStride  << ";\n";
+      out << SP << SP << "size_t out_offset = n * " << outputBatchStride << ";\n";
 
       if (fAttrGroup == 1) {
          out << SP << SP << "size_t x_offset = n * " << inputBatchStride << ";\n";
-         // when using im2col - resulting matrix is transposed, the dimension is (input_c * filter_h * filter_y,  output_h *
-         // output_w)
+         // when using im2col - resulting matrix is transposed, the dimension is (input_c * filter_h * filter_y,
+         // output_h * output_w)
          if (fDim < 3) {
             out << SP << SP << "UTILITY::Im2col<float>(tensor_" << fNX
                 << " + x_offset,"
@@ -476,10 +491,9 @@ public:
                out << "1, " << fAttrKernelShape[0] << ",0,0," << fAttrPads[0] << "," << fAttrPads[1] << ",1,"
                    << fAttrStrides[0] << ",1," << fAttrDilations[0];
             else // dim ==2
-               out << fAttrKernelShape[0] << "," << fAttrKernelShape[1] << "," << fAttrPads[0] << ","
-                   << fAttrPads[2] << "," << fAttrPads[1] << "," << fAttrPads[3]
-                   << "," << fAttrStrides[0] << "," << fAttrStrides[1] << "," << fAttrDilations[0] << ","
-                   << fAttrDilations[1];
+               out << fAttrKernelShape[0] << "," << fAttrKernelShape[1] << "," << fAttrPads[0] << "," << fAttrPads[2]
+                   << "," << fAttrPads[1] << "," << fAttrPads[3] << "," << fAttrStrides[0] << "," << fAttrStrides[1]
+                   << "," << fAttrDilations[0] << "," << fAttrDilations[1];
             out << "," << "tensor_" << imcol << ");\n\n ";
          } else {
             // 3d im2col
@@ -517,9 +531,10 @@ public:
          // group)
          // out << SP << SP << "size_t out_offset = n * " << fShapeY[1] * oDepth * oHeight * oWidth << ";\n";
          out << SP << SP << "for (size_t g = 0; g < " << fAttrGroup << "; g++) {\n";
-         out << SP << SP << "size_t x_offset = n * " << inputBatchStride << " + g * "
-             << fShapeW[1] << " * " << inputChannelStride << ";\n ";
-         out << SP << SP << "size_t g_offset = g * " << fShapeW[0] << " * (" << outputChannelStride << ") / " << fAttrGroup << ";\n ";
+         out << SP << SP << "size_t x_offset = n * " << inputBatchStride << " + g * " << fShapeW[1] << " * "
+             << inputChannelStride << ";\n ";
+         out << SP << SP << "size_t g_offset = g * " << fShapeW[0] << " * (" << outputChannelStride << ") / "
+             << fAttrGroup << ";\n ";
          out << SP << SP << "size_t out_offset = n * " << outputBatchStride << " + g_offset;\n";
 
          if (fDim < 3) {
@@ -533,10 +548,9 @@ public:
                out << "1, " << fAttrKernelShape[0] << ",0,0," << fAttrPads[0] << "," << fAttrPads[1] << ",1,"
                    << fAttrStrides[0] << ",1," << fAttrDilations[0];
             else // dim ==2
-               out << fAttrKernelShape[0] << "," << fAttrKernelShape[1] << "," << fAttrPads[0] << ","
-                   << fAttrPads[2] << "," << fAttrPads[1] << "," << fAttrPads[3]
-                   << "," << fAttrStrides[0] << "," << fAttrStrides[1] << "," << fAttrDilations[0] << ","
-                   << fAttrDilations[1];
+               out << fAttrKernelShape[0] << "," << fAttrKernelShape[1] << "," << fAttrPads[0] << "," << fAttrPads[2]
+                   << "," << fAttrPads[1] << "," << fAttrPads[3] << "," << fAttrStrides[0] << "," << fAttrStrides[1]
+                   << "," << fAttrDilations[0] << "," << fAttrDilations[1];
             out << ", tensor_" << imcol << ");\n\n ";
          } else {
             // 3d im2col
@@ -594,11 +608,11 @@ public:
       out << SP << "}\n"; // end of batch size loop
 
       return out.str();
-      }
+   }
 
    /*! \brief Returns the blas routines needed to compile the generated code
     */
-   std::vector<std::string> GetBlasRoutines() override { return { std::string("Gemm"), std::string("Axpy") }; }
+   std::vector<std::string> GetBlasRoutines() override { return {std::string("Gemm"), std::string("Axpy")}; }
 };
 
 } // namespace ONNXToCpp

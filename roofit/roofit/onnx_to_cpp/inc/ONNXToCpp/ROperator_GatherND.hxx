@@ -9,14 +9,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-class ROperator_GatherND final : public ROperator
-{
+class ROperator_GatherND final : public ROperator {
 private:
-
    size_t fBatchDims = 0;
    std::string fNX;
    std::string fNIndices;
@@ -26,26 +24,31 @@ private:
    std::vector<Dim> fShapeIndices;
    std::vector<Dim> fShapeY;
 
-   std::vector<int64_t> fIndices;  // indices vector in case they are known at initialization
+   std::vector<int64_t> fIndices; // indices vector in case they are known at initialization
 
    std::string fType;
 
 public:
-   ROperator_GatherND(){}
-   ROperator_GatherND(int batch_dims, std::string nameX, std::string nameIndices, std::string nameY):
-      fBatchDims(batch_dims), fNX(UTILITY::Clean_name(nameX)), fNIndices(UTILITY::Clean_name(nameIndices)), fNY(UTILITY::Clean_name(nameY)) {
-         fInputTensorNames = { fNX, fNIndices };
-         fOutputTensorNames = { fNY };
+   ROperator_GatherND() {}
+   ROperator_GatherND(int batch_dims, std::string nameX, std::string nameIndices, std::string nameY)
+      : fBatchDims(batch_dims),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNIndices(UTILITY::Clean_name(nameIndices)),
+        fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX, fNIndices};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          throw std::runtime_error("Internal::ONNXToCpp GatherND Op Input Tensor " + fNX + " is not found in model");
       }
       fShapeX = model.GetDimTensorShape(fNX);
       if (model.Verbose())
          std::cout << "GatherND - initial shape " << ConvertDimShapeToString(fShapeX) << " shape of indices "
-               << ConvertDimShapeToString(model.GetDimTensorShape(fNIndices)) << std::endl;
+                   << ConvertDimShapeToString(model.GetDimTensorShape(fNIndices)) << std::endl;
       //  fShapeIndices can be  dynamic
       fShapeIndices = model.GetDimTensorShape(fNIndices);
       size_t q = fShapeIndices.size();
@@ -58,7 +61,7 @@ public:
       if (r < 1) {
          throw std::runtime_error("Internal::ONNXToCpp GatherND : rank of input tensor is < 1");
       }
-      if (fBatchDims >= std::min(q,r)) {
+      if (fBatchDims >= std::min(q, r)) {
          throw std::runtime_error("Internal::ONNXToCpp GatherND : invalid batch dim value");
       }
       if (fBatchDims > 0) {
@@ -66,12 +69,13 @@ public:
             if (fShapeX[i] != fShapeIndices[i]) {
                std::cout << " input shape " << ConvertDimShapeToString(fShapeX) << " "
                          << " index shape " << ConvertDimShapeToString(fShapeIndices) << std::endl;
-               throw std::runtime_error("Internal::ONNXToCpp GatherND : invalid input or index shape for " + std::to_string(i));
+               throw std::runtime_error("Internal::ONNXToCpp GatherND : invalid input or index shape for " +
+                                        std::to_string(i));
             }
          }
       }
 
-      //general case. Assumption is that last dimension of index shape is known (is not dynamic)
+      // general case. Assumption is that last dimension of index shape is known (is not dynamic)
       if (fShapeIndices.back().isParam)
          throw std::runtime_error("Internal::ONNXToCpp GatherND : Index_shape(-1) is not known");
 
@@ -80,19 +84,18 @@ public:
       size_t last_index_shape = fShapeIndices.back().dim;
       if (last_index_shape < 1 || last_index_shape > r - fBatchDims) {
          throw std::runtime_error("Internal::ONNXToCpp GatherND : Index_shape(-1) has wrong value " +
-            std::to_string(last_index_shape));
+                                  std::to_string(last_index_shape));
       }
 
-      size_t output_rank = r + q -1 - last_index_shape - fBatchDims;
-      //fShapeY.resize(output_rank);
-      // first index shape dimensions are same in output
+      size_t output_rank = r + q - 1 - last_index_shape - fBatchDims;
+      // fShapeY.resize(output_rank);
+      //  first index shape dimensions are same in output
       fShapeY = std::vector<Dim>(fShapeIndices.begin(), fShapeIndices.end() - 1);
       fShapeY.insert(fShapeY.end(), fShapeX.begin() + fBatchDims + last_index_shape, fShapeX.end());
       if (fShapeY.size() != output_rank) {
          std::cout << " input shape " << ConvertDimShapeToString(fShapeX) << " "
-                         << " index shape " << ConvertDimShapeToString(fShapeIndices)
-                         << " output shape " << ConvertDimShapeToString(fShapeY)
-                         << " and output rank should be " << output_rank << std::endl;
+                   << " index shape " << ConvertDimShapeToString(fShapeIndices) << " output shape "
+                   << ConvertDimShapeToString(fShapeY) << " and output rank should be " << output_rank << std::endl;
          throw std::runtime_error("Internal::ONNXToCpp GatherND : Something is wrong in initialization ");
       }
 
@@ -101,19 +104,18 @@ public:
          model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShapeY);
          fType = ConvertTypeToString(model.GetTensorType(fNX));
          if (model.Verbose())
-               std::cout <<  "GatherND: input " << fNX << " " << ConvertDimShapeToString(fShapeX) << " indices " << fNIndices << ConvertDimShapeToString(fShapeIndices)
-                         << " -> " << fNY << " with shape " << ConvertDimShapeToString(fShapeY) << std::endl;
+            std::cout << "GatherND: input " << fNX << " " << ConvertDimShapeToString(fShapeX) << " indices "
+                      << fNIndices << ConvertDimShapeToString(fShapeIndices) << " -> " << fNY << " with shape "
+                      << ConvertDimShapeToString(fShapeY) << std::endl;
       }
-
-
 
       // // case indices tensor is initialized
       // if (model.IsInitializedTensor(fNIndices)) {
       //     // empty shape Indices is a scalar value for the indices
       //    size_t indicesLength = ConvertShapeToLength(model.GetTensorShape(fNIndices));
       //    int64_t* indicesData = static_cast<int64_t*>(model.GetInitializedTensorData(fNIndices).get());
-      //    //flag index tensor as not writable (not sure this is needed since index tensor might be used in generated code)
-      //    model.SetNotWritableInitializedTensor(fNIndices);
+      //    //flag index tensor as not writable (not sure this is needed since index tensor might be used in generated
+      //    code) model.SetNotWritableInitializedTensor(fNIndices);
       //    // update indices data in case of negative dim values
       //    for (size_t i = 0; i < indicesLength; i++) {
       //       // move this at generation time?
@@ -138,7 +140,8 @@ public:
       //       outputData[0] = inputData[fIndices[0]];
       //       model.AddConstantTensor(fNY, shapeY, outputData.data());
       //       if (model.Verbose())
-      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(shapeX) << " -> " << fNY << " with shape " << ConvertShapeToString(shapeY)
+      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(shapeX) << " -> " << fNY << " with
+      //          shape " << ConvertShapeToString(shapeY)
       //              << " and values " << ConvertValuesToString(outputData) << " (constant) " << std::endl;
       //       fIsOutputConstant = true;
       //    }
@@ -154,7 +157,8 @@ public:
       //       // shapeY can be scalar or vector of size1
       //       model.AddShapeTensor(fNY, outputData, fShapeY.size() == 0);
       //       if (model.Verbose())
-      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(fShapeX) << " -> " << fNY << " with shape " << ConvertShapeToString(fShapeY)
+      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(fShapeX) << " -> " << fNY << " with
+      //          shape " << ConvertShapeToString(fShapeY)
       //              << " and values " << ConvertShapeToString(outputData) << " (shape) " << std::endl;
       //    } else {
       //       int64_t value = static_cast<int64_t>(outputData[0].dim);
@@ -162,14 +166,15 @@ public:
       //       model.AddConstantTensor(fNY, shapeY, &value);
       //       fIsOutputConstant = true;
       //       if (model.Verbose())
-      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(fShapeX) << " -> " << fNY << " with shape " << ConvertShapeToString(fShapeY)
+      //          std::cout << "GatherND: " << fNX << " " << ConvertShapeToString(fShapeX) << " -> " << fNY << " with
+      //          shape " << ConvertShapeToString(fShapeY)
       //              << " and values {" << value <<  "} (constant) " << std::endl;
       //    }
       // }
-
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       if (fIsOutputConstant) {
          // no code to generate here for constant output. Tensor output is defined in Session constructor
          return "//---------------------------------------\n";
@@ -197,7 +202,8 @@ public:
       std::string idIndex;
       for (size_t j = 0; j < fBatchDims; j++) {
          std::string index = "i_" + std::to_string(j);
-         for (size_t k = 0; k <= j; k++) out << SP;
+         for (size_t k = 0; k <= j; k++)
+            out << SP;
          out << "for (size_t " << index << " = 0; " << index << " < " << fShapeY[j] << "; " << index << "++) {\n";
          if (j > 0) {
             outIndex += " + ";
@@ -217,7 +223,8 @@ public:
       // loop between b and q-1
       for (size_t j = fBatchDims; j < q - 1; j++) {
          std::string index = "i_" + std::to_string(j);
-         for (size_t k = 0; k <= j; k++) out << SP;
+         for (size_t k = 0; k <= j; k++)
+            out << SP;
          out << "for (size_t " << index << " = 0; " << index << " < " << fShapeY[j] << "; " << index << "++) {\n";
          if (j > 0) {
             outIndex += " + ";
@@ -242,18 +249,20 @@ public:
             out << SP;
          out << "if (index_" << l << " < 0) index_" << l << " += " << fShapeX[fBatchDims + l] << ";\n";
       }
-      for (size_t k = 0; k <= q - 1; k++) out << SP;
+      for (size_t k = 0; k <= q - 1; k++)
+         out << SP;
       out << "size_t inputIndex = " << inIndex;
       for (size_t l = 0; l < ss; l++) {
          // compute input index using index tensors
          if (!inIndex.empty() || l > 0)
             out << " + ";
          out << "index_" << l;
-         if (stridesX[fBatchDims + l].GetVal() != "1") out
-             << " * " << stridesX[fBatchDims + l];
+         if (stridesX[fBatchDims + l].GetVal() != "1")
+            out << " * " << stridesX[fBatchDims + l];
       }
       out << ";\n";
-      for (size_t k = 0; k <= q - 1; k++) out << SP;
+      for (size_t k = 0; k <= q - 1; k++)
+         out << SP;
       // case slice is a scalar
       if (ss == r - fBatchDims) {
          out << "tensor_" << fNY << "[" << outIndex << "] = "
@@ -267,20 +276,19 @@ public:
       // close the loops
 
       // end loops j_k, j_{k + 1}, ..., j_{r - 2}
-      for (size_t j = q-1; j > 0; j--) {
-         for (size_t k = 0; k <j; k++) out << SP;
+      for (size_t j = q - 1; j > 0; j--) {
+         for (size_t k = 0; k < j; k++)
+            out << SP;
          out << "}\n";
       }
       out << SP << "}\n"; // end of the scope
 
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_RELU
+#endif // ONNXTOCPP_ROPERATOR_RELU

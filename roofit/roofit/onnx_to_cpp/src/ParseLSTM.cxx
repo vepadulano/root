@@ -47,8 +47,8 @@ ParserFuncSignature ParseLSTM = [](RModelParser_ONNX &parser, const onnx::NodePr
       } else if (attribute_name == "layout") {
          attr_layout = nodeproto.attribute(i).i();
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
 

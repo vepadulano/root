@@ -7,43 +7,42 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-template<class T>
-class ROperator_NonZero final : public ROperator
-{
+template <class T>
+class ROperator_NonZero final : public ROperator {
 
 private:
-
    std::string fNX;
    std::string fNY;
-   std::string fNonZeroParam; // name of the parameter used to store the number of non zero elements when output is not constant
+   std::string
+      fNonZeroParam; // name of the parameter used to store the number of non zero elements when output is not constant
    bool fDeclaresParam = false; // true when this operator is the one declaring fNonZeroParam
    std::vector<Dim> fShapeX;
    std::vector<Dim> fShapeY;
 
 public:
-   ROperator_NonZero(){}
-   ROperator_NonZero(std::string nameX, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)){
-         fInputTensorNames = { fNX };
-         fOutputTensorNames = { fNY };
-      }
+   ROperator_NonZero() {}
+   ROperator_NonZero(std::string nameX, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
+   }
 
-
-
-   void Initialize(RModel& model) override {
-      if (model.CheckIfTensorAlreadyExist(fNX) == false){   //input must be a graph input, or already initialized intermediate tensor
+   void Initialize(RModel &model) override
+   {
+      if (model.CheckIfTensorAlreadyExist(fNX) ==
+          false) { // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp NonZero Op Input Tensor " + fNX + " is not found in model");
       }
-
 
       // case input is constant
       if (model.IsConstantTensor(fNX)) {
          // compute output directly
-         T * data = static_cast<T*>(model.GetInitializedTensorData(fNX).get());
+         T *data = static_cast<T *>(model.GetInitializedTensorData(fNX).get());
          // shape is fully known
          auto shapeX = model.GetTensorShape(fNX);
          std::vector<size_t> shapeY(2);
@@ -64,7 +63,7 @@ public:
             }
          }
          shapeY[1] = nonzero_indices.size();
-         std::vector<int64_t> dataY(shapeY[0]* shapeY[1]);
+         std::vector<int64_t> dataY(shapeY[0] * shapeY[1]);
          size_t k = 0;
          for (size_t i = 0; i < shapeY[0]; i++) {
             for (size_t j = 0; j < shapeY[1]; j++) {
@@ -75,13 +74,13 @@ public:
          if (dataY.empty()) {
             // no zero elements found
             dataY.resize(1);
-            shapeY.clear();  // use an empty shape
+            shapeY.clear(); // use an empty shape
          }
 
          model.AddConstantTensor(fNY, shapeY, dataY);
          if (model.Verbose()) {
-            std::cout << "NonZero : " << fNX << " -> " << fNY << " " << ConvertShapeToString(shapeY)
-                     << " : " << ConvertValuesToString(dataY) << std::endl;
+            std::cout << "NonZero : " << fNX << " -> " << fNY << " " << ConvertShapeToString(shapeY) << " : "
+                      << ConvertValuesToString(dataY) << std::endl;
          }
          fIsOutputConstant = true;
 
@@ -120,7 +119,8 @@ public:
       }
    }
 
-   std::string GenerateSessionMembersCode(std::string /*opName*/) override {
+   std::string GenerateSessionMembersCode(std::string /*opName*/) override
+   {
       if (fIsOutputConstant || !fDeclaresParam)
          return "";
       std::stringstream out;
@@ -128,14 +128,15 @@ public:
       return out.str();
    }
 
-
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       if (fIsOutputConstant) {
          return "";
       }
       opName = "op_" + opName;
       if (fShapeX.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator NonZero called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator NonZero called to Generate without being initialized first");
       }
       std::stringstream out;
       auto intShapeX = ConvertShapeToInt(fShapeX);
@@ -155,58 +156,69 @@ public:
       out << SP << "size_t " << vnonzero << " = 0;\n";
       for (size_t j = 0; j < dims; j++) {
          std::string index = "i_" + std::to_string(j);
-         for (size_t k = 0; k <= j; k++) out << SP;
+         for (size_t k = 0; k <= j; k++)
+            out << SP;
          out << "for (size_t " << index << " = 0; " << index << " < " << fShapeX[j] << "; " << index << "++) {\n";
       }
-      for (size_t k = 0; k <= dims; k++) out << SP;
+      for (size_t k = 0; k <= dims; k++)
+         out << SP;
       out << "if (tensor_" << fNX << "[offset_" << opName << "++]) {\n";
       for (size_t j = 0; j < dims; j++) {
-         for (size_t k = 0; k <= dims+1; k++) out << SP;
+         for (size_t k = 0; k <= dims + 1; k++)
+            out << SP;
          out << "tensor_" << fNY << "[";
          if (j > 0) {
             if (inputLength > 0) {
                out << inputLength * j;
             } else {
                out << s_inputLength;
-               if (j > 1) out << " * " << j;
+               if (j > 1)
+                  out << " * " << j;
             }
             out << " + ";
          }
          out << vnonzero << "] = i_" << j << ";\n";
       }
-      for (size_t k = 0; k <= dims+1; k++) out << SP;
+      for (size_t k = 0; k <= dims + 1; k++)
+         out << SP;
       out << vnonzero << "++;\n";
-      for (size_t k = 0; k <= dims; k++) out << SP;
+      for (size_t k = 0; k <= dims; k++)
+         out << SP;
       out << "}\n";
-      //end loops
+      // end loops
       for (size_t j = dims; j > 0; j--) {
-         for (size_t k = 0; k <j; k++) out << SP;
+         for (size_t k = 0; k < j; k++)
+            out << SP;
          out << "}\n";
       }
       // now we need to rearrange the vector if nonzero is less than length of input
       out << SP << "if (" << vnonzero << " < " << s_inputLength << "){\n";
       for (size_t j = 1; j < dims; j++) {
          out << SP << SP << "std::copy(tensor_" << fNY;
-         if (j>0) out << " + " << s_inputLength;
-         if (j>1) out << " * " << j;
+         if (j > 0)
+            out << " + " << s_inputLength;
+         if (j > 1)
+            out << " * " << j;
          out << ", tensor_" << fNY;
-         if (j>0) out << " + " << s_inputLength;
-         if (j>1) out << " * " << j;
-         out << " + " << vnonzero << ", tensor_" <<  fNY;
-         if (j>0) out << " + " << vnonzero;
-         if (j>1) out << "* " << j;
+         if (j > 0)
+            out << " + " << s_inputLength;
+         if (j > 1)
+            out << " * " << j;
+         out << " + " << vnonzero << ", tensor_" << fNY;
+         if (j > 0)
+            out << " + " << vnonzero;
+         if (j > 1)
+            out << "* " << j;
          out << ");\n";
       }
       out << SP << "}\n";
 
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_NonZero
+#endif // ONNXTOCPP_ROPERATOR_NonZero

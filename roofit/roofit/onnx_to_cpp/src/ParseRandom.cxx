@@ -7,12 +7,10 @@ namespace Internal {
 namespace ONNXToCpp {
 
 ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
-
    RandomOpMode opMode = kUniform;
    auto op_type = nodeproto.op_type();
    if (op_type == "RandomNormal" || op_type == "RandomNormalLike")
       opMode = kNormal;
-
 
    ETensorType input_type = ETensorType::FLOAT; // default value
    std::string input_name;
@@ -23,7 +21,7 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
          input_type = parser.GetTensorType(input_name);
       } else {
          throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Randomr op has input tensor" + input_name +
-                               " but its type is not yet registered");
+                                  " but its type is not yet registered");
       }
    }
    // get  attributes
@@ -36,33 +34,33 @@ ParserFuncSignature ParseRandom = [](RModelParser_ONNX &parser, const onnx::Node
       if (attribute_name == "dtype")
          input_type = static_cast<ETensorType>(nodeproto.attribute(i).i());
       else if (attribute_name == "seed") {
-         if (attr_type == onnx::AttributeProto::FLOAT )
+         if (attr_type == onnx::AttributeProto::FLOAT)
             seed = nodeproto.attribute(i).f();
          else if (attr_type == onnx::AttributeProto::INT)
             seed = nodeproto.attribute(i).i();
          else
             throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute seed");
-      }
-      else if (attribute_name == "shape") {
+      } else if (attribute_name == "shape") {
          if (attr_type != onnx::AttributeProto::INTS)
             throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute shape");
          shape = std::vector<size_t>(nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end());
-      }
-      else {
+      } else {
          float value = 0;
          if (attr_type == onnx::AttributeProto::FLOAT)
             value = nodeproto.attribute(i).f();
          else if (attr_type == onnx::AttributeProto::INT)
             value = nodeproto.attribute(i).i();
          else
-            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute " + attribute_name);
+            throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Random  op has invalid type for attribute " +
+                                     attribute_name);
          paramMap[attribute_name] = value;
       }
    }
 
    std::string output_name = nodeproto.output(0);
 
-   std::unique_ptr<ROperator> op(new ROperator_Random(opMode, input_type, input_name, output_name, shape, paramMap, seed));
+   std::unique_ptr<ROperator> op(
+      new ROperator_Random(opMode, input_type, input_name, output_name, shape, paramMap, seed));
 
    if (!parser.IsRegisteredTensorType(output_name)) {
       parser.RegisterTensorType(output_name, input_type);

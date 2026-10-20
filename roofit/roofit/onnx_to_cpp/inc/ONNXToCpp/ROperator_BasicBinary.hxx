@@ -12,7 +12,15 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-enum EBasicBinaryOperator { Add, Sub, Mul, Div, Pow, Mod, FMod };
+enum EBasicBinaryOperator {
+   Add,
+   Sub,
+   Mul,
+   Div,
+   Pow,
+   Mod,
+   FMod
+};
 
 template <typename T, EBasicBinaryOperator Op1>
 struct BinaryOperatorTrait {};
@@ -54,13 +62,13 @@ struct BinaryOperatorTrait<T, Pow> {
 template <typename T>
 struct BinaryOperatorTrait<T, Mod> {
    static const std::string Name() { return "Mod"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return "(" + t1 + " % " + t2 + ")"; }
+   static std::string Op(const std::string &t1, const std::string t2) { return "(" + t1 + " % " + t2 + ")"; }
    static T Func(T t1, T t2) { return t1 % t2; }
 };
 template <typename T>
 struct BinaryOperatorTrait<T, FMod> {
    static const std::string Name() { return "FMod"; }
-   static std::string Op(const std::string & t1, const std::string t2) { return "std::fmod(" + t1 + "," + t2 + ")"; }
+   static std::string Op(const std::string &t1, const std::string t2) { return "std::fmod(" + t1 + "," + t2 + ")"; }
    static T Func(T t1, T t2) { return std::fmod(t1, t2); }
 };
 
@@ -95,10 +103,12 @@ public:
    {
       // input must be a graph input, or already initialized intermediate tensor
       if (!model.CheckIfTensorAlreadyExist(fNA)) {
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Binary Op Input Tensor ") + fNA + "is not found in model");
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Binary Op Input Tensor ") + fNA +
+                                  "is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNB)) {
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Binary Op Input Tensor ") + fNB + "is not found in model");
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Binary Op Input Tensor ") + fNB +
+                                  "is not found in model");
       }
       int dynamicInputs = 0;
       if (model.IsDynamicTensor(fNA)) {
@@ -130,7 +140,7 @@ public:
          auto ret = UTILITY::MultidirectionalBroadcastShape(fShapeA, fShapeB);
          fBroadcastFlag = ret.first;
          fShapeY = ret.second;
-         auto  lengthY = ConvertShapeToLength(fShapeY);
+         auto lengthY = ConvertShapeToLength(fShapeY);
          if (model.IsConstantTensor(fNA) && model.IsConstantTensor(fNB)) {
             bool broadcast = fBroadcastFlag > 0;
             if (broadcast) {
@@ -199,9 +209,9 @@ public:
                          << ConvertShapeToString(fShapeY) << " : " << ConvertValuesToString(dataY) << std::endl;
             }
          } else if (((model.IsShapeTensor(fNA) && model.IsShapeTensor(fNB)) ||
-                    (model.IsShapeTensor(fNA) && model.IsInitializedTensor(fNB)) ||
-                    (model.IsShapeTensor(fNB) && model.IsInitializedTensor(fNA)))
-                     && (fShapeA.size() <=1 && fShapeB.size() <=1 &&  model.GetTensorType(fNA) == ETensorType::INT64)) {
+                     (model.IsShapeTensor(fNA) && model.IsInitializedTensor(fNB)) ||
+                     (model.IsShapeTensor(fNB) && model.IsInitializedTensor(fNA))) &&
+                    (fShapeA.size() <= 1 && fShapeB.size() <= 1 && model.GetTensorType(fNA) == ETensorType::INT64)) {
             // case of shape tensors ( tensors are of rank 0 or 1  )
             std::vector<Dim> dimValA;
             std::vector<Dim> dimValB;
@@ -211,42 +221,46 @@ public:
                dimValB = model.GetShapeTensorValues(fNB);
             // adjust for broadcasting - repet values until it reaches shapes of Y
             if (!fShapeY.empty() && fShapeY[0] > 1) {
-               if (dimValA.size() == 1) dimValA = std::vector<Dim>( fShapeY[0], dimValA[0]);
-               if (dimValB.size() == 1) dimValB = std::vector<Dim>( fShapeY[0], dimValB[0]);
+               if (dimValA.size() == 1)
+                  dimValA = std::vector<Dim>(fShapeY[0], dimValA[0]);
+               if (dimValB.size() == 1)
+                  dimValB = std::vector<Dim>(fShapeY[0], dimValB[0]);
             }
 
-            auto convertDataToDim = [&](const std::string & name, const std::vector<size_t> & shape, std::vector<Dim> & dimValues) {
+            auto convertDataToDim = [&](const std::string &name, const std::vector<size_t> &shape,
+                                        std::vector<Dim> &dimValues) {
                auto data = static_cast<int64_t *>(model.GetInitializedTensorData(name).get());
                dimValues.resize(lengthY);
                for (size_t i = 0; i < lengthY; i++) {
                   if (!shape.empty() && lengthY == shape[0])
-                     dimValues[i] = Dim{ static_cast<size_t>(data[i])};
+                     dimValues[i] = Dim{static_cast<size_t>(data[i])};
                   else // case dataA is a scalar
-                     dimValues[i] = Dim{ static_cast<size_t>(data[0])};
+                     dimValues[i] = Dim{static_cast<size_t>(data[0])};
                }
             };
             if (model.IsInitializedTensor(fNA)) {
-               convertDataToDim(fNA,fShapeA,dimValA);
+               convertDataToDim(fNA, fShapeA, dimValA);
             } else if (model.IsInitializedTensor(fNB)) {
-               convertDataToDim(fNB,fShapeB,dimValB);
+               convertDataToDim(fNB, fShapeB, dimValB);
             }
 
-            //perform binary operations on shape tensors
+            // perform binary operations on shape tensors
             std::vector<Dim> dimValY(lengthY);
             for (size_t i = 0; i < lengthY; i++) {
                if (!dimValA[i].isParam && !dimValB[i].isParam) {
                   size_t d = BinaryOperatorTrait<size_t, Op>::Func(dimValA[i].dim, dimValB[i].dim);
                   dimValY[i] = Dim{d};
                } else {
-                  auto res =  BinaryOperatorTrait<T, Op>::Op(dimValA[i].GetVal(), dimValB[i].GetVal());
+                  auto res = BinaryOperatorTrait<T, Op>::Op(dimValA[i].GetVal(), dimValB[i].GetVal());
                   dimValY[i] = Dim{res, static_cast<size_t>(-1)};
                }
             }
-            model.AddShapeTensor(fNY,dimValY, fShapeY.empty()); // cannot be a  scalar
+            model.AddShapeTensor(fNY, dimValY, fShapeY.empty()); // cannot be a  scalar
             if (model.Verbose()) {
                std::cout << BinaryOperatorTrait<T, Op>::Name() << " : " << fNA << "  " << ConvertShapeToString(fShapeA)
                          << " , " << fNB << "  " << ConvertShapeToString(fShapeB) << " ---> " << fNY << "  "
-                         << ConvertShapeToString(fShapeY) << " : " << ConvertDimShapeToString(dimValY) << " (shape)" <<  std::endl;
+                         << ConvertShapeToString(fShapeY) << " : " << ConvertDimShapeToString(dimValY) << " (shape)"
+                         << std::endl;
             }
             // no code needs to be generated (flag this as a constant output tensor)
             fIsOutputConstant = true;
@@ -304,7 +318,8 @@ public:
          model.AddIntermediateTensor(fNY, model.GetTensorType(fNA), fDimShapeY);
          if (model.Verbose()) {
             std::cout << BinaryOperatorTrait<T, Op>::Name() << " : " << ConvertDimShapeToString(fDimShapeA) << " , "
-                      << ConvertDimShapeToString(fDimShapeB) << " --> " << ConvertDimShapeToString(fDimShapeY) << std::endl;
+                      << ConvertDimShapeToString(fDimShapeB) << " --> " << ConvertDimShapeToString(fDimShapeY)
+                      << std::endl;
          }
       }
    }
@@ -343,21 +358,24 @@ public:
                 fDimShapeB[i].isParam) {
                // B->A B[i] needs to be 1
                out << SP << SP << "if (" << fDimShapeB[i] << "!= 1)\n";
-               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast B->A in operator "
-                   << opName << "\");\n";
+               out << SP << SP << SP
+                   << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast B->A in operator " << opName
+                   << "\");\n";
             }
             if (fBroadcastFlag & 6 && fDimShapeY[i] == fDimShapeB[i] && fDimShapeB[i].dim > 1 &&
                 fDimShapeA[i].isParam) {
                // A-> B A[i] needs to be 1
                out << SP << SP << "if (" << fDimShapeA[i] << "!= 1)\n";
-               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast A->B in operator "
-                   << opName << "\");\n";
+               out << SP << SP << SP
+                   << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast A->B in operator " << opName
+                   << "\");\n";
             } else if (fDimShapeA[i].isParam && fDimShapeB[i].isParam) {
                // both shapes are parametric and we broadcast to maximum
                // we allocate here output vector
                out << SP << SP << "if (" << fDimShapeA[i] << " != " << fDimShapeB[i] << " && (" << fDimShapeA[i]
                    << " != 1 || " << fDimShapeB[i] << " != 1))\n";
-               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast shapes in operator " << opName
+               out << SP << SP << SP
+                   << "throw std::runtime_error(\"Internal::ONNXToCpp - Cannot broadcast shapes in operator " << opName
                    << "\");\n";
             }
          }
@@ -397,7 +415,7 @@ public:
                compute_idx_B += " * " + stridesB[i].GetVal();
             compute_idx_B += " + ";
          }
-          // remove last 3 character " + "
+         // remove last 3 character " + "
          for (int j = 0; j < 3; j++)
             compute_idx_B.pop_back();
       }
@@ -409,9 +427,10 @@ public:
          for (size_t i = 0; i < fDimShapeY.size(); ++i) {
             if (fDimShapeY[i].dim != 1 && fDimShapeY[i].GetVal() != "1") {
                nloop++;
-               for (int j = 0; j < nloop; j++) out << SP;
-               out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i]
-                   << "; ++idx_" << i << "){\n";
+               for (int j = 0; j < nloop; j++)
+                  out << SP;
+               out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i] << "; ++idx_" << i
+                   << "){\n";
                compute_idx_Y += "idx_" + std::to_string(i);
                if (stridesY[i].GetVal() != "1")
                   compute_idx_Y += " * " + stridesY[i].GetVal();
@@ -422,14 +441,16 @@ public:
          for (int j = 0; j < 3; j++)
             compute_idx_Y.pop_back();
       }
-      for (int j = 0; j < nloop + 1; j++) out << SP;
+      for (int j = 0; j < nloop + 1; j++)
+         out << SP;
       out << "tensor_" << fNY << "[" << compute_idx_Y << "] = "
           << BinaryOperatorTrait<T, Op>::Op("tensor_" + fNA + "[" + compute_idx_A + "]",
                                             "tensor_" + fNB + "[" + compute_idx_B + "]")
           << " ;\n";
 
       for (int i = nloop; i > 0; i--) {
-         for (int j = 0; j < i; j++) out << SP;
+         for (int j = 0; j < i; j++)
+            out << SP;
          out << "}\n";
       }
       return out.str();
@@ -450,7 +471,8 @@ inline std::unique_ptr<ROperator> createBasicBinary(std::string layerDType, std:
 {
    if (ConvertStringToType(layerDType) != ETensorType::FLOAT) {
       throw std::runtime_error(
-         ("Internal::ONNXToCpp - Unsupported - Operator BasicBinary does not yet support input type " + layerDType).c_str());
+         ("Internal::ONNXToCpp - Unsupported - Operator BasicBinary does not yet support input type " + layerDType)
+            .c_str());
    }
    if (layerType == "Add")
       return std::make_unique<ROperator_BasicBinary<float, EBasicBinaryOperator::Add>>(nameA, nameB, nameY);
@@ -460,7 +482,8 @@ inline std::unique_ptr<ROperator> createBasicBinary(std::string layerDType, std:
       return std::make_unique<ROperator_BasicBinary<float, EBasicBinaryOperator::Mul>>(nameA, nameB, nameY);
 
    throw std::runtime_error(
-      ("Internal::ONNXToCpp - Unsupported - Operator BasicBinary does not yet support layer type " + layerType).c_str());
+      ("Internal::ONNXToCpp - Unsupported - Operator BasicBinary does not yet support layer type " + layerType)
+         .c_str());
 }
 
 } // namespace ONNXToCpp

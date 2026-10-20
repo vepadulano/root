@@ -8,18 +8,14 @@
 #include <algorithm> // for std::all_of
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-
-
-template<typename T>
-class ROperator_Where final : public ROperator{
+template <typename T>
+class ROperator_Where final : public ROperator {
 private:
-
    bool fIsInputBoolTensor = false;
-
 
    std::string fNX;
    std::string fNY;
@@ -28,8 +24,6 @@ private:
    std::string fNBroadcastedY;
    std::string fNBroadcastedC;
    std::string fNZ;
-
-
 
    // static shapes (used when tensors are not dynamic) )
    std::vector<size_t> fShapeX;
@@ -51,23 +45,32 @@ private:
    int fBroadcastFlag = 0;
 
 public:
-   ROperator_Where(){}
-   ROperator_Where(const std::string & nameC, const std::string & nameX, const std::string & nameY, const std::string & nameZ):
-      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)), fNC(UTILITY::Clean_name(nameC)), fNZ(UTILITY::Clean_name(nameZ)){
-         fInputTensorNames = { fNX, fNY, fNC };
-         fOutputTensorNames = { fNZ };
-      }
+   ROperator_Where() {}
+   ROperator_Where(const std::string &nameC, const std::string &nameX, const std::string &nameY,
+                   const std::string &nameZ)
+      : fNX(UTILITY::Clean_name(nameX)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fNC(UTILITY::Clean_name(nameC)),
+        fNZ(UTILITY::Clean_name(nameZ))
+   {
+      fInputTensorNames = {fNX, fNY, fNC};
+      fOutputTensorNames = {fNZ};
+   }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       // input must be a graph input, or already initialized intermediate tensor
-      if (!model.CheckIfTensorAlreadyExist(fNX)){
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNX + "is not found in model");
+      if (!model.CheckIfTensorAlreadyExist(fNX)) {
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNX +
+                                  "is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNY)) {
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNY + "is not found in model");
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNY +
+                                  "is not found in model");
       }
       if (!model.CheckIfTensorAlreadyExist(fNC)) {
-         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNC + "is not found in model");
+         throw std::runtime_error(std::string("Internal::ONNXToCpp Where Op Input Tensor ") + fNC +
+                                  "is not found in model");
       }
       // check if fNC input tensor is boolean
       if (model.IsReadyInputTensor(fNC))
@@ -76,30 +79,29 @@ public:
       // ---------------------------------------------------------------- //
       //  Collect shapes – dynamic or static
       // ---------------------------------------------------------------- //
-      int dynamicInputs = 0;   // bitmask: bit0=C, bit1=X, bit2=Y
+      int dynamicInputs = 0; // bitmask: bit0=C, bit1=X, bit2=Y
 
       if (model.IsDynamicTensor(fNC)) {
          fDimShapeC = model.GetDynamicTensorShape(fNC);
          dynamicInputs |= 1;
       } else {
-         fShapeC    = model.GetTensorShape(fNC);
+         fShapeC = model.GetTensorShape(fNC);
          fDimShapeC = ConvertShapeToDim(fShapeC);
       }
       if (model.IsDynamicTensor(fNX)) {
          fDimShapeX = model.GetDynamicTensorShape(fNX);
          dynamicInputs |= 2;
       } else {
-         fShapeX    = model.GetTensorShape(fNX);
+         fShapeX = model.GetTensorShape(fNX);
          fDimShapeX = ConvertShapeToDim(fShapeX);
       }
       if (model.IsDynamicTensor(fNY)) {
          fDimShapeY = model.GetDynamicTensorShape(fNY);
          dynamicInputs |= 4;
       } else {
-         fShapeY    = model.GetTensorShape(fNY);
+         fShapeY = model.GetTensorShape(fNY);
          fDimShapeY = ConvertShapeToDim(fShapeY);
       }
-
 
       if (model.Verbose()) {
          if (dynamicInputs & 1)
@@ -225,7 +227,7 @@ public:
                }
                if (model.Verbose())
                   std::cout << "data A but shapeB " << ConvertDimShapeToString(shapeDataY) << "  "
-                         << isOutputConstantTensor << std::endl;
+                            << isOutputConstantTensor << std::endl;
             } else if (dataY && shapeDataX.size() > 0) {
                shapeDataZ.resize(ConvertShapeToLength(fShapeZ));
                for (size_t i = 0; i < shapeDataZ.size(); i++) {
@@ -234,7 +236,7 @@ public:
                }
                if (model.Verbose())
                   std::cout << "data B but shapeA " << ConvertDimShapeToString(shapeDataX) << "  "
-                         << isOutputConstantTensor << std::endl;
+                            << isOutputConstantTensor << std::endl;
             } else if (shapeDataY.size() > 0 && shapeDataX.size() > 0) {
                shapeDataZ.resize(ConvertShapeToLength(fShapeZ));
                for (size_t i = 0; i < shapeDataZ.size(); i++) {
@@ -243,7 +245,7 @@ public:
                }
                if (model.Verbose())
                   std::cout << " shapeA and B " << ConvertDimShapeToString(shapeDataX) << " shapeB "
-                         << ConvertDimShapeToString(shapeDataY) << "  " << isOutputConstantTensor << std::endl;
+                            << ConvertDimShapeToString(shapeDataY) << "  " << isOutputConstantTensor << std::endl;
             }
             fIsOutputConstant = true;
             // add as constant or shape tensor depending on the case
@@ -268,8 +270,8 @@ public:
             fDimShapeZ = ConvertShapeToDim(fShapeZ);
             model.AddIntermediateTensor(fNZ, model.GetTensorType(fNX), fShapeZ);
             if (model.Verbose())
-               std::cout << "Where : condition : " << fNC << "  " << ConvertShapeToString(fShapeC) << " X "
-                         << fNX << "  " << ConvertShapeToString(fShapeX) << " Y " << fNY << "  "
+               std::cout << "Where : condition : " << fNC << "  " << ConvertShapeToString(fShapeC) << " X " << fNX
+                         << "  " << ConvertShapeToString(fShapeX) << " Y " << fNY << "  "
                          << ConvertShapeToString(fShapeY) << " ---> " << fNZ << "  " << ConvertShapeToString(fShapeZ)
                          << std::endl;
          }
@@ -280,17 +282,18 @@ public:
          // ---------------------------------------------------------------- //
          auto retXY = UTILITY::MultidirectionalBroadcastShape(fDimShapeX, fDimShapeY);
          fBroadcastFlag = retXY.first;
-         fDimShapeZ     = retXY.second;
+         fDimShapeZ = retXY.second;
          auto retCZ = UTILITY::MultidirectionalBroadcastShape(fDimShapeC, fDimShapeZ);
          fBroadcastFlag |= retCZ.first;
-         fDimShapeZ      = retCZ.second;
+         fDimShapeZ = retCZ.second;
 
          // Resolve std::max params to actual input dim params (same logic as BasicBinary)
          if (fBroadcastFlag & 4) {
             auto IsInputDimParam = [&](const std::string &p) {
                for (auto &input : model.GetInputTensorNames())
                   for (auto &s : model.GetDimTensorShape(input))
-                     if (s.isParam && s.param == p) return true;
+                     if (s.isParam && s.param == p)
+                        return true;
                return false;
             };
             for (size_t i = 0; i < fDimShapeZ.size(); i++) {
@@ -323,24 +326,25 @@ public:
 
          if (model.Verbose())
             std::cout << "Where (dynamic) : C=" << ConvertDimShapeToString(fDimShapeC)
-                      << "  A=" << ConvertDimShapeToString(fDimShapeX)
-                      << "  B=" << ConvertDimShapeToString(fDimShapeY)
+                      << "  A=" << ConvertDimShapeToString(fDimShapeX) << "  B=" << ConvertDimShapeToString(fDimShapeY)
                       << " --> Y=" << ConvertDimShapeToString(fDimShapeZ) << "\n";
       }
    }
 
-   std::string GenerateInitCode() override {
+   std::string GenerateInitCode() override
+   {
       std::stringstream out;
       return out.str();
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
 
       opName = "op_" + opName;
       std::stringstream out;
       out << SP << "\n//------ WHERE " << opName << " --> " << ConvertDimShapeToString(fDimShapeZ) << "\n";
-      if (fIsOutputConstant) return out.str();
-
+      if (fIsOutputConstant)
+         return out.str();
 
       // ---------------------------------------------------------------- //
       //  Runtime broadcast validation (dynamic shapes, flag bit 4)
@@ -349,29 +353,28 @@ public:
          auto lengthX = ConvertDimShapeToLength(fDimShapeX);
          auto lengthY = ConvertDimShapeToLength(fDimShapeY);
          auto lengthC = ConvertDimShapeToLength(fDimShapeC);
-         out << SP << "if (" << lengthX << " != " << lengthY << " || "
-             << lengthX << " != " << lengthC << ") {\n";
+         out << SP << "if (" << lengthX << " != " << lengthY << " || " << lengthX << " != " << lengthC << ") {\n";
          for (size_t i = 0; i < fDimShapeZ.size(); i++) {
             // validate X vs Z
             if (i < fDimShapeX.size() && fDimShapeX[i].isParam) {
-               out << SP << SP << "if (" << fDimShapeX[i] << " != 1 && "
-                   << fDimShapeX[i] << " != " << fDimShapeZ[i] << ")\n";
-               out << SP << SP << SP
-                   << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast A dim " << i << " in " << opName << "\");\n";
+               out << SP << SP << "if (" << fDimShapeX[i] << " != 1 && " << fDimShapeX[i] << " != " << fDimShapeZ[i]
+                   << ")\n";
+               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast A dim "
+                   << i << " in " << opName << "\");\n";
             }
             // validate Y vs Z
             if (i < fDimShapeY.size() && fDimShapeY[i].isParam) {
-               out << SP << SP << "if (" << fDimShapeY[i] << " != 1 && "
-                   << fDimShapeY[i] << " != " << fDimShapeZ[i] << ")\n";
-               out << SP << SP << SP
-                   << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast B dim " << i << " in " << opName << "\");\n";
+               out << SP << SP << "if (" << fDimShapeY[i] << " != 1 && " << fDimShapeY[i] << " != " << fDimShapeZ[i]
+                   << ")\n";
+               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast B dim "
+                   << i << " in " << opName << "\");\n";
             }
             // validate C vs Z
             if (i < fDimShapeC.size() && fDimShapeC[i].isParam) {
-               out << SP << SP << "if (" << fDimShapeC[i] << " != 1 && "
-                   << fDimShapeC[i] << " != " << fDimShapeZ[i] << ")\n";
-               out << SP << SP << SP
-                   << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast C dim " << i << " in " << opName << "\");\n";
+               out << SP << SP << "if (" << fDimShapeC[i] << " != 1 && " << fDimShapeC[i] << " != " << fDimShapeZ[i]
+                   << ")\n";
+               out << SP << SP << SP << "throw std::runtime_error(\"Internal::ONNXToCpp Where: cannot broadcast C dim "
+                   << i << " in " << opName << "\");\n";
             }
          }
          out << SP << "}\n";
@@ -385,24 +388,24 @@ public:
       auto stridesC = UTILITY::ComputeStrideFromShape(fDimShapeC);
       auto stridesZ = UTILITY::ComputeStrideFromShape(fDimShapeZ);
 
-      auto buildIdxExpr = [&](const std::vector<Dim> &dimShape,
-                               const std::vector<Dim> &strides,
-                               size_t rankZ) -> std::string {
+      auto buildIdxExpr = [&](const std::vector<Dim> &dimShape, const std::vector<Dim> &strides,
+                              size_t rankZ) -> std::string {
          if (dimShape.empty() ||
-             std::all_of(dimShape.begin(), dimShape.end(),
-                         [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; }))
+             std::all_of(dimShape.begin(), dimShape.end(), [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; }))
             return "0";
          std::string expr;
          size_t offset = rankZ - dimShape.size();
          for (size_t i = 0; i < dimShape.size(); ++i) {
-            if (dimShape[i].dim == 1 || dimShape[i].GetVal() == "1") continue;
+            if (dimShape[i].dim == 1 || dimShape[i].GetVal() == "1")
+               continue;
             expr += "idx_" + std::to_string(i + offset);
             if (strides[i].GetVal() != "1")
                expr += " * " + strides[i].GetVal();
             expr += " + ";
          }
          if (expr.size() >= 3)
-            for (int j = 0; j < 3; j++) expr.pop_back();  // remove trailing " + "
+            for (int j = 0; j < 3; j++)
+               expr.pop_back(); // remove trailing " + "
          return expr.empty() ? "0" : expr;
       };
 
@@ -410,21 +413,21 @@ public:
       std::string idxY = buildIdxExpr(fDimShapeY, stridesY, fDimShapeZ.size());
       std::string idxC = buildIdxExpr(fDimShapeC, stridesC, fDimShapeZ.size());
 
-       // Emit nested loops over output shape
+      // Emit nested loops over output shape
       int nloop = 0;
       std::string idxZ;
       // case Z is a scalar (all dimensions are 1) or Z has no dimension
       if (fDimShapeZ.empty() ||
-          std::all_of(fDimShapeZ.begin(), fDimShapeZ.end(),
-                      [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; })) {
+          std::all_of(fDimShapeZ.begin(), fDimShapeZ.end(), [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; })) {
          idxZ = "0";
       } else {
          for (size_t i = 0; i < fDimShapeZ.size(); ++i) {
             if (fDimShapeZ[i].dim != 1 && fDimShapeZ[i].GetVal() != "1") {
                nloop++;
-               for (int j = 0; j < nloop; j++) out << SP;
-               out << "for (size_t idx_" << i << " = 0; idx_" << i
-                   << " < " << fDimShapeZ[i] << "; ++idx_" << i << ") {\n";
+               for (int j = 0; j < nloop; j++)
+                  out << SP;
+               out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeZ[i] << "; ++idx_" << i
+                   << ") {\n";
                idxZ += "idx_" + std::to_string(i);
                if (stridesZ[i].GetVal() != "1")
                   idxZ += " * " + stridesZ[i].GetVal();
@@ -432,11 +435,13 @@ public:
             }
          }
          if (idxZ.size() >= 3)
-            for (int j = 0; j < 3; j++) idxZ.pop_back();
+            for (int j = 0; j < 3; j++)
+               idxZ.pop_back();
       }
 
       // Inner assignment
-      for (int j = 0; j < nloop + 1; j++) out << SP;
+      for (int j = 0; j < nloop + 1; j++)
+         out << SP;
       out << "tensor_" << fNZ << "[" << idxZ << "] = "
           << "tensor_" << fNC << "[" << idxC << "] ? "
           << "tensor_" << fNX << "[" << idxX << "] : "
@@ -444,19 +449,17 @@ public:
 
       // Close loops
       for (int i = nloop; i > 0; i--) {
-         for (int j = 0; j < i; j++) out << SP;
+         for (int j = 0; j < i; j++)
+            out << SP;
          out << "}\n";
       }
 
       return out.str();
    }
-
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROperator_Where
+#endif // ONNXTOCPP_ROperator_Where

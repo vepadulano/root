@@ -50,7 +50,8 @@ public:
    {
       OpName = "op_" + OpName;
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator HardSigmoid called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator HardSigmoid called to Generate without being initialized first");
       }
       std::stringstream out;
       size_t length = ConvertShapeToLength(fShape);

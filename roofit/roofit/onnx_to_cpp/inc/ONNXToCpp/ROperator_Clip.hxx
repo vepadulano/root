@@ -37,13 +37,11 @@ namespace ONNXToCpp {
 template <typename T>
 class ROperator_Clip final : public ROperator {
 private:
-
    // Tensor names
-   std::string fNX;       // input data
-   std::string fNY;       // output
-   std::string fNMin;     // optional: tensor name for min bound
-   std::string fNMax;     // optional: tensor name for max bound
-
+   std::string fNX;   // input data
+   std::string fNY;   // output
+   std::string fNMin; // optional: tensor name for min bound
+   std::string fNMax; // optional: tensor name for max bound
 
    // Static shape (non-dynamic path, mirrors Selu)
    std::vector<size_t> fShape;
@@ -54,69 +52,65 @@ private:
 
    // Compile-time bound values — used when bounds are constant tensors
    // Initialised to the ONNX defaults (no clipping)
-   T fMin =  std::numeric_limits<T>::lowest();   // -inf equivalent
-   T fMax =  std::numeric_limits<T>::max();      //  +inf equivalent
+   T fMin = std::numeric_limits<T>::lowest(); // -inf equivalent
+   T fMax = std::numeric_limits<T>::max();    //  +inf equivalent
 
    // Flags indicating whether each bound is:
    //   - absent (no input provided)
    //   - a constant resolved at Initialize time
    //   - a runtime tensor that must be read in the generated code
-   bool fHasMin         = false;
-   bool fHasMax         = false;
-   bool fMinIsConstant  = false;
-   bool fMaxIsConstant  = false;
+   bool fHasMin = false;
+   bool fHasMax = false;
+   bool fMinIsConstant = false;
+   bool fMaxIsConstant = false;
 
 public:
-
    ROperator_Clip() {}
 
    // Constructor for the common case where bounds are tensor inputs
    // (follows ONNX node input order: X, min, max)
-   ROperator_Clip(std::string nameX,
-                  std::string nameY,
-                  std::string nameMin = "",
-                  std::string nameMax = "")
-      : fNX  (UTILITY::Clean_name(nameX)),
-        fNY  (UTILITY::Clean_name(nameY)),
+   ROperator_Clip(std::string nameX, std::string nameY, std::string nameMin = "", std::string nameMax = "")
+      : fNX(UTILITY::Clean_name(nameX)),
+        fNY(UTILITY::Clean_name(nameY)),
         fNMin(nameMin.empty() ? "" : UTILITY::Clean_name(nameMin)),
         fNMax(nameMax.empty() ? "" : UTILITY::Clean_name(nameMax))
    {
-      fInputTensorNames  = { fNX };
-      if (!fNMin.empty()) fInputTensorNames.push_back(fNMin);
-      if (!fNMax.empty()) fInputTensorNames.push_back(fNMax);
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      if (!fNMin.empty())
+         fInputTensorNames.push_back(fNMin);
+      if (!fNMax.empty())
+         fInputTensorNames.push_back(fNMax);
+      fOutputTensorNames = {fNY};
    }
 
    // Convenience constructor when bounds are known scalars at model-build time
-   ROperator_Clip(std::string nameX,
-                  std::string nameY,
-                  T minVal,
-                  T maxVal)
-      : fNX (UTILITY::Clean_name(nameX)),
-        fNY (UTILITY::Clean_name(nameY)),
-        fMin(minVal), fMax(maxVal),
-        fHasMin(true), fHasMax(true),
-        fMinIsConstant(true), fMaxIsConstant(true)
+   ROperator_Clip(std::string nameX, std::string nameY, T minVal, T maxVal)
+      : fNX(UTILITY::Clean_name(nameX)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fMin(minVal),
+        fMax(maxVal),
+        fHasMin(true),
+        fHasMax(true),
+        fMinIsConstant(true),
+        fMaxIsConstant(true)
    {
-      fInputTensorNames  = { fNX };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-
    // -----------------------------------------------------------------------
-   void Initialize(RModel& model) override
+   void Initialize(RModel &model) override
    {
       // ---- validate main input ------------------------------------------
       if (!model.CheckIfTensorAlreadyExist(fNX))
-         throw std::runtime_error(
-            "Internal::ONNXToCpp Clip Op Input Tensor " + fNX + " is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp Clip Op Input Tensor " + fNX + " is not found in model");
 
       // ---- collect shape (static or dynamic, mirrors BasicBinary) -------
       if (model.IsDynamicTensor(fNX)) {
          fIsDynamic = true;
-         fDimShape  = model.GetDynamicTensorShape(fNX);
+         fDimShape = model.GetDynamicTensorShape(fNX);
       } else {
-         fShape    = model.GetTensorShape(fNX);
+         fShape = model.GetTensorShape(fNX);
          fDimShape = ConvertShapeToDim(fShape);
       }
 
@@ -125,9 +119,9 @@ public:
          fHasMin = true;
          if (model.IsInitializedTensor(fNMin)) {
             // constant scalar tensor — read value now
-            auto data = static_cast<T*>(model.GetInitializedTensorData(fNMin).get());
-            fMin            = data[0];
-            fMinIsConstant  = true;
+            auto data = static_cast<T *>(model.GetInitializedTensorData(fNMin).get());
+            fMin = data[0];
+            fMinIsConstant = true;
             model.SetNotWritableInitializedTensor(fNMin);
          }
          // else: runtime input — will be dereferenced in generated code
@@ -137,9 +131,9 @@ public:
       if (!fNMax.empty() && model.CheckIfTensorAlreadyExist(fNMax)) {
          fHasMax = true;
          if (model.IsInitializedTensor(fNMax)) {
-            auto data = static_cast<T*>(model.GetInitializedTensorData(fNMax).get());
-            fMax            = data[0];
-            fMaxIsConstant  = true;
+            auto data = static_cast<T *>(model.GetInitializedTensorData(fNMax).get());
+            fMax = data[0];
+            fMaxIsConstant = true;
             model.SetNotWritableInitializedTensor(fNMax);
          }
       }
@@ -151,14 +145,11 @@ public:
          model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShape);
 
       if (model.Verbose()) {
-         std::cout << "Clip : " << fNX << " "
-                   << ConvertShapeToString(fShape);
+         std::cout << "Clip : " << fNX << " " << ConvertShapeToString(fShape);
          if (fHasMin)
-            std::cout << "  min=" << (fMinIsConstant
-                       ? std::to_string(fMin) : fNMin + "(runtime)");
+            std::cout << "  min=" << (fMinIsConstant ? std::to_string(fMin) : fNMin + "(runtime)");
          if (fHasMax)
-            std::cout << "  max=" << (fMaxIsConstant
-                       ? std::to_string(fMax) : fNMax + "(runtime)");
+            std::cout << "  max=" << (fMaxIsConstant ? std::to_string(fMax) : fNMax + "(runtime)");
          std::cout << " --> " << fNY << "\n";
       }
 
@@ -166,7 +157,6 @@ public:
       model.AddNeededStdLib("algorithm");
       model.AddNeededStdLib("limits");
    }
-
 
    // -----------------------------------------------------------------------
    // Generate
@@ -197,11 +187,10 @@ public:
       if (fMinIsConstant) {
          minExpr = ToStringHighPrec(fMin);
       } else if (fHasMin) {
-         minExpr = "tensor_" + fNMin + "[0]";  // scalar input tensor
+         minExpr = "tensor_" + fNMin + "[0]"; // scalar input tensor
       } else {
          // No lower bound — use lowest representable value
-         minExpr = "std::numeric_limits<" + TensorType<T>::Name()
-                   + ">::lowest()";
+         minExpr = "std::numeric_limits<" + TensorType<T>::Name() + ">::lowest()";
       }
 
       if (fMaxIsConstant) {
@@ -210,11 +199,10 @@ public:
          maxExpr = "tensor_" + fNMax + "[0]";
       } else {
          // No upper bound — use max representable value
-         maxExpr = "std::numeric_limits<" + TensorType<T>::Name()
-                   + ">::max()";
+         maxExpr = "std::numeric_limits<" + TensorType<T>::Name() + ">::max()";
       }
 
-      auto tensorValue = [](const std::string & name, const std::string & index) {
+      auto tensorValue = [](const std::string &name, const std::string &index) {
          std::stringstream s;
          s << "tensor_" << name << "[" << index << "]";
          return s.str();
@@ -222,19 +210,19 @@ public:
 
       // ---- flat element loop (identical structure to Selu) -------------
       out << SP << "for (int id = 0; id < " << length << " ; id++) {\n";
-      std::string firstExpr = fHasMax ? "std::min(" + maxExpr + ", " + tensorValue(fNX, "id") + ")" : tensorValue(fNX, "id");
-      std::string secondExpr  = fHasMin ? "std::max(" + minExpr + ", " + firstExpr + ")" : firstExpr;
+      std::string firstExpr =
+         fHasMax ? "std::min(" + maxExpr + ", " + tensorValue(fNX, "id") + ")" : tensorValue(fNX, "id");
+      std::string secondExpr = fHasMin ? "std::max(" + minExpr + ", " + firstExpr + ")" : firstExpr;
       out << SP << SP << tensorValue(fNY, "id") << " = " << secondExpr << ";\n";
       out << SP << "}\n";
 
       return out.str();
    }
 
-
 private:
-
    // Helper: convert a T value to string with enough precision
-   std::string ToStringHighPrec(T val) const {
+   std::string ToStringHighPrec(T val) const
+   {
       std::ostringstream ss;
       ss << std::setprecision(std::numeric_limits<T>::max_digits10) << val;
       if constexpr (std::is_floating_point_v<T>) {

@@ -44,8 +44,8 @@ ParserFuncSignature ParseConv = [](RModelParser_ONNX &parser, const onnx::NodePr
          attr_strides =
             std::vector<size_t>({nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end()});
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << nodeproto.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
 

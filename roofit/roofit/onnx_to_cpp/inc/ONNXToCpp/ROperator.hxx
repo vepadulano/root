@@ -18,43 +18,39 @@ class ROperator {
 public:
    virtual std::vector<std::string> GetBlasRoutines() { return {}; }
    virtual std::vector<std::string> GetStdLibs() { return {}; }
-   virtual void Initialize(RModel&) = 0;
-   virtual std::string Generate(std::string OpName) = 0;  //expect unique opName for each operator within the same RModel
+   virtual void Initialize(RModel &) = 0;
+   virtual std::string Generate(std::string OpName) = 0; // expect unique opName for each operator within the same
+                                                         // RModel
    // generate initialization code for session constructor
-   virtual std::string GenerateInitCode() { return "";}
+   virtual std::string GenerateInitCode() { return ""; }
    // generate some specific declaration code for Session
-   virtual std::string GenerateDeclCode() { return "";}
+   virtual std::string GenerateDeclCode() { return ""; }
    // generate session data members specific to operator
    virtual std::string GenerateSessionMembersCode(std::string /*opName*/) { return ""; }
-   virtual std::string Header() { return "";}
+   virtual std::string Header() { return ""; }
 
    /// check if the output of the operator is Constant and is evaluated at initialization time
    bool IsOutputConstant() const { return fIsOutputConstant; }
 
-   //virtual void Forward_reference() = 0;
-   //virtual void Forward_blas() = 0;
-   virtual ~ROperator(){}
+   // virtual void Forward_reference() = 0;
+   // virtual void Forward_blas() = 0;
+   virtual ~ROperator() {}
 
 protected:
-
-   const std::string SP = "   ";    ///< space used to correctly indent the generated C++ code
-   bool fIsOutputConstant = false;  ///< flag to identify if operator has a constant output (no need to generate code)
-   bool fIsOutputParamShape = false;     ///< flag to identify of the output represents a parametric shape (can be known at compile time)
+   const std::string SP = "   ";   ///< space used to correctly indent the generated C++ code
+   bool fIsOutputConstant = false; ///< flag to identify if operator has a constant output (no need to generate code)
+   bool fIsOutputParamShape =
+      false; ///< flag to identify of the output represents a parametric shape (can be known at compile time)
 
    mutable std::vector<std::string_view> fInputTensorNames;
    mutable std::vector<std::string_view> fOutputTensorNames;
 
 public:
-   span<const std::string_view> GetOpInputTensors() const {
-      return fInputTensorNames;
-   }
+   span<const std::string_view> GetOpInputTensors() const { return fInputTensorNames; }
 
-   span<const std::string_view> GetOpOutputTensors() const {
-      return fOutputTensorNames;
-   }
-
+   span<const std::string_view> GetOpOutputTensors() const { return fOutputTensorNames; }
 };
 
 } // namespace ROOT::Internal::ONNXToCpp
 
-#endif //ONNXTOCPP_OPERATOR
+#endif // ONNXTOCPP_OPERATOR

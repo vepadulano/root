@@ -7,14 +7,13 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-template<typename T>
-class ROperator_Expand final : public ROperator{
+template <typename T>
+class ROperator_Expand final : public ROperator {
 private:
-
    std::vector<Dim> fShapeX;
    std::vector<size_t> fShape;
    std::vector<Dim> fShapeY;
@@ -31,26 +30,26 @@ private:
    bool fInitBroadcast = false;
 
 public:
-   ROperator_Expand(){}
-   ROperator_Expand(std::string nameX, std::string nameShape, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)), fNShape(UTILITY::Clean_name(nameShape)), fNY(UTILITY::Clean_name(nameY)){
-         fInputTensorNames = { fNX };
-         fOutputTensorNames = { fNY };
-      }
+   ROperator_Expand() {}
+   ROperator_Expand(std::string nameX, std::string nameShape, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)), fNShape(UTILITY::Clean_name(nameShape)), fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
+   }
 
-
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       // the generated code may use the UnidirectionalBroadcast inference helper
       model.AddNeededHelperFunction("UnidirectionalBroadcast");
       // input must be a graph input, or already initialized intermediate tensor
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
-        throw std::runtime_error("Internal::ONNXToCpp Expand Op Input Tensor " + fNX + " is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp Expand Op Input Tensor " + fNX + " is not found in model");
       }
       fShapeX = model.GetDimTensorShape(fNX);
       if (model.IsInitializedTensor(fNShape)) {
          fInitializedShape = true;
-         int64_t *shapeData =
-           static_cast<int64_t *>(model.GetInitializedTensorData(fNShape).get());
+         int64_t *shapeData = static_cast<int64_t *>(model.GetInitializedTensorData(fNShape).get());
          fShape = model.GetTensorShape(fNShape);
          if (fShape.size() != 1) {
             throw std::runtime_error("Internal::ONNXToCpp - Expand operator shape must be a 1d tensor.");
@@ -58,8 +57,9 @@ public:
          size_t N = fShape[0];
          // what do we do if shapeData contains negative values?
          for (size_t i = 0; i < N; i++) {
-            if ( shapeData[i] < 0)
-               throw std::runtime_error("Internal::ONNXToCpp - Expand: invalid shape value " + std::to_string(shapeData[i]));
+            if (shapeData[i] < 0)
+               throw std::runtime_error("Internal::ONNXToCpp - Expand: invalid shape value " +
+                                        std::to_string(shapeData[i]));
          }
          std::vector<size_t> shape(shapeData, shapeData + N);
          fShapeDim = ConvertShapeToDim(shape);
@@ -77,7 +77,7 @@ public:
          }
       }
       // Y is the common shape of fShapeX and shape
-      auto ret  = UTILITY::MultidirectionalBroadcastShape(fShapeX, fShapeDim);
+      auto ret = UTILITY::MultidirectionalBroadcastShape(fShapeX, fShapeDim);
       fShapeY = ret.second;
       fInitialized = model.IsInitializedTensor(fNX) && fInitializedShape;
       std::vector<size_t> shapeX;
@@ -119,24 +119,30 @@ public:
       }
       fType = ConvertTypeToString(model.GetTensorType(fNX));
       if (model.Verbose()) {
-         std::cout << "Expand - input " << fNX << " shape " << ConvertDimShapeToString(fShapeX) << " --> " << fNY << " shape "
-                  << ConvertDimShapeToString(fShapeY) << (fIsOutputConstant ? ConvertValuesToString(model.GetTensorData<T>(fNY)) + " (constant)" : "") << std::endl;
+         std::cout << "Expand - input " << fNX << " shape " << ConvertDimShapeToString(fShapeX) << " --> " << fNY
+                   << " shape " << ConvertDimShapeToString(fShapeY)
+                   << (fIsOutputConstant ? ConvertValuesToString(model.GetTensorData<T>(fNY)) + " (constant)" : "")
+                   << std::endl;
       }
    }
 
-   std::string GenerateInitCode() override {
+   std::string GenerateInitCode() override
+   {
       std::stringstream out;
       if (!fIsOutputConstant && fInitialized && !fInitBroadcast) {
          // shapeX and shapeY are the same in this case
          auto length = ConvertDimShapeToLength(fShapeY);
          out << "// Copying initialized tensor " << fNX << " to " << fNY << "\n";
-         out << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + " << length << ", tensor_" << fNY << ");\n";
+         out << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + " << length << ", tensor_" << fNY
+             << ");\n";
       }
       return out.str();
    }
 
-   std::string Generate(std::string opName) override {
-      if (fIsOutputConstant) return "";
+   std::string Generate(std::string opName) override
+   {
+      if (fIsOutputConstant)
+         return "";
       opName = "op_" + opName;
       if (fShapeY.empty()) {
          throw std::runtime_error("Internal::ONNXToCpp Expand Op called to Generate without being initialized first");
@@ -155,24 +161,25 @@ public:
       if (lengthX != lengthY) {
          out << SP << "if ( (" << lengthX << ") < (" << lengthY << ") ) {\n";
          out << SP << SP << "// Broadcasting uninitialized tensor " << fNX << "\n";
-         out << SP << SP << "UTILITY::UnidirectionalBroadcast(tensor_" << fNX << ", " << ConvertDimShapeToString(fShapeX) << ", " << ConvertDimShapeToString(fShapeY)
-                   << ", tensor_"<<fNY<<");\n";
+         out << SP << SP << "UTILITY::UnidirectionalBroadcast(tensor_" << fNX << ", "
+             << ConvertDimShapeToString(fShapeX) << ", " << ConvertDimShapeToString(fShapeY) << ", tensor_" << fNY
+             << ");\n";
          out << SP << "} else {\n";
-         out << SP << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + (" << lengthX << "), tensor_" << fNY << ");\n";
+         out << SP << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + (" << lengthX << "), tensor_"
+             << fNY << ");\n";
          out << SP << "}\n";
       } else {
          // case of equal length even if shapes are dims
-         out << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + (" << lengthX << "), tensor_" << fNY << ");\n";
+         out << SP << "std::copy(tensor_" << fNX << ", " << "tensor_" << fNX << " + (" << lengthX << "), tensor_" << fNY
+             << ");\n";
       }
 
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROperator_Expand
+#endif // ONNXTOCPP_ROperator_Expand

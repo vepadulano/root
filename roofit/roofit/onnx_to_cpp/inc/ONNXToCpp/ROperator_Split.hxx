@@ -7,17 +7,14 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-
-class ROperator_Split final : public ROperator
-{
+class ROperator_Split final : public ROperator {
 
 private:
-
-   int fAxis  = 0;
+   int fAxis = 0;
    std::string fNX;
    std::string fNSplit;
    std::vector<std::string> fNYs;
@@ -25,31 +22,33 @@ private:
    std::vector<int64_t> fSplit;
    std::vector<std::vector<Dim>> fOutputShapes;
 
-
-
 public:
-   ROperator_Split(){}
-   ROperator_Split(const std::string & nameX, const std::string & nameS,  int axis, const std::vector<std::string> &  namesY):
-      fAxis(axis), fNX(UTILITY::Clean_name(nameX)), fNSplit(UTILITY::Clean_name(nameS)) {
-         fNYs.reserve(namesY.size());
-         for (auto & name : namesY)
-            fNYs.push_back(UTILITY::Clean_name(name));
+   ROperator_Split() {}
+   ROperator_Split(const std::string &nameX, const std::string &nameS, int axis, const std::vector<std::string> &namesY)
+      : fAxis(axis), fNX(UTILITY::Clean_name(nameX)), fNSplit(UTILITY::Clean_name(nameS))
+   {
+      fNYs.reserve(namesY.size());
+      for (auto &name : namesY)
+         fNYs.push_back(UTILITY::Clean_name(name));
 
-         fInputTensorNames = { fNX };
-         fOutputTensorNames.resize(fNYs.size());
-         std::transform(fNYs.begin(), fNYs.end(), fOutputTensorNames.begin(),
-                   [](const std::string& s) -> std::string_view { return s; });
-      }
+      fInputTensorNames = {fNX};
+      fOutputTensorNames.resize(fNYs.size());
+      std::transform(fNYs.begin(), fNYs.end(), fOutputTensorNames.begin(),
+                     [](const std::string &s) -> std::string_view { return s; });
+   }
 
-   void Initialize(RModel& model) override {
-      if (model.CheckIfTensorAlreadyExist(fNX) == false){   //input must be a graph input, or already initialized intermediate tensor
+   void Initialize(RModel &model) override
+   {
+      if (model.CheckIfTensorAlreadyExist(fNX) ==
+          false) { // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp Split Op Input Tensor is not found in model");
       }
       fInputShape = model.GetDimTensorShape(fNX);
 
       // correct for negative axis
-      if (fAxis < 0) fAxis += fInputShape.size();
-      if (fAxis < 0 || fAxis >= static_cast<int>(fInputShape.size()) )
+      if (fAxis < 0)
+         fAxis += fInputShape.size();
+      if (fAxis < 0 || fAxis >= static_cast<int>(fInputShape.size()))
          throw std::runtime_error("Internal::ONNXToCpp Split - invalid axis " + std::to_string(fAxis));
 
       // support for time being split in axis whi are defined not parametrics
@@ -64,12 +63,12 @@ public:
       if (fNSplit.empty()) {
          int64_t splitValue = 0;
          if (origValue % nsplit == 0) {
-            splitValue = origValue/nsplit;
+            splitValue = origValue / nsplit;
             fSplit = std::vector<int64_t>(nsplit, splitValue);
          } else {
             // case of not equal splitting
-            splitValue = std::ceil(double(origValue)/nsplit);
-            fSplit = std::vector<int64_t>(nsplit-1, splitValue);
+            splitValue = std::ceil(double(origValue) / nsplit);
+            fSplit = std::vector<int64_t>(nsplit - 1, splitValue);
             fSplit.push_back(origValue % splitValue);
          }
       } else {
@@ -77,7 +76,7 @@ public:
          // get split tensor values
          if (!model.IsInitializedTensor(fNSplit))
             throw std::runtime_error("Internal::ONNXToCpp Split - non-initialized split tensors are not supported");
-         auto splitShape =  model.GetTensorShape(fNSplit);
+         auto splitShape = model.GetTensorShape(fNSplit);
          if (splitShape.size() != 1 || splitShape[0] != nsplit)
             throw std::runtime_error("Internal::ONNXToCpp Split - split input tensor has invalid shape");
          auto split_data = static_cast<int64_t *>(model.GetInitializedTensorData(fNSplit).get());
@@ -87,38 +86,39 @@ public:
       size_t tot_split = 0;
       for (size_t i = 0; i < fNYs.size(); i++) {
          std::vector<Dim> outputShape = fInputShape;
-         outputShape[fAxis] = Dim{ static_cast<size_t>(fSplit[i]) };
+         outputShape[fAxis] = Dim{static_cast<size_t>(fSplit[i])};
          tot_split += fSplit[i];
          model.AddIntermediateTensor(fNYs[i], model.GetTensorType(fNX), outputShape);
          fOutputShapes.push_back(outputShape);
       }
       if (tot_split != origValue)
-         throw std::runtime_error("Internal::ONNXToCpp Split - Sum of split sizes must match the input dimension along the axis");
-
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Split - Sum of split sizes must match the input dimension along the axis");
 
       if (model.Verbose()) {
          std::cout << "Split - input shape " << ConvertDimShapeToString(fInputShape) << " --> ";
-         for (auto & s : fOutputShapes)
+         for (auto &s : fOutputShapes)
             std::cout << ConvertDimShapeToString(s) << "  ";
          std::cout << std::endl;
       }
    }
 
-
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       OpName = "op_" + OpName;
-      if (fOutputShapes.empty()){
-         throw std::runtime_error("Internal::ONNXToCpp Operator Split called to Generate without being initialized first");
+      if (fOutputShapes.empty()) {
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator Split called to Generate without being initialized first");
       }
 
-      auto input_strides =  UTILITY::ComputeStrideFromShape(fInputShape);
+      auto input_strides = UTILITY::ComputeStrideFromShape(fInputShape);
 
       // generate now the code for split
       std::stringstream out;
       out << "\n" << SP << "//------ Split\n";
       out << SP << "size_t " << OpName << "_axis_offset = 0;\n";
       // unroll the loop on split outputs
-      for (size_t i = 0; i < fNYs.size(); i++)  {
+      for (size_t i = 0; i < fNYs.size(); i++) {
          auto length = ConvertDimShapeToLength(fOutputShapes[i]);
          auto output_strides = UTILITY::ComputeStrideFromShape(fOutputShapes[i]);
 
@@ -129,13 +129,13 @@ public:
          // loop on dimensions to compute the input indices(unroll this loop)
          for (size_t k = 0; k < fOutputShapes[i].size(); ++k) {
             out << SP << SP << "// dim " << k << "\n";
-            if (k < fOutputShapes[i].size()-1) {
+            if (k < fOutputShapes[i].size() - 1) {
                out << SP << SP << "input_index += (int(remaining / " << output_strides[k] << ")";
                // for the split axis we need to consider the offset in the splits when converting to input coordinates
                if (k == static_cast<size_t>(fAxis) && i > 0)
                   out << " + " << OpName << "_axis_offset";
                out << ") * " << input_strides[k] << ";\n";
-               out << SP << SP  << "remaining %= " << output_strides[k] << ";\n";
+               out << SP << SP << "remaining %= " << output_strides[k] << ";\n";
             } else {
                // for last dims all strides are one
                out << SP << SP << "input_index += remaining";
@@ -145,18 +145,17 @@ public:
             }
          }
 
-         out << SP << SP  << "tensor_" << fNYs[i] << "[id] = tensor_" << fNX <<"[input_index];\n";
+         out << SP << SP << "tensor_" << fNYs[i] << "[id] = tensor_" << fNX << "[input_index];\n";
          out << SP << "}\n";
-         if (i < fNYs.size()-1) out << SP << OpName << "_axis_offset += " << fSplit[i] << ";\n";
+         if (i < fNYs.size() - 1)
+            out << SP << OpName << "_axis_offset += " << fSplit[i] << ";\n";
       }
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_Swish
+#endif // ONNXTOCPP_ROPERATOR_Swish

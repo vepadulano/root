@@ -6,8 +6,8 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-ParserFuncSignature ParseIf = [] (RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
-   //ETensorType input_type;
+ParserFuncSignature ParseIf = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
+   // ETensorType input_type;
 
    auto input_name = nodeproto.input(0);
    if (!parser.IsRegisteredTensorType(input_name)) {
@@ -24,20 +24,19 @@ ParserFuncSignature ParseIf = [] (RModelParser_ONNX &parser, const onnx::NodePro
       std::string attribute_name = nodeproto.attribute(i).name();
       if (attribute_name == "then_branch") {
          then_index = i;
-      }
-      else if (attribute_name == "else_branch") {
+      } else if (attribute_name == "else_branch") {
          else_index = i;
       }
    }
    if (else_index < 0 || then_index < 0)
-     throw std::runtime_error("Internal::ONNXToCpp ONNX Parser If has wrong attributes");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser If has wrong attributes");
 
    auto then_graph = nodeproto.attribute(then_index).g();
    auto else_graph = nodeproto.attribute(else_index).g();
    // need here to parse the graphs
 
-   auto model_then = std::make_unique<RModel>(then_graph.name(),"");
-   auto model_else = std::make_unique<RModel>(else_graph.name(),"");
+   auto model_then = std::make_unique<RModel>(then_graph.name(), "");
+   auto model_else = std::make_unique<RModel>(else_graph.name(), "");
 
    std::vector<std::string> outputNames;
    for (int i = 0; i < nodeproto.output_size(); i++) {
@@ -46,8 +45,8 @@ ParserFuncSignature ParseIf = [] (RModelParser_ONNX &parser, const onnx::NodePro
    parser.ParseONNXGraph(*model_then, then_graph);
    parser.ParseONNXGraph(*model_else, else_graph);
 
-
-   std::unique_ptr<ROperator> op(new ROperator_If(input_name, outputNames, std::move(model_then), std::move(model_else)));
+   std::unique_ptr<ROperator> op(
+      new ROperator_If(input_name, outputNames, std::move(model_then), std::move(model_else)));
    // output of if are the output of the branches
    for (size_t i = 0; i < outputNames.size(); i++) {
       // get type from the output of subgraph models

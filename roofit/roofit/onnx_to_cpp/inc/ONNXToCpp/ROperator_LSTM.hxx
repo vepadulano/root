@@ -18,8 +18,9 @@ namespace ROOT::Internal::ONNXToCpp {
  * See the <a href="https://github.com/onnx/onnx/blob/master/docs/Operators.md#LSTM">ONNX documentation</a>
  * for details about the supported LSTM architectures.
  */
-template <typename T> class ROperator_LSTM final : public ROperator {
- private:
+template <typename T>
+class ROperator_LSTM final : public ROperator {
+private:
    std::vector<float> fAttrActivationAlpha;   ///< Sacling values used by some activation functions
    std::vector<float> fAttrActivationBeta;    ///< Scaling values used by some activation functions
    std::vector<std::string> fAttrActivations; ///< Activation functions
@@ -29,33 +30,33 @@ template <typename T> class ROperator_LSTM final : public ROperator {
    size_t fAttrInputForget;                   ///< Forget gate
    size_t fAttrLayout;                        ///< Data layout
 
-   std::string fNX;                           ///< Name of the input
-   std::string fNW;                           ///< Name of the weights
-   std::string fNR;                           ///< Name of the recurrence
-   std::string fNB;                           ///< Name of the bias
-   std::string fNSequence_lens;               ///< Name of length of the sequences
-   std::string fNInitial_h;                   ///< Name of the initial value of the hidden states
-   std::string fNInitial_c;                   ///< Name of the initial value of the cell states
-   std::string fNP;                           ///< Name of peepholes
-   std::string fNY;                           ///< Name of the output
-   std::string fNY_h;                         ///< Name of the last sequence of the output
-   std::string fNY_c;                         ///< Name of the last sequence of the cell states
+   std::string fNX;             ///< Name of the input
+   std::string fNW;             ///< Name of the weights
+   std::string fNR;             ///< Name of the recurrence
+   std::string fNB;             ///< Name of the bias
+   std::string fNSequence_lens; ///< Name of length of the sequences
+   std::string fNInitial_h;     ///< Name of the initial value of the hidden states
+   std::string fNInitial_c;     ///< Name of the initial value of the cell states
+   std::string fNP;             ///< Name of peepholes
+   std::string fNY;             ///< Name of the output
+   std::string fNY_h;           ///< Name of the last sequence of the output
+   std::string fNY_c;           ///< Name of the last sequence of the cell states
 
-   std::vector<size_t> fShapeX;               ///< Shape of the input
-   std::vector<size_t> fShapeW;               ///< Shape of the weights
-   std::vector<size_t> fShapeR;               ///< Shape of the recurrence
-   std::vector<size_t> fShapeB;               ///< Shape of the bias
-   std::vector<size_t> fShapeSequence_lens;   ///< Shape of the length of the sequences
-   std::vector<size_t> fShapeInitial_h;       ///< Shape of the initial value of the hidden states
-   std::vector<size_t> fShapeInitial_c;       ///< Shape of the initial value of the cell states
-   std::vector<size_t> fShapeP;               ///< Shape of the peepholes
-   std::vector<size_t> fShapeY;               ///< Shape of the output
-   std::vector<size_t> fShapeY_h;             ///< Shape of the last sequence of the output
-   std::vector<size_t> fShapeY_c;             ///< Shape of the last sequence of the cell states
+   std::vector<size_t> fShapeX;             ///< Shape of the input
+   std::vector<size_t> fShapeW;             ///< Shape of the weights
+   std::vector<size_t> fShapeR;             ///< Shape of the recurrence
+   std::vector<size_t> fShapeB;             ///< Shape of the bias
+   std::vector<size_t> fShapeSequence_lens; ///< Shape of the length of the sequences
+   std::vector<size_t> fShapeInitial_h;     ///< Shape of the initial value of the hidden states
+   std::vector<size_t> fShapeInitial_c;     ///< Shape of the initial value of the cell states
+   std::vector<size_t> fShapeP;             ///< Shape of the peepholes
+   std::vector<size_t> fShapeY;             ///< Shape of the output
+   std::vector<size_t> fShapeY_h;           ///< Shape of the last sequence of the output
+   std::vector<size_t> fShapeY_c;           ///< Shape of the last sequence of the cell states
 
-   std::string fType;                         ///< Type of the tensors
+   std::string fType; ///< Type of the tensors
 
- public:
+public:
    /*! Default constructor of ROperator_LSTM */
    ROperator_LSTM() {}
 
@@ -81,58 +82,63 @@ template <typename T> class ROperator_LSTM final : public ROperator {
     * \param nameY_h name of the last sequence of the output
     * \param nameY_c name of the last sequence of the cell states
     */
-   ROperator_LSTM(std::vector<float> activation_alpha,
-                 std::vector<float> activation_beta,
-                 std::vector<std::string> activations, float clip,
-                 std::string direction, size_t hidden_size,
-                 size_t input_forget, size_t layout,
-                 std::string nameX, std::string nameW, std::string nameR,
-                 std::string nameB, std::string nameSequence_lens,
-                 std::string nameInitial_h, std::string nameInitial_c, std::string nameP,
-                 std::string nameY, std::string nameY_h, std::string nameY_c)
-       : fAttrActivationAlpha(activation_alpha),
-         fAttrActivationBeta(activation_beta), fAttrActivations(activations),
-         fAttrClip(clip), fAttrDirection(direction), fAttrHiddenSize(hidden_size),
-         fAttrInputForget(input_forget), fAttrLayout(layout),
-         fNX(UTILITY::Clean_name(nameX)), fNW(UTILITY::Clean_name(nameW)),
-         fNR(UTILITY::Clean_name(nameR)), fNB(UTILITY::Clean_name(nameB)),
-         fNSequence_lens(UTILITY::Clean_name(nameSequence_lens)),
-         fNInitial_h(UTILITY::Clean_name(nameInitial_h)),
-         fNInitial_c(UTILITY::Clean_name(nameInitial_c)), fNP(UTILITY::Clean_name(nameP)),
-         fNY(UTILITY::Clean_name(nameY)), fNY_h(UTILITY::Clean_name(nameY_h)),
-         fNY_c(UTILITY::Clean_name(nameY_c)) {
+   ROperator_LSTM(std::vector<float> activation_alpha, std::vector<float> activation_beta,
+                  std::vector<std::string> activations, float clip, std::string direction, size_t hidden_size,
+                  size_t input_forget, size_t layout, std::string nameX, std::string nameW, std::string nameR,
+                  std::string nameB, std::string nameSequence_lens, std::string nameInitial_h,
+                  std::string nameInitial_c, std::string nameP, std::string nameY, std::string nameY_h,
+                  std::string nameY_c)
+      : fAttrActivationAlpha(activation_alpha),
+        fAttrActivationBeta(activation_beta),
+        fAttrActivations(activations),
+        fAttrClip(clip),
+        fAttrDirection(direction),
+        fAttrHiddenSize(hidden_size),
+        fAttrInputForget(input_forget),
+        fAttrLayout(layout),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNW(UTILITY::Clean_name(nameW)),
+        fNR(UTILITY::Clean_name(nameR)),
+        fNB(UTILITY::Clean_name(nameB)),
+        fNSequence_lens(UTILITY::Clean_name(nameSequence_lens)),
+        fNInitial_h(UTILITY::Clean_name(nameInitial_h)),
+        fNInitial_c(UTILITY::Clean_name(nameInitial_c)),
+        fNP(UTILITY::Clean_name(nameP)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fNY_h(UTILITY::Clean_name(nameY_h)),
+        fNY_c(UTILITY::Clean_name(nameY_c))
+   {
       if (std::is_same<T, float>::value) {
          fType = "float";
       } else {
-         throw std::runtime_error(
-             "Internal::ONNXToCpp Encountered unsupported type parsing a LSTM operator");
+         throw std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a LSTM operator");
       }
 
-      fInputTensorNames = { fNX, fNW, fNR };
-      if (!fNB.empty()){
+      fInputTensorNames = {fNX, fNW, fNR};
+      if (!fNB.empty()) {
          fInputTensorNames.emplace_back(fNB);
       }
-      if (!fNSequence_lens.empty()){
+      if (!fNSequence_lens.empty()) {
          fInputTensorNames.emplace_back(fNSequence_lens);
       }
-      if (!fNInitial_h.empty()){
+      if (!fNInitial_h.empty()) {
          fInputTensorNames.emplace_back(fNInitial_h);
       }
-      if (!fNInitial_c.empty()){
+      if (!fNInitial_c.empty()) {
          fInputTensorNames.emplace_back(fNInitial_c);
       }
-      if (!fNP.empty()){
+      if (!fNP.empty()) {
          fInputTensorNames.emplace_back(fNP);
       }
 
-      fOutputTensorNames = { };
-      if (!fNY.empty()){
+      fOutputTensorNames = {};
+      if (!fNY.empty()) {
          fOutputTensorNames.emplace_back(fNY);
       }
-      if (!fNY_h.empty()){
+      if (!fNY_h.empty()) {
          fOutputTensorNames.emplace_back(fNY_h);
       }
-      if (!fNY_c.empty()){
+      if (!fNY_c.empty()) {
          fOutputTensorNames.emplace_back(fNY_c);
       }
    }
@@ -141,8 +147,7 @@ template <typename T> class ROperator_LSTM final : public ROperator {
     *
     * \param input shape of the input tensors
     */
-   std::vector<std::vector<size_t>>
-   ShapeInference(std::vector<std::vector<size_t>> input);
+   std::vector<std::vector<size_t>> ShapeInference(std::vector<std::vector<size_t>> input);
 
    /*! \brief Initialize the model
     *
@@ -164,7 +169,7 @@ template <typename T> class ROperator_LSTM final : public ROperator {
 
    /*! \brief Returns the blas routines needed to compile the generated code
     */
-   std::vector<std::string> GetBlasRoutines() override { return { std::string("Gemm"), std::string("Axpy") }; }
+   std::vector<std::string> GetBlasRoutines() override { return {std::string("Gemm"), std::string("Axpy")}; }
 };
 
 template <typename T>
@@ -257,29 +262,35 @@ auto ROperator_LSTM<T>::Initialize(RModel &model) -> void
    }
    if (!fNSequence_lens.empty()) {
       if (!model.CheckIfTensorAlreadyExist(fNSequence_lens)) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNSequence_lens + "is not found in model.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNSequence_lens +
+                                  "is not found in model.");
       }
       fShapeSequence_lens = model.GetTensorShape(fNSequence_lens);
       if (fShapeSequence_lens.size() != 1) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNSequence_lens + " is not of 1 dimension.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNSequence_lens +
+                                  " is not of 1 dimension.");
       }
    }
    if (!fNInitial_h.empty()) {
       if (!model.CheckIfTensorAlreadyExist(fNInitial_h)) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_h + " is not found in model.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_h +
+                                  " is not found in model.");
       }
       fShapeInitial_h = model.GetTensorShape(fNInitial_h);
       if (fShapeInitial_h.size() != 3) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_h + " is not of 3 dimensions.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_h +
+                                  " is not of 3 dimensions.");
       }
    }
    if (!fNInitial_c.empty()) {
       if (!model.CheckIfTensorAlreadyExist(fNInitial_c)) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_c + " is not found in model.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_c +
+                                  " is not found in model.");
       }
       fShapeInitial_c = model.GetTensorShape(fNInitial_c);
       if (fShapeInitial_c.size() != 3) {
-         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_c + " is not of 3 dimensions.");
+         throw std::runtime_error("Internal::ONNXToCpp LSTM Op input tensor " + fNInitial_c +
+                                  " is not of 3 dimensions.");
       }
    }
    if (!fNP.empty()) {
@@ -345,7 +356,8 @@ auto ROperator_LSTM<T>::Initialize(RModel &model) -> void
       throw std::runtime_error("Internal::ONNXToCpp - Invalid LSTM direction fAttrDirection = " + fAttrDirection);
    }
    if (4 * fAttrHiddenSize != fShapeW[1]) {
-      throw std::runtime_error("Internal::ONNXToCpp - fAttrHiddenSize must be equal to " + std::to_string(fShapeW[1] / 4));
+      throw std::runtime_error("Internal::ONNXToCpp - fAttrHiddenSize must be equal to " +
+                               std::to_string(fShapeW[1] / 4));
    }
    if (fAttrInputForget > 1) {
       throw std::runtime_error("Internal::ONNXToCpp - fAttrInputForget = " + std::to_string(fAttrInputForget) +

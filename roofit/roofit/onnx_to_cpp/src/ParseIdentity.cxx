@@ -23,8 +23,9 @@ ParserFuncSignature ParseIdentity = [](RModelParser_ONNX &parser, const onnx::No
    switch (input_type) {
    case ETensorType::FLOAT: op.reset(new ROperator_Identity<float>(input_name, output_name)); break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Identity does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator Identity does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    if (!parser.IsRegisteredTensorType(output_name)) {

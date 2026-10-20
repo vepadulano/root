@@ -57,20 +57,21 @@ ParserFuseFuncSignature ParseFuseConvTransposeAdd = [](RModelParser_ONNX &parser
       } else if (attribute_name == "strides") {
          attr_strides = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << convnode.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << convnode.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
    if (addnode.input_size() != 2) {
       throw std::runtime_error("Internal::ONNXToCpp - Cannote fuse ConvTranspose - Add is input size of add is not 2");
    }
    std::string name_b;
-   if (convnode.output(0) == addnode.input(0) )
+   if (convnode.output(0) == addnode.input(0))
       name_b = addnode.input(1);
    else if (convnode.output(0) == addnode.input(1))
       name_b = addnode.input(0);
    else
-      throw std::runtime_error("Internal::ONNXToCpp - Cannote fuse ConvTranspose - Output of ConvTrans is not input to Add");
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Cannote fuse ConvTranspose - Output of ConvTrans is not input to Add");
 
    switch (input_type) {
    case ETensorType::FLOAT:
@@ -79,8 +80,9 @@ ParserFuseFuncSignature ParseFuseConvTransposeAdd = [](RModelParser_ONNX &parser
                                                   convnode.input(0), convnode.input(1), name_b, addnode.output(0)));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator ConvTranspose does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator ConvTranspose does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    // Output of ConvTranspose and input of Add must be have the same type

@@ -31,8 +31,9 @@ ParserFuncSignature ParseLeakyRelu = [](RModelParser_ONNX &parser, const onnx::N
    switch (input_type) {
    case ETensorType::FLOAT: op.reset(new ROperator_LeakyRelu<float>(attr_alpha, input_name, output_name)); break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator Leaky Relu does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator Leaky Relu does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    if (!parser.IsRegisteredTensorType(output_name)) {

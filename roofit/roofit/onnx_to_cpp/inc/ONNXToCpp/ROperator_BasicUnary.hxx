@@ -9,11 +9,25 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-enum class EBasicUnaryOperator { kReciprocal, kSqrt , kNeg, kExp, kLog, kSin, kCos, kAbs, kSoftplus, kAtan, kFloor, kAsinh, kAcosh, kAtanh };
+enum class EBasicUnaryOperator {
+   kReciprocal,
+   kSqrt,
+   kNeg,
+   kExp,
+   kLog,
+   kSin,
+   kCos,
+   kAbs,
+   kSoftplus,
+   kAtan,
+   kFloor,
+   kAsinh,
+   kAcosh,
+   kAtanh
+};
 
 template <typename T, EBasicUnaryOperator Op>
-struct UnaryOpTraits {
-};
+struct UnaryOpTraits {};
 
 template <typename T>
 struct UnaryOpTraits<T, EBasicUnaryOperator::kReciprocal> {
@@ -119,11 +133,12 @@ public:
    ROperator_BasicUnary(std::string nameX, std::string nameY)
       : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
    {
-         fInputTensorNames =  { fNX };
-         fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          throw std::runtime_error("Internal::ONNXToCpp - Tensor " + fNX + " not found.");
       }
@@ -147,9 +162,7 @@ public:
       return out.str();
    }
 
-   std::vector<std::string> GetStdLibs() override {
-      return { std::string("cmath") };
-   }
+   std::vector<std::string> GetStdLibs() override { return {std::string("cmath")}; }
 };
 
 } // namespace ONNXToCpp

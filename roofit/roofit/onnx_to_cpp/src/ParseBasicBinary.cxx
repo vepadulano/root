@@ -20,10 +20,10 @@ std::unique_ptr<ROperator> ParseBasicBinary(RModelParser_ONNX &parser, const onn
          else {
             ETensorType input_type2 = parser.GetTensorType(input_name);
             if (input_type2 != input_type) {
-               throw
-                  std::runtime_error("Internal::ONNXToCpp ONNX parser Binary op has input tensors of different types: " +
-                     input_name + " : " + ConvertTypeToString(input_type2) +
-                     " and " +  nodeproto.input(0) + " : " + ConvertTypeToString(input_type));
+               throw std::runtime_error(
+                  "Internal::ONNXToCpp ONNX parser Binary op has input tensors of different types: " + input_name +
+                  " : " + ConvertTypeToString(input_type2) + " and " + nodeproto.input(0) + " : " +
+                  ConvertTypeToString(input_type));
             }
          }
       } else {
@@ -61,11 +61,9 @@ std::unique_ptr<ROperator> ParseBasicBinary(RModelParser_ONNX &parser, const onn
    return op;
 };
 
-
 // Mod (and fmod) is a special case di BasicBinary
 
-ParserFuncSignature ParseMod = [] (RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
-
+ParserFuncSignature ParseMod = [](RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto) {
    ETensorType input_type = ETensorType::UNDEFINED;
    for (int i = 0; i < 2; ++i) {
       auto input_name = nodeproto.input(i);
@@ -76,10 +74,10 @@ ParserFuncSignature ParseMod = [] (RModelParser_ONNX &parser, const onnx::NodePr
          else {
             ETensorType input_type2 = parser.GetTensorType(input_name);
             if (input_type2 != input_type) {
-               throw
-                  std::runtime_error("Internal::ONNXToCpp ONNX parser Binary op has input tensors of different types: " +
-                     input_name + " : " + ConvertTypeToString(input_type2) +
-                     " and " +  nodeproto.input(0) + " : " + ConvertTypeToString(input_type));
+               throw std::runtime_error(
+                  "Internal::ONNXToCpp ONNX parser Binary op has input tensors of different types: " + input_name +
+                  " : " + ConvertTypeToString(input_type2) + " and " + nodeproto.input(0) + " : " +
+                  ConvertTypeToString(input_type));
             }
          }
       } else {
@@ -97,22 +95,28 @@ ParserFuncSignature ParseMod = [] (RModelParser_ONNX &parser, const onnx::NodePr
 
    switch (input_type) {
    case ETensorType::FLOAT:
-      op.reset(new ROperator_BasicBinary<float,EBasicBinaryOperator::FMod >(nodeproto.input(0), nodeproto.input(1), output_name));
+      op.reset(new ROperator_BasicBinary<float, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1),
+                                                                            output_name));
       break;
    case ETensorType::DOUBLE:
-      op.reset(new ROperator_BasicBinary<double, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1), output_name));
+      op.reset(new ROperator_BasicBinary<double, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1),
+                                                                             output_name));
       break;
    case ETensorType::INT32:
       if (fmod == 1)
-         op.reset(new ROperator_BasicBinary<int32_t, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1), output_name));
+         op.reset(new ROperator_BasicBinary<int32_t, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1),
+                                                                                 output_name));
       else
-         op.reset(new ROperator_BasicBinary<int32_t, EBasicBinaryOperator::Mod>(nodeproto.input(0), nodeproto.input(1), output_name));
+         op.reset(new ROperator_BasicBinary<int32_t, EBasicBinaryOperator::Mod>(nodeproto.input(0), nodeproto.input(1),
+                                                                                output_name));
       break;
    case ETensorType::INT64:
       if (fmod == 1)
-         op.reset(new ROperator_BasicBinary<int64_t, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1), output_name));
+         op.reset(new ROperator_BasicBinary<int64_t, EBasicBinaryOperator::FMod>(nodeproto.input(0), nodeproto.input(1),
+                                                                                 output_name));
       else
-         op.reset(new ROperator_BasicBinary<int64_t, EBasicBinaryOperator::Mod>(nodeproto.input(0), nodeproto.input(1), output_name));
+         op.reset(new ROperator_BasicBinary<int64_t, EBasicBinaryOperator::Mod>(nodeproto.input(0), nodeproto.input(1),
+                                                                                output_name));
       break;
    default:
       throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Binary Operator does not yet support input type " +

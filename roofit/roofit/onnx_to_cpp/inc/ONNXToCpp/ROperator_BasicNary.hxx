@@ -9,18 +9,23 @@
 #include <sstream>
 #include <vector>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-enum class EBasicNaryOperator {Max, Min, Mean, Sum};
+enum class EBasicNaryOperator {
+   Max,
+   Min,
+   Mean,
+   Sum
+};
 
-template<typename T, EBasicNaryOperator Op>
+template <typename T, EBasicNaryOperator Op>
 struct NaryOperatorTraits {};
 
-template<typename T>
+template <typename T>
 struct NaryOperatorTraits<T, EBasicNaryOperator::Max> {
-   static const std::string Name() {return "Max";}
+   static const std::string Name() { return "Max"; }
    static std::string Expr(const std::vector<std::string> &inputs)
    {
       std::stringstream out;
@@ -38,9 +43,9 @@ struct NaryOperatorTraits<T, EBasicNaryOperator::Max> {
    static size_t Func(const std::vector<size_t> &values) { return *std::max_element(values.begin(), values.end()); }
 };
 
-template<typename T>
+template <typename T>
 struct NaryOperatorTraits<T, EBasicNaryOperator::Min> {
-   static const std::string Name() {return "Min";}
+   static const std::string Name() { return "Min"; }
    static std::string Expr(const std::vector<std::string> &inputs)
    {
       std::stringstream out;
@@ -60,7 +65,7 @@ struct NaryOperatorTraits<T, EBasicNaryOperator::Min> {
 
 template <typename T>
 struct NaryOperatorTraits<T, EBasicNaryOperator::Mean> {
-   static const std::string Name() {return "Mean";}
+   static const std::string Name() { return "Mean"; }
    static std::string Expr(const std::vector<std::string> &inputs)
    {
       std::stringstream out;
@@ -85,9 +90,9 @@ struct NaryOperatorTraits<T, EBasicNaryOperator::Mean> {
    }
 };
 
-template<typename T>
+template <typename T>
 struct NaryOperatorTraits<T, EBasicNaryOperator::Sum> {
-   static const std::string Name() {return "Sum";}
+   static const std::string Name() { return "Sum"; }
    static std::string Expr(const std::vector<std::string> &inputs)
    {
       std::stringstream out;
@@ -112,11 +117,9 @@ struct NaryOperatorTraits<T, EBasicNaryOperator::Sum> {
 };
 
 template <typename T, EBasicNaryOperator Op>
-class ROperator_BasicNary final : public ROperator
-{
+class ROperator_BasicNary final : public ROperator {
 
 private:
-
    std::vector<std::string> fNInputs;
    std::string fNY;
    std::vector<std::vector<Dim>> fShapeInputs;
@@ -130,18 +133,19 @@ private:
    std::string fType;
 
 public:
-   ROperator_BasicNary(){}
+   ROperator_BasicNary() {}
 
-   ROperator_BasicNary( const std::vector<std::string> & inputNames, const std::string& nameY):
-   fNY(UTILITY::Clean_name(nameY)){
+   ROperator_BasicNary(const std::vector<std::string> &inputNames, const std::string &nameY)
+      : fNY(UTILITY::Clean_name(nameY))
+   {
       fNInputs.reserve(inputNames.size());
-      for (auto & name : inputNames)
+      for (auto &name : inputNames)
          fNInputs.push_back(UTILITY::Clean_name(name));
 
       fInputTensorNames.resize(fNInputs.size());
       std::transform(fNInputs.begin(), fNInputs.end(), fInputTensorNames.begin(),
-                  [](const std::string& s) -> std::string_view { return s; });
-      fOutputTensorNames = { fNY };
+                     [](const std::string &s) -> std::string_view { return s; });
+      fOutputTensorNames = {fNY};
    }
 
    // Case where all inputs are rank <= 1 INT64 tensors known at initialization time and at least one of
@@ -216,7 +220,8 @@ public:
       return true;
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       std::vector<std::vector<size_t>> inputShapes;
       for (auto &it : fNInputs) {
          if (!model.CheckIfTensorAlreadyExist(it)) {
@@ -227,7 +232,7 @@ public:
          return;
       for (auto &it : fNInputs) {
          fShapeInputs.push_back(model.GetDimTensorShape(it));
-         if (fNInputs.size()> 2) {
+         if (fNInputs.size() > 2) {
             if (model.IsDimInputTensor(it))
                throw std::runtime_error("Internal::ONNXToCpp BasicNary : supports only 2 inputs for dynamic tensors");
             else
@@ -235,12 +240,12 @@ public:
          }
       }
       // Find the common shape of the input tensors
-      if (fShapeInputs.size() > 2 ) {
+      if (fShapeInputs.size() > 2) {
          // support dynamic tensors now for input list of size=2
          auto shapeY = UTILITY::MultidirectionalBroadcastShape(inputShapes);
          fDimShapeY = ConvertShapeToDim(shapeY);
-      } else if (fShapeInputs.size() == 2 ) {
-         auto ret  = UTILITY::MultidirectionalBroadcastShape(fShapeInputs[0], fShapeInputs[1]);
+      } else if (fShapeInputs.size() == 2) {
+         auto ret = UTILITY::MultidirectionalBroadcastShape(fShapeInputs[0], fShapeInputs[1]);
          // use same code as in BinaryOperator (need to extend for input sizes > 2)
          fBroadcast = ret.first;
          fDimShapeY = ret.second;
@@ -259,8 +264,8 @@ public:
                }
                return false;
             };
-            auto & shapeA = fShapeInputs[0];
-            auto & shapeB = fShapeInputs[1];
+            auto &shapeA = fShapeInputs[0];
+            auto &shapeB = fShapeInputs[1];
             for (size_t i = 0; i < fDimShapeY.size(); i++) {
                auto &s = fDimShapeY[i];
                if (s.isParam && s.param.find("std::max") != std::string::npos) {
@@ -279,7 +284,7 @@ public:
                }
             }
          }
-      } else if  (fShapeInputs.size() == 1 ) {
+      } else if (fShapeInputs.size() == 1) {
          fDimShapeY = fShapeInputs[0];
       }
       if (!fShapeY.empty())
@@ -287,19 +292,18 @@ public:
       else
          model.AddIntermediateTensor(fNY, model.GetTensorType(fNInputs[0]), fDimShapeY);
 
-
       fType = ConvertTypeToString(model.GetTensorType(fNInputs[0]));
 
       if (model.Verbose()) {
          std::cout << NaryOperatorTraits<T, Op>::Name() << " : ";
          if (fNInputs.size() == 2)
-            std::cout << ConvertDimShapeToString(fShapeInputs[0]) << " , "
-                      << ConvertDimShapeToString(fShapeInputs[1]);
+            std::cout << ConvertDimShapeToString(fShapeInputs[0]) << " , " << ConvertDimShapeToString(fShapeInputs[1]);
          std::cout << " --> " << ConvertDimShapeToString(fDimShapeY) << std::endl;
       }
    }
 
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       if (fIsOutputConstant)
          return "";
       OpName = "op_" + OpName;
@@ -328,15 +332,16 @@ public:
          std::string compute_idx_Y;
          int nloop = 0;
          if (fDimShapeY.empty() ||
-               std::all_of(fDimShapeY.begin(), fDimShapeY.end(), [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; })) {
+             std::all_of(fDimShapeY.begin(), fDimShapeY.end(), [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; })) {
             compute_idx_Y = "0";
          } else {
             for (size_t i = 0; i < fDimShapeY.size(); ++i) {
                if (fDimShapeY[i].dim != 1 && fDimShapeY[i].GetVal() != "1") {
                   nloop++;
-                  for (int j = 0; j < nloop; j++) out << SP;
-                  out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i]
-                      << "; ++idx_" << i << "){\n";
+                  for (int j = 0; j < nloop; j++)
+                     out << SP;
+                  out << "for (size_t idx_" << i << " = 0; idx_" << i << " < " << fDimShapeY[i] << "; ++idx_" << i
+                      << "){\n";
                   compute_idx_Y += "idx_" + std::to_string(i);
                   if (stridesY[i].GetVal() != "1")
                      compute_idx_Y += " * " + stridesY[i].GetVal();
@@ -349,10 +354,10 @@ public:
          }
          // find indices for input tensors
          std::vector<std::string> inputs(nInputs);
-         for (int ipt = 0; ipt < nInputs; ipt++ ) {
+         for (int ipt = 0; ipt < nInputs; ipt++) {
             std::string compute_idx_X;
-            auto & shape = fShapeInputs[ipt];
-            auto & stride = inputStrides[ipt];
+            auto &shape = fShapeInputs[ipt];
+            auto &stride = inputStrides[ipt];
             if (shape.empty() ||
                 std::all_of(shape.begin(), shape.end(), [](Dim d) { return d.dim == 1 || d.GetVal() == "1"; })) {
                compute_idx_X = "0";
@@ -373,24 +378,25 @@ public:
          }
 
          // perform the operation
-         for (int j = 0; j < nloop + 1; j++) out << SP;
+         for (int j = 0; j < nloop + 1; j++)
+            out << SP;
          std::string output = "tensor_" + fNY + "[" + compute_idx_Y + "]";
-         out << NaryOperatorTraits<T,Op>::Op(output, inputs);
+         out << NaryOperatorTraits<T, Op>::Op(output, inputs);
 
          for (int i = nloop; i > 0; i--) {
-            for (int j = 0; j < i; j++) out << SP;
+            for (int j = 0; j < i; j++)
+               out << SP;
             out << "}\n";
          }
       }
       return out.str();
    }
 
-   std::vector<std::string> GetStdLibs() override {return { std::string("cmath") }; }
+   std::vector<std::string> GetStdLibs() override { return {std::string("cmath")}; }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_BasicNary
+#endif // ONNXTOCPP_ROPERATOR_BasicNary

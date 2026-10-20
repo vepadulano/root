@@ -17,7 +17,6 @@ ParserFuncSignature ParseTranspose = [](RModelParser_ONNX &parser, const onnx::N
                                " but its type is not yet registered");
    }
 
-
    std::string output_name = nodeproto.output(0);
    std::vector<int_t> attr_perm;
 

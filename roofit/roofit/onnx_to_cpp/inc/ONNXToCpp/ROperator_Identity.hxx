@@ -7,13 +7,12 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <typename T>
-class ROperator_Identity final : public ROperator
-{
+class ROperator_Identity final : public ROperator {
 
 private:
    bool fIsOutputInitialized = false; // the output is the same weight as the input
@@ -23,24 +22,26 @@ private:
    std::vector<Dim> fShape;
 
 public:
-   ROperator_Identity(){}
-   ROperator_Identity(std::string nameX, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)){
-         fInputTensorNames = { fNX };
-         fOutputTensorNames = { fNY };
-      }
+   ROperator_Identity() {}
+   ROperator_Identity(std::string nameX, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
+   }
 
-   void Initialize(RModel& model) override {
-       //input must be a graph input, or already initialized intermediate tensor
-      if (model.CheckIfTensorAlreadyExist(fNX) == false){
-        throw std::runtime_error("Internal::ONNXToCpp Identity Op Input Tensor is not found in model");
+   void Initialize(RModel &model) override
+   {
+      // input must be a graph input, or already initialized intermediate tensor
+      if (model.CheckIfTensorAlreadyExist(fNX) == false) {
+         throw std::runtime_error("Internal::ONNXToCpp Identity Op Input Tensor is not found in model");
       }
       fShape = model.GetDimTensorShape(fNX);
       if (model.IsInitializedTensor(fNX)) {
          // we need to check if is a weight (initialized) or a constant tensor: in both cases the
          // output is registered directly and no code is generated at run time
          if (model.IsConstantTensor(fNX)) {
-            auto inputData = static_cast<T*>(model.GetInitializedTensorData(fNX).get());
+            auto inputData = static_cast<T *>(model.GetInitializedTensorData(fNX).get());
             model.AddConstantTensor<T>(fNY, model.GetTensorShape(fNX), inputData);
             fIsOutputConstant = true;
          } else {
@@ -59,12 +60,14 @@ public:
       }
    }
 
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       if (fIsOutputConstant || fIsOutputInitialized)
          return "";
       OpName = "op_" + OpName;
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator Identity called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator Identity called to Generate without being initialized first");
       }
       std::stringstream out;
       out << "\n//------ IDENTITY\n";
@@ -76,12 +79,10 @@ public:
       }
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_IDENTITY
+#endif // ONNXTOCPP_ROPERATOR_IDENTITY

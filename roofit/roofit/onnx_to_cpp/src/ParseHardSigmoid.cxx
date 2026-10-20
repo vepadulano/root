@@ -36,8 +36,9 @@ ParserFuncSignature ParseHardSigmoid = [](RModelParser_ONNX &parser, const onnx:
       op.reset(new ROperator_HardSigmoid<float>(attr_alpha, attr_beta, input_name, output_name));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator HardSigmoid does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator HardSigmoid does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    if (!parser.IsRegisteredTensorType(output_name)) {

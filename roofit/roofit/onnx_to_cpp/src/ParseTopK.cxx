@@ -39,7 +39,8 @@ ParserFuncSignature ParseTopK = [](RModelParser_ONNX &parser, const onnx::NodePr
       if (attribute_name == "sorted")
          attr_sorted = nodeproto.attribute(i).i();
    }
-   op.reset(new ROperator_TopK<float>(attr_axis, attr_largest, attr_sorted, k_name, input_name, outputVal_name, outputInd_name));
+   op.reset(new ROperator_TopK<float>(attr_axis, attr_largest, attr_sorted, k_name, input_name, outputVal_name,
+                                      outputInd_name));
 
    if (!parser.IsRegisteredTensorType(outputVal_name)) {
       parser.RegisterTensorType(outputVal_name, input_type);

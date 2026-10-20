@@ -7,8 +7,9 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-template<EBasicNaryOperator Op>
-std::unique_ptr<ROperator> ParseBasicNary(RModelParser_ONNX& parser, const onnx::NodeProto& nodeproto) {
+template <EBasicNaryOperator Op>
+std::unique_ptr<ROperator> ParseBasicNary(RModelParser_ONNX &parser, const onnx::NodeProto &nodeproto)
+{
    ETensorType input_type = ETensorType::UNDEFINED;
    std::vector<std::string> inputs;
    size_t size = nodeproto.input_size();

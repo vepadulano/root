@@ -12,9 +12,8 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
 
    std::string input_name = nodeproto.input(0);
    if (!parser.IsRegisteredTensorType(input_name)) {
-      throw
-         std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() + " op has input tensor " + input_name +
-                                  " but its type is not yet registered");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() + " op has input tensor " +
+                               input_name + " but its type is not yet registered");
    }
 
    // get attributes for the IsInf operator
@@ -24,13 +23,12 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
       std::string attribute_name = nodeproto.attribute(i).name();
       if (attribute_name == "detect_negative")
          detect_negative = nodeproto.attribute(i).i();
-       if (attribute_name == "detect_positive")
+      if (attribute_name == "detect_positive")
          detect_positive = nodeproto.attribute(i).i();
    }
 
    if (detect_positive == 0 && detect_negative == 0)
       throw std::runtime_error("Internal::ONNXToCpp ONNX Parser IsInf op has invalide attributes");
-
 
    std::unique_ptr<ROperator> op;
    std::string output_name = nodeproto.output(0);
@@ -44,7 +42,8 @@ std::unique_ptr<ROperator> ParseBasicIs(RModelParser_ONNX &parser, const onnx::N
       else if (detect_positive == 0)
          op.reset(new ROperator_Basic_Is<EBasicIsOperator::kIsInfNeg>(input_name, output_name));
    } else
-      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() + " operator - invalid attributes");
+      throw std::runtime_error("Internal::ONNXToCpp ONNX Parser " + IsOpTraits<Op>::Name() +
+                               " operator - invalid attributes");
 
    // Register the output type (is always BOOL)
    if (!parser.IsRegisteredTensorType(output_name)) {

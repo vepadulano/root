@@ -7,7 +7,7 @@ namespace Internal {
 namespace ONNXToCpp {
 
 ParserFuseFuncSignature ParseFuseGemmRelu = [](RModelParser_ONNX &parser, const onnx::NodeProto &gemmnode,
-                                                const onnx::NodeProto &relunode) -> std::unique_ptr<ROperator> {
+                                               const onnx::NodeProto &relunode) -> std::unique_ptr<ROperator> {
    ETensorType input_type = ETensorType::UNDEFINED;
    // check input type - only first input from Gemm
    auto input_name = gemmnode.input(0);
@@ -35,14 +35,16 @@ ParserFuseFuncSignature ParseFuseGemmRelu = [](RModelParser_ONNX &parser, const 
       } else if (attribute_name == "transA") {
          attr_transA = gemmnode.attribute(i).i();
          if (attr_transA != 0 && attr_transA != 1)
-            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transA in Operator Gemm not 0/1");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Error - Model Loading - attribute transA in Operator Gemm not 0/1");
       } else if (attribute_name == "transB") {
          attr_transB = gemmnode.attribute(i).i();
          if (attr_transB != 0 && attr_transB != 1)
-            throw std::runtime_error("Internal::ONNXToCpp Error - Model Loading - attribute transB in Operator Gemm not 0/1");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Error - Model Loading - attribute transB in Operator Gemm not 0/1");
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << gemmnode.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << gemmnode.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
    switch (input_type) {
@@ -52,7 +54,8 @@ ParserFuseFuncSignature ParseFuseGemmRelu = [](RModelParser_ONNX &parser, const 
                                             gemmnode.input(1), relunode.output(0), EActivationType::RELU));
       } else {
          op.reset(new ROperator_Gemm<float>(attr_alpha, attr_beta, attr_transA, attr_transB, gemmnode.input(0),
-                                            gemmnode.input(1), gemmnode.input(2), relunode.output(0), EActivationType::RELU));
+                                            gemmnode.input(1), gemmnode.input(2), relunode.output(0),
+                                            EActivationType::RELU));
       }
       break;
    default:

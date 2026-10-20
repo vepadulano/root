@@ -28,14 +28,17 @@ struct RAttributes_Pool {
    std::vector<size_t> strides;
 };
 
-enum PoolOpMode { InvalidPool, MaxPool, AveragePool, GlobalAveragePool };
+enum PoolOpMode {
+   InvalidPool,
+   MaxPool,
+   AveragePool,
+   GlobalAveragePool
+};
 
-template<typename T>
-class ROperator_Pool final : public ROperator
-{
+template <typename T>
+class ROperator_Pool final : public ROperator {
 
 private:
-
    PoolOpMode fPoolMode;
 
    size_t fAttrCeilMode;
@@ -55,59 +58,68 @@ private:
 
    std::string fType;
 
-   size_t fDim;   // dimension of the MaxPool
+   size_t fDim; // dimension of the MaxPool
 
 public:
-
-   std::string Name() {
-      if (fPoolMode == AveragePool)  return "AveragePool";
-      if (fPoolMode == MaxPool)  return "MaxPool";
+   std::string Name()
+   {
+      if (fPoolMode == AveragePool)
+         return "AveragePool";
+      if (fPoolMode == MaxPool)
+         return "MaxPool";
       return "Invalid";
    }
 
    ROperator_Pool() {}
 
    ROperator_Pool(PoolOpMode mode, RAttributes_Pool attr, std::string nameX, std::string nameY)
-      : fPoolMode(mode), fAttrCeilMode(attr.ceil_mode), fAttrCountIncludePad(attr.count_include_pad),
-        fAttrStorageOrder(attr.storage_order), fAttrAutopad(attr.auto_pad),
-        fAttrDilations(attr.dilations), fAttrKernelShape(attr.kernel_shape), fAttrPads(attr.pads), fAttrStrides(attr.strides),
-        fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
+      : fPoolMode(mode),
+        fAttrCeilMode(attr.ceil_mode),
+        fAttrCountIncludePad(attr.count_include_pad),
+        fAttrStorageOrder(attr.storage_order),
+        fAttrAutopad(attr.auto_pad),
+        fAttrDilations(attr.dilations),
+        fAttrKernelShape(attr.kernel_shape),
+        fAttrPads(attr.pads),
+        fAttrStrides(attr.strides),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNY(UTILITY::Clean_name(nameY))
    {
-      if(std::is_same<T, float>::value) {
+      if (std::is_same<T, float>::value) {
          fType = "float";
       } else {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Pool operator");
+         throw std::runtime_error("Internal::ONNXToCpp Encountered unsupported type parsing a Pool operator");
       }
-      fInputTensorNames = { fNX };
-      fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
    // function returning output shape given input
-   std::vector<std::vector<size_t>> ShapeInference(std::vector<std::vector<size_t>> input) {
+   std::vector<std::vector<size_t>> ShapeInference(std::vector<std::vector<size_t>> input)
+   {
       // shape of pooling input has to be (according to ONNX): NxCxHxW
       // Where N is batch size, C : input  channels, H : input height, W = input width
       // or it can be [N, C, F1,F2,....FN] . Minimum dimension is 3
-      if (input.size() != 1 ) {
+      if (input.size() != 1) {
          throw std::runtime_error("Internal::ONNXToCpp" + Name() + "Op Shape inference need 1 input tensor");
       }
       if (input[0].size() < 3) {
-         throw std::runtime_error("Internal::ONNXToCpp" + Name() + "Op Shape inference only accept tensor with at least 3 dimensions");
+         throw std::runtime_error("Internal::ONNXToCpp" + Name() +
+                                  "Op Shape inference only accept tensor with at least 3 dimensions");
       }
       // support only input tensors with dim = 3,4,5
-      if (input[0].size() < 3 || input[0].size() >  5) {
-         throw std::runtime_error("Internal::ONNXToCpp" + Name() + "Op : tensors with dimension " + std::to_string(input[0].size()) + " are not yet supported");
+      if (input[0].size() < 3 || input[0].size() > 5) {
+         throw std::runtime_error("Internal::ONNXToCpp" + Name() + "Op : tensors with dimension " +
+                                  std::to_string(input[0].size()) + " are not yet supported");
       }
 
-      if (input[0].size() -2 != fDim) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Pool Op Shape inference - invalid inputs ");
+      if (input[0].size() - 2 != fDim) {
+         throw std::runtime_error("Internal::ONNXToCpp Pool Op Shape inference - invalid inputs ");
       }
-       // kernel shape
-      size_t k1 = ((fAttrKernelShape.empty())? input[0][2] : fAttrKernelShape[0]);
+      // kernel shape
+      size_t k1 = ((fAttrKernelShape.empty()) ? input[0][2] : fAttrKernelShape[0]);
       size_t k2 = (fDim > 1) ? ((fAttrKernelShape.empty()) ? input[0][3] : fAttrKernelShape[1]) : 1;
       size_t k3 = (fDim > 2) ? ((fAttrKernelShape.empty()) ? input[0][4] : fAttrKernelShape[2]) : 1;
-
 
       size_t i1 = (fDim > 1) ? ((fDim > 2) ? 3 : 2) : 1;
       size_t i2 = (fDim > 2) ? 4 : 3;
@@ -120,9 +132,8 @@ public:
       if (fDim < 3) {
          fAttrDilations.resize(3, 1);
       }
-           // Shape of the kernel
-      fAttrKernelShape = {k1 + (fAttrDilations[0] - 1) * (k1 - 1),
-                          k2 + (fAttrDilations[1] - 1) * (k2 - 1),
+      // Shape of the kernel
+      fAttrKernelShape = {k1 + (fAttrDilations[0] - 1) * (k1 - 1), k2 + (fAttrDilations[1] - 1) * (k2 - 1),
                           k3 + (fAttrDilations[2] - 1) * (k3 - 1)};
 
       if (fAttrStrides.empty()) {
@@ -154,11 +165,11 @@ public:
             }
          }
       } else if (fAttrAutopad != "VALID") {
-         throw
-            std::runtime_error("Internal::ONNXToCpp" + Name() + "Op invalid Autopad value : " + fAttrAutopad);
+         throw std::runtime_error("Internal::ONNXToCpp" + Name() + "Op invalid Autopad value : " + fAttrAutopad);
       }
       // to be sure pad is vector of size 6
-      if (fDim < 3) fAttrPads.resize(6, 0);
+      if (fDim < 3)
+         fAttrPads.resize(6, 0);
 
       size_t input1 = input[0][2];
       size_t input2 = (fDim > 1) ? input[0][3] : 1;
@@ -176,10 +187,10 @@ public:
 
       size_t output1 = poolOutDim(input1, fAttrPads[0], fAttrPads[i1], fAttrKernelShape[0], fAttrStrides[0]);
 
-      size_t batch_size = input[0][0];        // first element in input tensor
-      size_t output_channels = input[0][1];   // first element in output tensor
+      size_t batch_size = input[0][0];      // first element in input tensor
+      size_t output_channels = input[0][1]; // first element in output tensor
 
-      std::vector<std::vector<size_t>> ret({{ batch_size, output_channels, output1 }});
+      std::vector<std::vector<size_t>> ret({{batch_size, output_channels, output1}});
 
       if (fDim == 1)
          return ret;
@@ -197,19 +208,19 @@ public:
       return ret;
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
 
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
-         throw
-            std::runtime_error("Internal::ONNXToCpp Pool op Input Tensor " + fNX + " is not found in model");
+         throw std::runtime_error("Internal::ONNXToCpp Pool op Input Tensor " + fNX + " is not found in model");
       }
       fShapeX = model.GetTensorShape(fNX);
-      if (fShapeX.size() < 3 || fShapeX.size()  > 5) {
+      if (fShapeX.size() < 3 || fShapeX.size() > 5) {
          std::cout << fNX << " : " << ConvertShapeToString(fShapeX) << std::endl;
-         throw
-            std::runtime_error("Internal::ONNXToCpp Pool Op input data tensor" + fNX + " is not of 3,4 or 5 dimensions");
+         throw std::runtime_error("Internal::ONNXToCpp Pool Op input data tensor" + fNX +
+                                  " is not of 3,4 or 5 dimensions");
       }
-       fDim = fShapeX.size() - 2;
+      fDim = fShapeX.size() - 2;
       // case of GlobalAveragePool. It is a pool case with kernel shape == image shape
       if (fPoolMode == GlobalAveragePool) {
          fPoolMode = AveragePool;
@@ -220,7 +231,7 @@ public:
          if (fDim > 2)
             fAttrKernelShape[2] = fShapeX[4];
          fAttrAutopad = "VALID";
-         fAttrPads = {0, 0, 0, 0, 0, 0 };
+         fAttrPads = {0, 0, 0, 0, 0, 0};
          assert(fAttrStrides.empty());
       }
       // find shape of Y and add it in the list of intermediate tensors
@@ -228,17 +239,18 @@ public:
       model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShapeY);
 
       // need cmath for INFINITY when using MaxPool
-      if (fPoolMode == MaxPool) model.AddNeededStdLib("cmath");
-
+      if (fPoolMode == MaxPool)
+         model.AddNeededStdLib("cmath");
    }
 
-   std::string GenerateInitCode() override {
+   std::string GenerateInitCode() override
+   {
       std::stringstream out;
       return out.str();
    }
 
-
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       OpName = "op_" + OpName;
 
       if (fShapeX.empty() || fShapeY.empty()) {
@@ -260,29 +272,29 @@ public:
          return (fAttrCeilMode && upper > (int)size) ? (int)size : upper;
       };
       // find lower bounds of filtered area
-      int hmin = - fAttrPads[0];   // minimum lower bound value of filter area
+      int hmin = -fAttrPads[0]; // minimum lower bound value of filter area
       // use stride instead of 1 when ceil_mode=1, so the loop covers the extra partial window
-      int hmax = clipToInput(fShapeX[2] + fAttrPads[fDim] - fAttrKernelShape[0] + (fAttrCeilMode ? (int)fAttrStrides[0] : 1),
-                             fShapeX[2]);
-      int wmin,wmax,dmin,dmax;
+      int hmax = clipToInput(
+         fShapeX[2] + fAttrPads[fDim] - fAttrKernelShape[0] + (fAttrCeilMode ? (int)fAttrStrides[0] : 1), fShapeX[2]);
+      int wmin, wmax, dmin, dmax;
 
-      if(fDim >= 2){
+      if (fDim >= 2) {
          wmin = -fAttrPads[1]; // minimum lower bound value of filter area
-         wmax = clipToInput(fShapeX[3] + fAttrPads[fDim + 1] - fAttrKernelShape[1] + (fAttrCeilMode ? (int)fAttrStrides[1] : 1),
+         wmax = clipToInput(fShapeX[3] + fAttrPads[fDim + 1] - fAttrKernelShape[1] +
+                               (fAttrCeilMode ? (int)fAttrStrides[1] : 1),
                             fShapeX[3]);
+      } else {
+         wmin = 1;
+         wmax = 1;
       }
-      else{
-         wmin=1;
-         wmax=1;
-      }
-      if(fDim == 3){
+      if (fDim == 3) {
          dmin = -fAttrPads[2]; // minimum lower bound value of filter area
-         dmax = clipToInput(fShapeX[4] + fAttrPads[fDim + 2] - fAttrKernelShape[2] + (fAttrCeilMode ? (int)fAttrStrides[2] : 1),
+         dmax = clipToInput(fShapeX[4] + fAttrPads[fDim + 2] - fAttrKernelShape[2] +
+                               (fAttrCeilMode ? (int)fAttrStrides[2] : 1),
                             fShapeX[4]);
-      }
-      else{
-         dmin=1;
-         dmax=1;
+      } else {
+         dmin = 1;
+         dmax = 1;
       }
       out << SP << "constexpr int hsize = " << fShapeX[2] << ";\n";
       out << SP << "constexpr int hmin = " << hmin << ";\n";
@@ -297,16 +309,15 @@ public:
          if (fDim > 2) {
             size_t dsize = fShapeX[4];
             out << SP << "constexpr int dsize = " << dsize << ";\n";
-            out << SP << "constexpr int dwsize = " << dsize*wsize << ";\n"; // hstride
+            out << SP << "constexpr int dwsize = " << dsize * wsize << ";\n"; // hstride
             out << SP << "constexpr int dmin = " << dmin << ";\n";
             out << SP << "constexpr int dmax = " << dmax << ";\n";
             out << SP << "constexpr int kd = " << fAttrKernelShape[2] << ";\n";
          }
       }
 
-
       bool doPadding = false;
-      for ( auto & e : fAttrPads)
+      for (auto &e : fAttrPads)
          doPadding |= (e > 0);
 
       // An AveragePool window can cover fewer cells than the kernel area either because it overlaps the
@@ -320,15 +331,16 @@ public:
       auto windowExtent = [this](const std::string &var, const std::string &kern, size_t size, size_t padEnd) {
          std::string hi = std::to_string(fAttrCountIncludePad ? size + padEnd : size);
          std::string lo = fAttrCountIncludePad ? var : "(" + var + " > 0 ? " + var + " : 0)";
-         return "((" + var + " + " + kern + " < " + hi + " ? " + var + " + " + kern + " : " + hi + ")"
-                " - " + lo + ")";
+         return "((" + var + " + " + kern + " < " + hi + " ? " + var + " + " + kern + " : " + hi +
+                ")"
+                " - " +
+                lo + ")";
       };
 
-
-      if(fDim==1){
+      if (fDim == 1) {
          // loop on batches and channels
          out << SP << "size_t outIndex = 0;\n";
-         out << SP << "for (size_t n = 0; n < " << fShapeX[0]*fShapeX[1] << "; n++) {\n";
+         out << SP << "for (size_t n = 0; n < " << fShapeX[0] * fShapeX[1] << "; n++) {\n";
          out << SP << SP << "size_t inputOffset = n*" << fShapeX[2] << ";\n";
          out << SP << SP << "for (int i = hmin; i < hmax; i+=" << fAttrStrides[0] << ") {\n";
          // loop on elements of filter region to compute maximum
@@ -337,39 +349,37 @@ public:
          else if (fPoolMode == AveragePool) {
             out << SP << SP << SP << SP << "float value = 0;\n";
             if (dynamicDivisor)
-               out << SP << SP << SP << SP << "const int nsum = "
-                   << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << ";\n";
+               out << SP << SP << SP << SP
+                   << "const int nsum = " << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << ";\n";
             else // every window is full, so the divisor is the kernel area
                out << SP << SP << SP << SP << "constexpr int nsum = kh;\n";
          }
          // loop on rows of filtered region
-         out << SP << SP << SP << SP  << "for (int l = i;  l < i + kh; l++) {\n";
-         out << SP << SP << SP << SP  << SP << "if (l < 0 || l >= hsize) continue;\n";
-         out << SP << SP << SP << SP  << SP << SP <<  "int index = inputOffset + l;\n";
+         out << SP << SP << SP << SP << "for (int l = i;  l < i + kh; l++) {\n";
+         out << SP << SP << SP << SP << SP << "if (l < 0 || l >= hsize) continue;\n";
+         out << SP << SP << SP << SP << SP << SP << "int index = inputOffset + l;\n";
          if (fPoolMode == MaxPool) {
-         out << SP << SP << SP << SP << SP << SP << "auto xval = tensor_" << fNX << "[index];\n";
-         out << SP << SP << SP << SP << SP << SP << "if (xval > value) value = xval;\n";
-         }
-         else if (fPoolMode == AveragePool) {
+            out << SP << SP << SP << SP << SP << SP << "auto xval = tensor_" << fNX << "[index];\n";
+            out << SP << SP << SP << SP << SP << SP << "if (xval > value) value = xval;\n";
+         } else if (fPoolMode == AveragePool) {
             // compute sum of values
             out << SP << SP << SP << SP << SP << SP << "value += tensor_" << fNX << "[index];\n";
          }
-          out << SP << SP << SP << SP << SP << "}\n"; // end loop on region elements
+         out << SP << SP << SP << SP << SP << "}\n"; // end loop on region elements
          if (fPoolMode == AveragePool) {
-         // compute average
-         out << SP << SP << SP << SP << "value /= float(nsum);\n";
+            // compute average
+            out << SP << SP << SP << SP << "value /= float(nsum);\n";
          }
 
          out << SP << SP << SP << SP << "tensor_" << fNY << "[outIndex++] = value;\n";
 
-         out << SP << SP << "}\n";   // end loop on i (image rows)
-         out << SP << "}\n";  // end loop on c*b
-      }
-      else if(fDim==2){
+         out << SP << SP << "}\n"; // end loop on i (image rows)
+         out << SP << "}\n";       // end loop on c*b
+      } else if (fDim == 2) {
          // loop on batches and channels
          out << SP << "size_t outIndex = 0;\n";
-         out << SP << "for (size_t n = 0; n < " << fShapeX[0]*fShapeX[1] << "; n++) {\n";
-         out << SP << SP << "size_t inputOffset = n*" << fShapeX[2]*fShapeX[3] << ";\n";
+         out << SP << "for (size_t n = 0; n < " << fShapeX[0] * fShapeX[1] << "; n++) {\n";
+         out << SP << SP << "size_t inputOffset = n*" << fShapeX[2] * fShapeX[3] << ";\n";
          out << SP << SP << "for (int i = hmin; i < hmax; i+=" << fAttrStrides[0] << ") {\n";
          out << SP << SP << SP << "for (int j = wmin; j < wmax; j+=" << fAttrStrides[1] << ") {\n";
          // loop on elements of filter region to compute maximum
@@ -378,8 +388,8 @@ public:
          else if (fPoolMode == AveragePool) {
             out << SP << SP << SP << SP << "float value = 0;\n";
             if (dynamicDivisor)
-               out << SP << SP << SP << SP << "const int nsum = "
-                   << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << " * "
+               out << SP << SP << SP << SP
+                   << "const int nsum = " << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << " * "
                    << windowExtent("j", "kw", fShapeX[3], fAttrPads[fDim + 1]) << ";\n";
             else // every window is full, so the divisor is the kernel area
                out << SP << SP << SP << SP << "constexpr int nsum = kw*kh;\n";
@@ -392,10 +402,9 @@ public:
          out << SP << SP << SP << SP << SP << SP << "if (m < 0 || m >= wsize) continue;\n";
          out << SP << SP << SP << SP << SP << SP << SP << "int index = inputOffset + l*wsize + m;\n";
          if (fPoolMode == MaxPool) {
-         out << SP << SP << SP << SP << SP << SP << SP << "auto xval = tensor_" << fNX << "[index];\n";
-         out << SP << SP << SP << SP << SP << SP << SP << "if (xval > value) value = xval;\n";
-         }
-         else if (fPoolMode == AveragePool) {
+            out << SP << SP << SP << SP << SP << SP << SP << "auto xval = tensor_" << fNX << "[index];\n";
+            out << SP << SP << SP << SP << SP << SP << SP << "if (xval > value) value = xval;\n";
+         } else if (fPoolMode == AveragePool) {
             // compute sum of values
             out << SP << SP << SP << SP << SP << SP << SP << "value += tensor_" << fNX << "[index];\n";
          }
@@ -406,15 +415,14 @@ public:
             out << SP << SP << SP << SP << "value /= float(nsum);\n";
          }
          out << SP << SP << SP << SP << "tensor_" << fNY << "[outIndex++] = value;\n";
-         out << SP << SP << SP << "}\n";   // end loop on j (columns of image)
-         out << SP << SP << "}\n";   // end loop on i (image rows)
-         out << SP << "}\n";  // end loop on c*b
-      }
-      else if(fDim==3){
+         out << SP << SP << SP << "}\n"; // end loop on j (columns of image)
+         out << SP << SP << "}\n";       // end loop on i (image rows)
+         out << SP << "}\n";             // end loop on c*b
+      } else if (fDim == 3) {
          // loop on batches and channels
          out << SP << "size_t outIndex = 0;\n";
-         out << SP << "for (size_t n = 0; n < " << fShapeX[0]*fShapeX[1] << "; n++) {\n";
-         out << SP << SP << "size_t inputOffset = n*" << fShapeX[2]*fShapeX[3]*fShapeX[4] << ";\n";
+         out << SP << "for (size_t n = 0; n < " << fShapeX[0] * fShapeX[1] << "; n++) {\n";
+         out << SP << SP << "size_t inputOffset = n*" << fShapeX[2] * fShapeX[3] * fShapeX[4] << ";\n";
          out << SP << SP << "for (int i = hmin; i < hmax; i+=" << fAttrStrides[0] << ") {\n";
          out << SP << SP << SP << "for (int j = wmin; j < wmax; j+=" << fAttrStrides[1] << ") {\n";
          out << SP << SP << SP << SP << "for (int k = dmin; k < dmax; k+=" << fAttrStrides[2] << ") {\n";
@@ -424,16 +432,16 @@ public:
          else if (fPoolMode == AveragePool) {
             out << SP << SP << SP << SP << "float value = 0;\n";
             if (dynamicDivisor)
-               out << SP << SP << SP << SP << "const int nsum = "
-                   << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << " * "
+               out << SP << SP << SP << SP
+                   << "const int nsum = " << windowExtent("i", "kh", fShapeX[2], fAttrPads[fDim]) << " * "
                    << windowExtent("j", "kw", fShapeX[3], fAttrPads[fDim + 1]) << " * "
                    << windowExtent("k", "kd", fShapeX[4], fAttrPads[fDim + 2]) << ";\n";
             else // every window is full, so the divisor is the kernel area
                out << SP << SP << SP << SP << "constexpr int nsum = kw*kh*kd;\n";
          }
          // loop on rows of filtered region
-         out << SP << SP << SP << SP  << "for (int l = i;  l < i + kh; l++) {\n";
-         out << SP << SP << SP << SP  << SP << "if (l < 0 || l >= hsize) continue;\n";
+         out << SP << SP << SP << SP << "for (int l = i;  l < i + kh; l++) {\n";
+         out << SP << SP << SP << SP << SP << "if (l < 0 || l >= hsize) continue;\n";
          // loop on columns of filtered region
          out << SP << SP << SP << SP << SP << "for (int m = j; m < j + kw; m++) {\n";
          out << SP << SP << SP << SP << SP << SP << "if (m < 0 || m >= wsize) continue;\n";
@@ -445,8 +453,7 @@ public:
          if (fPoolMode == MaxPool) {
             out << SP << SP << SP << SP << SP << SP << SP << SP << "auto xval = tensor_" << fNX << "[index];\n";
             out << SP << SP << SP << SP << SP << SP << SP << SP << "if (xval > value) value = xval;\n";
-         }
-         else if (fPoolMode == AveragePool) {
+         } else if (fPoolMode == AveragePool) {
             // compute sum of values
             out << SP << SP << SP << SP << SP << SP << SP << SP << "value += tensor_" << fNX << "[index];\n";
          }
@@ -459,14 +466,13 @@ public:
          }
 
          out << SP << SP << SP << SP << "tensor_" << fNY << "[outIndex++] = value;\n";
-         out << SP << SP << SP << SP << "}\n" ; // end loop on k (layers of image)
-         out << SP << SP << SP << "}\n";   // end loop on j (columns of image)
-         out << SP << SP << "}\n";   // end loop on i (image rows)
-         out << SP << "}\n";  // end loop on c*b
+         out << SP << SP << SP << SP << "}\n"; // end loop on k (layers of image)
+         out << SP << SP << SP << "}\n";       // end loop on j (columns of image)
+         out << SP << SP << "}\n";             // end loop on i (image rows)
+         out << SP << "}\n";                   // end loop on c*b
       }
       // end scope
       out << SP << "}\n";
-
 
       return out.str();
    }
@@ -475,6 +481,5 @@ public:
 } // namespace ONNXToCpp
 } // namespace Internal
 } // namespace ROOT
-
 
 #endif

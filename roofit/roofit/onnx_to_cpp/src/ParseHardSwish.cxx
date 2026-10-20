@@ -21,12 +21,11 @@ ParserFuncSignature ParseHardSwish = [](RModelParser_ONNX &parser, const onnx::N
 
    std::string output_name = nodeproto.output(0);
    switch (input_type) {
-   case ETensorType::FLOAT:
-      op.reset(new ROperator_HardSwish<float>(input_name, output_name));
-      break;
+   case ETensorType::FLOAT: op.reset(new ROperator_HardSwish<float>(input_name, output_name)); break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator HardSwish does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator HardSwish does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    if (!parser.IsRegisteredTensorType(output_name)) {

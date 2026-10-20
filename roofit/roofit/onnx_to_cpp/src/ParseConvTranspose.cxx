@@ -65,8 +65,9 @@ ParserFuncSignature ParseConvTranspose = [](RModelParser_ONNX &model,
                                                   pads, strides, inputName, nameW, nameBias, outputName));
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator ConvTranspose does not yet support input type " +
-                               std::to_string(static_cast<int>(inputType)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator ConvTranspose does not yet support input type " +
+         std::to_string(static_cast<int>(inputType)));
    }
 
    if (!model.IsRegisteredTensorType(outputName)) {

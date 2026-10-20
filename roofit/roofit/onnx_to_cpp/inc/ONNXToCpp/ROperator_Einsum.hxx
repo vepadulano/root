@@ -8,25 +8,21 @@
 #include <sstream>
 #include <cassert>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-
-
-template<typename T>
-class ROperator_Einsum final : public ROperator{
+template <typename T>
+class ROperator_Einsum final : public ROperator {
 private:
-
    bool fIsInputBoolTensor = false;
-
 
    std::vector<std::string> fNInputs;
    std::string fNY;
 
    std::vector<std::string> fInputLabels;
    std::string fOutputLabels;
-   std::string fSumLabels;  // string containing the reducing labels
+   std::string fSumLabels; // string containing the reducing labels
    std::string fGemmType;
 
    std::vector<int> fSumDims; // dimension of the labels we use to perform summing
@@ -34,13 +30,10 @@ private:
    std::vector<std::vector<size_t>> fShapeInputs;
    std::vector<size_t> fShapeY;
 
-
-
-
 public:
-   ROperator_Einsum(){}
-   ROperator_Einsum(const std::string & equation, const std::vector<std::string> & namesX, const std::string & nameY):
-      fNInputs(namesX.size()), fNY(UTILITY::Clean_name(nameY))
+   ROperator_Einsum() {}
+   ROperator_Einsum(const std::string &equation, const std::vector<std::string> &namesX, const std::string &nameY)
+      : fNInputs(namesX.size()), fNY(UTILITY::Clean_name(nameY))
    {
       for (size_t i = 0; i < namesX.size(); i++)
          fNInputs[i] = UTILITY::Clean_name(namesX[i]);
@@ -51,12 +44,13 @@ public:
 
       fInputTensorNames.resize(fNInputs.size());
       std::transform(fNInputs.begin(), fNInputs.end(), fInputTensorNames.begin(),
-                  [](const std::string& s) -> std::string_view { return s; });
-      fOutputTensorNames = { fNY };
+                     [](const std::string &s) -> std::string_view { return s; });
+      fOutputTensorNames = {fNY};
    }
 
-   bool ParseEquation(const std::string & input_equation) {
-      std::string eq (input_equation);
+   bool ParseEquation(const std::string &input_equation)
+   {
+      std::string eq(input_equation);
       // remove blank spaces
       eq.erase(std::remove(eq.begin(), eq.end(), ' '), eq.end());
       // look for '->'  finding the first occurrence
@@ -84,7 +78,7 @@ public:
       fInputLabels.push_back(inputStr.substr(start));
 
       // check if labels are ok and do not contain alphanumeric characters
-      auto checkLabel = [](const std::string & label) {
+      auto checkLabel = [](const std::string &label) {
          for (char c : label) {
             if (!std::isalnum(c)) {
                std::cout << "Wrong tensor label " << label << std::endl;
@@ -94,8 +88,9 @@ public:
          // empty label is OK , is a scalar
          return true;
       };
-      for (auto & label : fInputLabels) {
-         if (!checkLabel(label)) return false;
+      for (auto &label : fInputLabels) {
+         if (!checkLabel(label))
+            return false;
       }
       if (!checkLabel(outputStr)) {
          std::cout << "invalid output label" << std::endl;
@@ -104,20 +99,23 @@ public:
       fOutputLabels = outputStr;
 
       if (fInputLabels.size() != fNInputs.size()) {
-         std::cout << "Invalid number of input labels found " << fInputLabels.size() << " for #inputs = " << fNInputs.size() << std::endl;
+         std::cout << "Invalid number of input labels found " << fInputLabels.size()
+                   << " for #inputs = " << fNInputs.size() << std::endl;
          return false;
       }
       // ignore for the time being broadcasting, empty output label and other features
       return true;
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       // input must be a graph input, or already initialized intermediate tensor
       size_t i = 0;
       std::map<char, int> labelsMap;
-      for ( auto & name : fNInputs) {
+      for (auto &name : fNInputs) {
          if (!model.CheckIfTensorAlreadyExist(name))
-            throw std::runtime_error(std::string("Internal::ONNXToCpp Einsum Op Input Tensor ") + name + "is not found in model");
+            throw std::runtime_error(std::string("Internal::ONNXToCpp Einsum Op Input Tensor ") + name +
+                                     "is not found in model");
 
          // if (model.IsDynamicTensor(name) || model.IsDimInputTensor(name) ) {
          //    // not yet supported
@@ -129,7 +127,9 @@ public:
          std::string labels = fInputLabels[i];
          for (size_t j = 0; j < shape.size(); j++) {
             if (j >= labels.length()) {
-               throw std::runtime_error(std::string("Internal::ONNXToCpp Einsum Op Input Tensor has invalid label or shape ") + labels + " " + ConvertShapeToString(shape));
+               throw std::runtime_error(
+                  std::string("Internal::ONNXToCpp Einsum Op Input Tensor has invalid label or shape ") + labels + " " +
+                  ConvertShapeToString(shape));
             }
             labelsMap[labels[j]] = shape[j];
          }
@@ -138,14 +138,15 @@ public:
       // get output shape from label maps
       for (char l : fOutputLabels) {
          if (labelsMap.count(l) == 0)
-            throw std::runtime_error(std::string("Internal::ONNXToCpp Einsum Op : output label ") + std::string(&l) + " is not present in inputs");
+            throw std::runtime_error(std::string("Internal::ONNXToCpp Einsum Op : output label ") + std::string(&l) +
+                                     " is not present in inputs");
          fShapeY.push_back(labelsMap[l]);
       }
       // we need to get the labels we are going to sum
       // these are the labels not present in the output
       fSumLabels = "";
       fSumDims.clear();
-      for (auto & l : labelsMap) {
+      for (auto &l : labelsMap) {
          if (fOutputLabels.find(l.first) == std::string::npos) {
             fSumLabels += l.first;
             fSumDims.push_back(l.second);
@@ -154,7 +155,7 @@ public:
 
       // check if we can use MatMul for EinSum
       // need to have one sum labels in the last 2 and have the first in common
-      if (fNInputs.size() == 2 && fSumDims.size() == 1 && fShapeInputs[0].size() >=2 && fShapeInputs[1].size() >= 2 ) {
+      if (fNInputs.size() == 2 && fSumDims.size() == 1 && fShapeInputs[0].size() >= 2 && fShapeInputs[1].size() >= 2) {
          // find positions of dum labels
          char l = fSumLabels[0];
          size_t pos1 = fInputLabels[0].find(l);
@@ -178,22 +179,25 @@ public:
       if (model.Verbose()) {
          std::cout << "Einsum op ";
          for (i = 0; i < fNInputs.size(); i++) {
-            if (i > 0) std::cout << ", ";
+            if (i > 0)
+               std::cout << ", ";
             std::cout << fNInputs[i] << " " << ConvertShapeToString(fShapeInputs[i]) << " " << fInputLabels[i];
          }
          std::cout << " --> " << fNY << "  " << ConvertShapeToString(fShapeY) << "  " << fOutputLabels << std::endl;
       }
-
    }
 
-   std::string GenerateInitCode() override {
+   std::string GenerateInitCode() override
+   {
       std::stringstream out;
       return out.str();
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
 
-      if (fIsOutputConstant) return "";
+      if (fIsOutputConstant)
+         return "";
 
       opName = "op_" + opName;
 
@@ -202,16 +206,17 @@ public:
       }
 
       // function to write compute expression index from strides
-      auto tensorIndex = [](const std::vector<size_t> & stride, const std::string & labels) {
+      auto tensorIndex = [](const std::vector<size_t> &stride, const std::string &labels) {
          std::stringstream strst;
          int dims = labels.length();
          // scalar case
-         if (dims == 0) return std::string("0");
-         assert (dims == (int) stride.size());
-         for (int i = 0; i < dims-1; i++) {
+         if (dims == 0)
+            return std::string("0");
+         assert(dims == (int)stride.size());
+         for (int i = 0; i < dims - 1; i++) {
             strst << stride[i] << "*" << std::string{labels[i]} << " + ";
          }
-         strst << std::string{labels[dims-1]};
+         strst << std::string{labels[dims - 1]};
          return strst.str();
       };
 
@@ -222,44 +227,50 @@ public:
 
       // loops on the output indices  i0,....iN
       if (fGemmType.empty()) {
-      int outDims = fShapeY.size();
-      int inDims = fSumLabels.length();
-      assert(outDims == int(fOutputLabels.size()));
-      assert(inDims == int(fSumDims.size()));
-      for (int i = 0; i < outDims; i++) {
-         for (int j = 0; j < i; j++) out << SP;
-         std::string l {fOutputLabels[i]};
-         out << "for (int " << l << " = 0; " << l << " < " << fShapeY[i] << "; " << l << "++) {\n";
-      }
-      // reset to zero output tensor
-      std::string outputIndex = tensorIndex(outputStride,fOutputLabels);
+         int outDims = fShapeY.size();
+         int inDims = fSumLabels.length();
+         assert(outDims == int(fOutputLabels.size()));
+         assert(inDims == int(fSumDims.size()));
+         for (int i = 0; i < outDims; i++) {
+            for (int j = 0; j < i; j++)
+               out << SP;
+            std::string l{fOutputLabels[i]};
+            out << "for (int " << l << " = 0; " << l << " < " << fShapeY[i] << "; " << l << "++) {\n";
+         }
+         // reset to zero output tensor
+         std::string outputIndex = tensorIndex(outputStride, fOutputLabels);
 
-      for (int j = 0; j < outDims; j++) out << SP;
-      out << "tensor_" << fNY << "[" << outputIndex << "] = 0;\n";
-      // loop on remaining indices where we perform the sum
-      for (int i = 0; i < inDims; i++) {
-         for (int j = 0; j < outDims + i; j++) out << SP;
-         std::string l {fSumLabels[i]};
-         out << "for (int " << l << " = 0; " << l << " < " << fSumDims[i] << "; " << l << "++) {\n";
-      }
-      for (int j = 0; j < outDims+inDims; j++) out << SP;
-      // tensor_out[outId] += t_in_0[ind0] * t_in1[ind1] *....
-      out << "tensor_" << fNY << "[" << outputIndex << "] +=\n";
-      for (size_t k = 0; k < fNInputs.size(); k++) {
-         auto inputStride = UTILITY::ComputeStrideFromShape(fShapeInputs[k]);
-         std::string inputIndex = tensorIndex(inputStride,fInputLabels[k]);
-         for (int j = 0; j < outDims+inDims; j++) out << SP;
-         out << SP << "tensor_" << fNInputs[k] << "[" << inputIndex << "]";
-         if (fNInputs.size() > 1 && k < fNInputs.size() -1) out << " *\n";
-      }
-      out << ";\n";
+         for (int j = 0; j < outDims; j++)
+            out << SP;
+         out << "tensor_" << fNY << "[" << outputIndex << "] = 0;\n";
+         // loop on remaining indices where we perform the sum
+         for (int i = 0; i < inDims; i++) {
+            for (int j = 0; j < outDims + i; j++)
+               out << SP;
+            std::string l{fSumLabels[i]};
+            out << "for (int " << l << " = 0; " << l << " < " << fSumDims[i] << "; " << l << "++) {\n";
+         }
+         for (int j = 0; j < outDims + inDims; j++)
+            out << SP;
+         // tensor_out[outId] += t_in_0[ind0] * t_in1[ind1] *....
+         out << "tensor_" << fNY << "[" << outputIndex << "] +=\n";
+         for (size_t k = 0; k < fNInputs.size(); k++) {
+            auto inputStride = UTILITY::ComputeStrideFromShape(fShapeInputs[k]);
+            std::string inputIndex = tensorIndex(inputStride, fInputLabels[k]);
+            for (int j = 0; j < outDims + inDims; j++)
+               out << SP;
+            out << SP << "tensor_" << fNInputs[k] << "[" << inputIndex << "]";
+            if (fNInputs.size() > 1 && k < fNInputs.size() - 1)
+               out << " *\n";
+         }
+         out << ";\n";
 
-      // end loops on all indices i0,....iN
-      for (int i = outDims+inDims-1; i >= 0; i--) {
-         for (int j = 0; j < i; j++) out << SP;
-         out << "}\n";
-      }
-
+         // end loops on all indices i0,....iN
+         for (int i = outDims + inDims - 1; i >= 0; i--) {
+            for (int j = 0; j < i; j++)
+               out << SP;
+            out << "}\n";
+         }
 
       } else {
          // case we use Gemm
@@ -271,9 +282,9 @@ public:
          int64_t dimA = fShapeInputs[0].size();
          int64_t dimB = fShapeInputs[1].size();
 
-         auto m = (fGemmType[0] == 't') ? fShapeInputs[0][dimA-1] : fShapeInputs[0][dimA-2];
-         auto n = (fGemmType[1] == 't') ? fShapeInputs[1][dimB-2] : fShapeInputs[1][dimB-1];
-         auto k = (fGemmType[0] == 't') ? fShapeInputs[0][dimA-2] : fShapeInputs[0][dimA-1];
+         auto m = (fGemmType[0] == 't') ? fShapeInputs[0][dimA - 1] : fShapeInputs[0][dimA - 2];
+         auto n = (fGemmType[1] == 't') ? fShapeInputs[1][dimB - 2] : fShapeInputs[1][dimB - 1];
+         auto k = (fGemmType[0] == 't') ? fShapeInputs[0][dimA - 2] : fShapeInputs[0][dimA - 1];
 
          out << SP << "int " << opName << "_m = " << m << ";\n";
          out << SP << "int " << opName << "_n = " << n << ";\n";
@@ -286,52 +297,51 @@ public:
          auto inputStrideA = UTILITY::ComputeStrideFromShape(fShapeInputs[0]);
          auto inputStrideB = UTILITY::ComputeStrideFromShape(fShapeInputs[1]);
 
-         int stackDims = fShapeY.size()-2;
+         int stackDims = fShapeY.size() - 2;
          for (int i = 0; i < stackDims; i++) {
-            for (int j = 0; j < i; j++) out << SP;
-            std::string l {fOutputLabels[i]};
+            for (int j = 0; j < i; j++)
+               out << SP;
+            std::string l{fOutputLabels[i]};
             out << "for (int " << l << " = 0; " << l << " < " << fShapeY[i] << "; " << l << "++) {\n";
          }
-         auto tensorOffset = [](const std::vector<size_t> & stride, const std::string & labels) {
+         auto tensorOffset = [](const std::vector<size_t> &stride, const std::string &labels) {
             std::stringstream strst;
-            int dims = labels.length()-2;
+            int dims = labels.length() - 2;
             // scalar case
-            if (dims == 0) return std::string("0");
-            assert (dims +2 == (int) stride.size());
+            if (dims == 0)
+               return std::string("0");
+            assert(dims + 2 == (int)stride.size());
             for (int i = 0; i < dims; i++) {
                strst << stride[i] << "*" << std::string{labels[i]};
-               if (i < dims-1) strst << " + ";
+               if (i < dims - 1)
+                  strst << " + ";
             }
             return strst.str();
          };
          // only float type supported
-         out << SP << "BLAS::sgemm_(&" << opName << "_transB, &" << opName << "_transA, &" << opName
-             << "_n, &" << opName << "_m, &" << opName << "_k, &" << opName << "_alpha, "
-             << "&tensor_" << fNInputs[1] << "[" << tensorOffset(inputStrideB, fInputLabels[1])
-             << "], &" << opName << "_ldb, "
-             << "&tensor_" << fNInputs[0] << "[" << tensorOffset(inputStrideA, fInputLabels[0]  ) << "], &" << opName << "_lda, &" << opName << "_beta, "
-             << "&tensor_" << fNY << "[" << tensorOffset(outputStride,fOutputLabels) << "],  &" << opName << "_n);\n";
+         out << SP << "BLAS::sgemm_(&" << opName << "_transB, &" << opName << "_transA, &" << opName << "_n, &"
+             << opName << "_m, &" << opName << "_k, &" << opName << "_alpha, "
+             << "&tensor_" << fNInputs[1] << "[" << tensorOffset(inputStrideB, fInputLabels[1]) << "], &" << opName
+             << "_ldb, "
+             << "&tensor_" << fNInputs[0] << "[" << tensorOffset(inputStrideA, fInputLabels[0]) << "], &" << opName
+             << "_lda, &" << opName << "_beta, "
+             << "&tensor_" << fNY << "[" << tensorOffset(outputStride, fOutputLabels) << "],  &" << opName << "_n);\n";
 
-
-         for (int i = stackDims-1; i >= 0; i--) {
-            for (int j = 0; j < i; j++) out << SP;
+         for (int i = stackDims - 1; i >= 0; i--) {
+            for (int j = 0; j < i; j++)
+               out << SP;
             out << "}\n";
          }
-
       }
-
 
       return out.str();
    }
 
-   std::vector<std::string> GetBlasRoutines() override {
-      return { std::string("Gemm") };
-   }
+   std::vector<std::string> GetBlasRoutines() override { return {std::string("Gemm")}; }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROperator_Einsum
+#endif // ONNXTOCPP_ROperator_Einsum

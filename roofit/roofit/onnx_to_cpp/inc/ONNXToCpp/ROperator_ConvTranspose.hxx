@@ -262,8 +262,9 @@ void ROperator_ConvTranspose<T>::Initialize(RModel &model)
       } else {
          // bias tensor is already correct shape, no need to broadcast
          if (fShapeY != fShapeB)
-            throw std::runtime_error("Internal::ONNXToCpp ConvTrans op: Broadcasting is not needed but bias has wrong shape" +
-                                     ConvertShapeToString(fShapeB));
+            throw std::runtime_error(
+               "Internal::ONNXToCpp ConvTrans op: Broadcasting is not needed but bias has wrong shape" +
+               ConvertShapeToString(fShapeB));
          fNBroadcastedB = fNB;
       }
    }

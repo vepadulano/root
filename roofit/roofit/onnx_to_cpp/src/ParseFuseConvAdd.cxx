@@ -42,18 +42,20 @@ ParserFuseFuncSignature ParseFuseConvAdd = [](RModelParser_ONNX &parser, const o
       if (attribute_name == "auto_pad") {
          attr_auto_pad = convnode.attribute(i).s();
       } else if (attribute_name == "dilations") {
-         attr_dilations = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
+         attr_dilations =
+            std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else if (attribute_name == "group") {
          attr_group = convnode.attribute(i).i();
       } else if (attribute_name == "kernel_shape") {
-         attr_kernel_shape = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
+         attr_kernel_shape =
+            std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else if (attribute_name == "pads") {
          attr_pads = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else if (attribute_name == "strides") {
          attr_strides = std::vector<size_t>({convnode.attribute(i).ints().begin(), convnode.attribute(i).ints().end()});
       } else {
-         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name << " in OperatorNode "
-                   << convnode.name() << " is not defined in ONNX IR and not applied!\n";
+         std::cout << "Internal::ONNXToCpp Warning - Model Loading - Attribute " << attribute_name
+                   << " in OperatorNode " << convnode.name() << " is not defined in ONNX IR and not applied!\n";
       }
    }
 

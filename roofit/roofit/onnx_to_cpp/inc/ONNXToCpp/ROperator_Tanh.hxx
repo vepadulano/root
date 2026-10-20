@@ -7,43 +7,43 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 template <typename T>
-class ROperator_Tanh final : public ROperator
-{
+class ROperator_Tanh final : public ROperator {
 
 private:
-
    std::string fNX;
    std::string fNY;
    std::vector<Dim> fShape;
 
 public:
-   ROperator_Tanh(){}
-   ROperator_Tanh(std::string nameX, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY)){
-         fInputTensorNames = { fNX };
-         fOutputTensorNames = { fNY };
-      }
+   ROperator_Tanh() {}
+   ROperator_Tanh(std::string nameX, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
+   {
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
+   }
 
-   void Initialize(RModel& model) override {
-       //input must be a graph input, or already initialized intermediate tensor
-      if (model.CheckIfTensorAlreadyExist(fNX) == false){
-        throw std::runtime_error("Internal::ONNXToCpp Tanh Op Input Tensor is not found in model");
+   void Initialize(RModel &model) override
+   {
+      // input must be a graph input, or already initialized intermediate tensor
+      if (model.CheckIfTensorAlreadyExist(fNX) == false) {
+         throw std::runtime_error("Internal::ONNXToCpp Tanh Op Input Tensor is not found in model");
       }
       fShape = model.GetDimTensorShape(fNX);
       model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShape);
-
    }
 
-
-   std::string Generate(std::string OpName) override {
+   std::string Generate(std::string OpName) override
+   {
       OpName = "op_" + OpName;
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Tanh operator called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Tanh operator called to Generate without being initialized first");
       }
       std::stringstream out;
       auto length = ConvertDimShapeToLength(fShape);
@@ -61,12 +61,11 @@ public:
       return out.str();
    }
 
-   std::vector<std::string> GetStdLibs() override { return { std::string("cmath") };}
+   std::vector<std::string> GetStdLibs() override { return {std::string("cmath")}; }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_Tanh
+#endif // ONNXTOCPP_ROPERATOR_Tanh

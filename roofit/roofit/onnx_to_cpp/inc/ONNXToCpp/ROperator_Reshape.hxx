@@ -10,75 +10,89 @@
 #include <sstream>
 #include <algorithm>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-enum ReshapeOpMode { Reshape, Flatten, Squeeze, Unsqueeze };
+enum ReshapeOpMode {
+   Reshape,
+   Flatten,
+   Squeeze,
+   Unsqueeze
+};
 
-
-class ROperator_Reshape final : public ROperator
-{
+class ROperator_Reshape final : public ROperator {
 
 private:
-
    bool fVerbose = false;
    bool fDimInput = false;
    bool fDynamicShape = false;
-   bool fIsAlias = false;             // output shares the memory of the input
-   ReshapeOpMode fOpMode = Reshape;   // type of Reshape operator
+   bool fIsAlias = false;           // output shares the memory of the input
+   ReshapeOpMode fOpMode = Reshape; // type of Reshape operator
 
    int fAllowZero = 0; // (for Reshape) zero in tensor shape makes output shape equal to input tensor shape
    int fAxis = 1;      // (for Flatten)
 
-   std::string fNData;        // input data tensor name
-   std::string fNInput2;       // reshape or axes tensor name depending on operator
-   std::string fNOutput;            // output tensor name
-   std::vector<Dim> fShapeInput;    // input shape data
-   std::vector<Dim> fShapeOutput;   // output shape data
-   std::vector<Dim> fOutputShapeData; // in case output is a shape tensor we store here the shape value data (can be parametric)
-   std::vector<int64_t> fAttrAxes;  // axes attributes (provided for all version of Squeeze/Unsqueeze)
-   std::vector<int64_t> fShape;     // shape tensor values provided for Reshape for int shapes4
+   std::string fNData;            // input data tensor name
+   std::string fNInput2;          // reshape or axes tensor name depending on operator
+   std::string fNOutput;          // output tensor name
+   std::vector<Dim> fShapeInput;  // input shape data
+   std::vector<Dim> fShapeOutput; // output shape data
+   std::vector<Dim>
+      fOutputShapeData; // in case output is a shape tensor we store here the shape value data (can be parametric)
+   std::vector<int64_t> fAttrAxes; // axes attributes (provided for all version of Squeeze/Unsqueeze)
+   std::vector<int64_t> fShape;    // shape tensor values provided for Reshape for int shapes4
 
 public:
-
-   std::string Name() const {
-      if (fOpMode == Reshape) return "Reshape";
-      if (fOpMode == Flatten) return "Flatten";
-      if (fOpMode == Squeeze) return "Squeeze";
-      if (fOpMode == Unsqueeze) return "Unsqueeze";
+   std::string Name() const
+   {
+      if (fOpMode == Reshape)
+         return "Reshape";
+      if (fOpMode == Flatten)
+         return "Flatten";
+      if (fOpMode == Squeeze)
+         return "Squeeze";
+      if (fOpMode == Unsqueeze)
+         return "Unsqueeze";
       return "";
    }
 
-   ROperator_Reshape(){}
-   ROperator_Reshape(ReshapeOpMode opMode, int attr_value, std::string nameData, std::string nameInput2, std::string nameOutput)
-      : fOpMode(opMode), fNData(UTILITY::Clean_name(nameData)), fNInput2(UTILITY::Clean_name(nameInput2)),
-         fNOutput(UTILITY::Clean_name(nameOutput))
+   ROperator_Reshape() {}
+   ROperator_Reshape(ReshapeOpMode opMode, int attr_value, std::string nameData, std::string nameInput2,
+                     std::string nameOutput)
+      : fOpMode(opMode),
+        fNData(UTILITY::Clean_name(nameData)),
+        fNInput2(UTILITY::Clean_name(nameInput2)),
+        fNOutput(UTILITY::Clean_name(nameOutput))
    {
-      if (opMode == Reshape) fAllowZero = attr_value;
-      if (opMode == Flatten) fAxis = attr_value;
+      if (opMode == Reshape)
+         fAllowZero = attr_value;
+      if (opMode == Flatten)
+         fAxis = attr_value;
 
-      fInputTensorNames = { fNData };
-      if(!fNInput2.empty()){
+      fInputTensorNames = {fNData};
+      if (!fNInput2.empty()) {
          fInputTensorNames.emplace_back(fNInput2);
       }
-      fOutputTensorNames = { fNOutput };
+      fOutputTensorNames = {fNOutput};
    }
 
    // for squeeze/unsqueezed operators following old ONNX version (< 10)
    // In this cases axes are passed as attribute values
    ROperator_Reshape(ReshapeOpMode opMode, std::vector<int64_t> attrAxes, std::string nameData, std::string nameOutput)
-      : fOpMode(opMode), fNData(UTILITY::Clean_name(nameData)), fNOutput(UTILITY::Clean_name(nameOutput)),
+      : fOpMode(opMode),
+        fNData(UTILITY::Clean_name(nameData)),
+        fNOutput(UTILITY::Clean_name(nameOutput)),
         fAttrAxes(attrAxes)
    {
       assert(fOpMode == Squeeze || fOpMode == Unsqueeze);
-      fInputTensorNames = { fNData };
-      fOutputTensorNames = { fNOutput };
+      fInputTensorNames = {fNData};
+      fOutputTensorNames = {fNOutput};
    }
 
-
    // output shape
-   std::vector<Dim> DoShapeInference(const std::vector<Dim> & input_shape, const std::vector<Dim> & target_shape)  {
+   std::vector<Dim> DoShapeInference(const std::vector<Dim> &input_shape, const std::vector<Dim> &target_shape)
+   {
       if (fOpMode == Reshape) {
          // correct the provided shape (here we have the value) for 0 or -1
          // the target_shape can be a scalar in case of not present shape input tensor
@@ -94,20 +108,22 @@ public:
                      output_shape[i] = Dim{0};
                   else {
                      if (i > 0 && output_shape.size() != input_shape.size())
-                        std::cout << "WARNING: Internal::ONNXToCpp Reshape Op : output shape has zero value at index " << i <<
-                                  " but input shape has a different rank than output shape" << std::endl;
+                        std::cout << "WARNING: Internal::ONNXToCpp Reshape Op : output shape has zero value at index "
+                                  << i << " but input shape has a different rank than output shape" << std::endl;
                      if (i >= input_shape.size())
-                        throw std::runtime_error("Internal::ONNXToCpp Reshape Op : output shape has zero value at index " + std::to_string(i) +
-                              " but input shape does not have corresponding index");
-                     }
-                     output_shape[i] = input_shape[i];
+                        throw std::runtime_error(
+                           "Internal::ONNXToCpp Reshape Op : output shape has zero value at index " +
+                           std::to_string(i) + " but input shape does not have corresponding index");
+                  }
+                  output_shape[i] = input_shape[i];
                } else if (output_shape[i].dim == static_cast<size_t>(-1)) {
                   hasMinusOne = true;
                }
             }
          }
          if (hasZero && hasMinusOne) {
-            throw std::runtime_error("Internal::ONNXToCpp Reshape Op : zero value in shape is not allowed when there is also a -1 in shape");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Reshape Op : zero value in shape is not allowed when there is also a -1 in shape");
          }
          // now case of -1 in shape - we can infer the value of -1 from all other values
          for (size_t i = 0; i < output_shape.size(); i++) {
@@ -124,12 +140,11 @@ public:
                   output_shape[i] = Dim{static_cast<size_t>(std::stoi(input_length) / std::stoi(tmp_length))};
                else if (IsInteger(tmp_length) && std::stoi(tmp_length) == 1) {
                   output_shape[i] = Dim{input_length, static_cast<size_t>(-1)};
-               }
-               else {
-                  //we can try simplifying expression if tmp_length is integer and part of input_length
-                  // contains tmp_length
+               } else {
+                  // we can try simplifying expression if tmp_length is integer and part of input_length
+                  //  contains tmp_length
                   bool canSimplify = false;
-                  std::vector <Dim> reduced_input;
+                  std::vector<Dim> reduced_input;
                   if (IsInteger(tmp_length)) {
 
                      // try to tokenize with * the input length
@@ -139,19 +154,19 @@ public:
                      std::string token;
 
                      // Tokenizing w.r.t. space '*'
-                     while(getline(ss, token, '*'))
-                     {
+                     while (getline(ss, token, '*')) {
                         // remove any whitespace
-                        token.erase(std::remove_if(token.begin(), token.end(),
-                                                   [](unsigned char x) { return std::isspace(x); }), token.end());
+                        token.erase(
+                           std::remove_if(token.begin(), token.end(), [](unsigned char x) { return std::isspace(x); }),
+                           token.end());
                         if (token != tmp_length) {
                            if (IsInteger(token)) {
-                                 size_t il = static_cast<size_t>(std::stoi(input_length));
-                                 size_t tl = static_cast<size_t>(std::stoi(tmp_length));
-                                 if ((il % tl) == 0) {
+                              size_t il = static_cast<size_t>(std::stoi(input_length));
+                              size_t tl = static_cast<size_t>(std::stoi(tmp_length));
+                              if ((il % tl) == 0) {
                                  canSimplify = true;
                                  reduced_input.push_back(Dim{il / tl});
-                                 }
+                              }
                            } else {
                               reduced_input.push_back(Dim{token});
                            }
@@ -170,7 +185,8 @@ public:
                         output_shape[i] = Dim{res_shape};
                   }
                   if (!canSimplify)
-                     output_shape[i] = Dim{std::string("(") + input_length + " / (" + tmp_length + "))", static_cast<size_t>(-1)};
+                     output_shape[i] =
+                        Dim{std::string("(") + input_length + " / (" + tmp_length + "))", static_cast<size_t>(-1)};
                }
 
                break; // cannot have more than -1
@@ -183,8 +199,8 @@ public:
             std::cout << "Reshape: correct output shape  to " << ConvertDimShapeToString(output_shape) << std::endl;
 
          if (!fDimInput && ConvertDimShapeToLength(output_shape) != ConvertDimShapeToLength(input_shape)) {
-            throw std::runtime_error("Internal::ONNXToCpp Reshape Op : Invalid  shapes : " + ConvertDimShapeToString(input_shape) +
-                                     ConvertDimShapeToString(output_shape));
+            throw std::runtime_error("Internal::ONNXToCpp Reshape Op : Invalid  shapes : " +
+                                     ConvertDimShapeToString(input_shape) + ConvertDimShapeToString(output_shape));
          }
          return output_shape;
 
@@ -217,18 +233,17 @@ public:
                if (axes[i] < 0)
                   axes[i] += input_shape.size();
                if (!(output_shape[axes[i]] == Dim{1}))
-                  throw std::runtime_error("Internal::ONNXToCpp Squeeze Op : Invalid  axis value " + std::to_string(axes[i]) +
-                                           " for " + ConvertDimShapeToString(output_shape));
+                  throw std::runtime_error("Internal::ONNXToCpp Squeeze Op : Invalid  axis value " +
+                                           std::to_string(axes[i]) + " for " + ConvertDimShapeToString(output_shape));
             }
             // for calling vector::erase we must sort axes in decreasing order to avoid
             std::sort(axes.begin(), axes.end(), std::greater<int>());
-            for (auto & axis : axes) {
+            for (auto &axis : axes) {
                output_shape.erase(output_shape.begin() + axis);
             }
          }
          return output_shape;
-      }
-      else if (fOpMode == Unsqueeze) {
+      } else if (fOpMode == Unsqueeze) {
          // unsqueeze
          assert(!fAttrAxes.empty());
          auto output_shape = input_shape;
@@ -251,15 +266,16 @@ public:
       return {Dim{}};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
 
       fVerbose = model.Verbose();
       if (fVerbose)
-         std::cout << "initialize reshape op type " << fOpMode << " -  for input " << fNData
-                   << " to shape given by " << fNInput2 << std::endl;
+         std::cout << "initialize reshape op type " << fOpMode << " -  for input " << fNData << " to shape given by "
+                   << fNInput2 << std::endl;
 
       if (model.CheckIfTensorAlreadyExist(fNData) == false) {
-          // input must be a graph input, or already initialized intermediate tensor
+         // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp Reshape Op Input Tensor " + fNData + "  is not found in model");
       }
       fShapeInput = model.GetDimTensorShape(fNData);
@@ -281,7 +297,7 @@ public:
                else
                   fAttrAxes = std::vector<int64_t>(values, values + n);
 
-               std::vector<Dim> targetShape(fShape.begin(),fShape.end());
+               std::vector<Dim> targetShape(fShape.begin(), fShape.end());
                fShapeOutput = DoShapeInference(fShapeInput, targetShape);
                // set flag to not write tensor in weight file. Its data will be hard-coded in way model is constructed
                model.SetNotWritableInitializedTensor(fNInput2);
@@ -289,22 +305,25 @@ public:
                auto shapeData = model.GetShapeTensorValues(fNInput2);
                fShapeOutput = DoShapeInference(fShapeInput, shapeData);
                if (model.Verbose())
-                  std::cout << "Reshape op - get output shape from shape tensor " << fNInput2 << " with value " << ConvertDimShapeToString(shapeData) << std::endl;
+                  std::cout << "Reshape op - get output shape from shape tensor " << fNInput2 << " with value "
+                            << ConvertDimShapeToString(shapeData) << std::endl;
             } else {
                // we cannot get shape at initialization time but at run-time
                fDynamicShape = true;
                // size of shape output us given by size of shape input tensor
                if (model.IsDynamicTensor(fNInput2)) {
-                  throw std::runtime_error("Internal::ONNXToCpp Reshape Op 2nd input Tensor " + fNInput2 + " cannot have dynamic shape");
+                  throw std::runtime_error("Internal::ONNXToCpp Reshape Op 2nd input Tensor " + fNInput2 +
+                                           " cannot have dynamic shape");
                }
                auto shapeInput2 = model.GetTensorShape(fNInput2);
                fShapeOutput.resize(shapeInput2[0]);
                for (size_t i = 0; i < fShapeOutput.size(); i++) {
-                  fShapeOutput[i] = Dim{ std::string("s_") + fNOutput + "_" + std::to_string(i)};
+                  fShapeOutput[i] = Dim{std::string("s_") + fNOutput + "_" + std::to_string(i)};
                }
             }
          } else {
-            throw std::runtime_error("Internal::ONNXToCpp Reshape Op 2nd input Tensor " + fNInput2 + " is not found in model");
+            throw std::runtime_error("Internal::ONNXToCpp Reshape Op 2nd input Tensor " + fNInput2 +
+                                     " is not found in model");
          }
       } else if (!fAttrAxes.empty()) {
          // case fNShape is empty and axes are provided as attributes (e.g. for Unsqueeze)
@@ -317,18 +336,19 @@ public:
       // check if output is constant or not
       if (model.IsInitializedTensor(fNData) && model.GetTensorType(fNData) == ETensorType::INT64) {
          fIsOutputConstant = true;
-         auto inputData = static_cast<int64_t*>(model.GetInitializedTensorData(fNData).get());
+         auto inputData = static_cast<int64_t *>(model.GetInitializedTensorData(fNData).get());
          auto o_shape = ConvertShapeToInt(fShapeOutput);
-         if (ConvertShapeToLength(ConvertShapeToInt(fShapeInput)) != ConvertShapeToLength(o_shape) )
+         if (ConvertShapeToLength(ConvertShapeToInt(fShapeInput)) != ConvertShapeToLength(o_shape))
             throw std::runtime_error("Internal::ONNXToCpp Reshape Op : Invalid Input/Output lengths");
          model.AddConstantTensor<int64_t>(fNOutput, o_shape, inputData);
          if (model.Verbose()) {
-            std::cout << Name() << " : " << fNData << " " << ConvertDimShapeToString(fShapeInput) << " -->  " << fNOutput << " (constant) " << ConvertDimShapeToString(fShapeOutput)  << " : " <<
-            ConvertValuesToString(ConvertShapeToLength(o_shape), inputData) << std::endl;
+            std::cout << Name() << " : " << fNData << " " << ConvertDimShapeToString(fShapeInput) << " -->  "
+                      << fNOutput << " (constant) " << ConvertDimShapeToString(fShapeOutput) << " : "
+                      << ConvertValuesToString(ConvertShapeToLength(o_shape), inputData) << std::endl;
          }
       }
       // for input shape tensors we can have it if output shape is size==1 or a scalar
-      else if (model.IsShapeTensor(fNData) && fShapeOutput.size() <=1) {
+      else if (model.IsShapeTensor(fNData) && fShapeOutput.size() <= 1) {
          // not sure if we ever end-up here - maybe reshaping from scalar to vector or viceversa
          fIsOutputParamShape = true;
          fOutputShapeData = model.GetShapeTensorValues(fNData);
@@ -336,11 +356,11 @@ public:
          // so a rank-0 output would otherwise read back as rank 1
          model.AddShapeTensor(fNOutput, fOutputShapeData, fShapeOutput.empty());
          if (model.Verbose()) {
-            std::cout << Name() << " : " << fNData << " " << ConvertDimShapeToString(fShapeInput) << " -->  " << fNOutput << " (shape) " << ConvertDimShapeToString(fShapeOutput)  << " : " <<
-            ConvertDimShapeToString(fOutputShapeData) << std::endl;
+            std::cout << Name() << " : " << fNData << " " << ConvertDimShapeToString(fShapeInput) << " -->  "
+                      << fNOutput << " (shape) " << ConvertDimShapeToString(fShapeOutput) << " : "
+                      << ConvertDimShapeToString(fOutputShapeData) << std::endl;
          }
-      }
-      else {
+      } else {
          // non-constant case
          model.AddIntermediateTensor(fNOutput, model.GetTensorType(fNData), fShapeOutput);
          // the data are not changed, so the output can share the memory of the input
@@ -352,8 +372,8 @@ public:
       }
    }
 
-   std::string Generate(std::string opName) override {
-
+   std::string Generate(std::string opName) override
+   {
 
       std::stringstream out;
       std::string opType = "Reshape";
@@ -364,12 +384,14 @@ public:
       else if (fOpMode == Unsqueeze)
          opType = "Unsquueze";
 
-      out << SP << "///--------" << opType << " operator " << opName << " --> " << ConvertDimShapeToString(fShapeOutput) << "\n";
+      out << SP << "///--------" << opType << " operator " << opName << " --> " << ConvertDimShapeToString(fShapeOutput)
+          << "\n";
 
-      if (fIsOutputConstant) return out.str();  //no op for constant tensors
+      if (fIsOutputConstant)
+         return out.str(); // no op for constant tensors
 
       if (fIsOutputParamShape) {
-          // no code to generate here for param shape output. Tensor output is defined in Session constructor
+         // no code to generate here for param shape output. Tensor output is defined in Session constructor
          out << "//----------------output is a shape tensor----------\n";
          for (int i = 0; i < static_cast<int>(fShapeOutput[0].dim); i++) {
             out << SP << "tensor_" << fNOutput << "[" << i << " ] = " << fOutputShapeData[i].GetVal() << ";\n";
@@ -384,8 +406,8 @@ public:
             // since fNInput2 values are int64_t, should we check if they are negative?
             out << SP << "size_t " << fShapeOutput[i].param << " = " << "tensor_" << fNInput2 << "[" << i << "];\n";
             if (!fAllowZero)
-               out << SP << "if (tensor_" << fNInput2 << "[" << i << "] <= 0 ) "
-                         <<  fShapeOutput[i].param << " = " <<  fShapeInput[i] << ";\n";
+               out << SP << "if (tensor_" << fNInput2 << "[" << i << "] <= 0 ) " << fShapeOutput[i].param << " = "
+                   << fShapeInput[i] << ";\n";
          }
       }
 
@@ -409,9 +431,8 @@ public:
    }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_RESHAPE
+#endif // ONNXTOCPP_ROPERATOR_RESHAPE

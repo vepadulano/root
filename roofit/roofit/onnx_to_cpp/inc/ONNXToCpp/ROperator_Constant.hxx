@@ -7,16 +7,14 @@
 
 #include <sstream>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
-template<typename T>
-class ROperator_Constant final : public ROperator
-{
+template <typename T>
+class ROperator_Constant final : public ROperator {
 
 private:
-
    std::string fNX;
    std::string fNY;
    std::vector<size_t> fShape;
@@ -28,28 +26,30 @@ private:
    bool fIsUndefinedInputShape = false;
 
 public:
-   ROperator_Constant(){}
+   ROperator_Constant() {}
 
-   ROperator_Constant(const std::string & type, const std::vector<T> & values, const std::vector<size_t> & shape, std::string nameX, std::string nameY):
-      fNX(UTILITY::Clean_name(nameX)),
-      fNY(UTILITY::Clean_name(nameY)),
-      fShape(shape),
-      fValues(values),
-      fAttrType(type)
-      {
-         fInputTensorNames = { };
-         fOutputTensorNames = { };
-      }
+   ROperator_Constant(const std::string &type, const std::vector<T> &values, const std::vector<size_t> &shape,
+                      std::string nameX, std::string nameY)
+      : fNX(UTILITY::Clean_name(nameX)),
+        fNY(UTILITY::Clean_name(nameY)),
+        fShape(shape),
+        fValues(values),
+        fAttrType(type)
+   {
+      fInputTensorNames = {};
+      fOutputTensorNames = {};
+   }
 
-   void Initialize(RModel& model) override {
-       //input must be a graph input, or already initialized intermediate tensor
+   void Initialize(RModel &model) override
+   {
+      // input must be a graph input, or already initialized intermediate tensor
       size_t length = 1;
       /// ConstantOfShape-------------
       if (!fNX.empty()) {
          // case of ConstantOfShape (since no inputs in case of Constant operator)
-         fIsConstantOfShape  = true;
-         if (model.CheckIfTensorAlreadyExist(fNX) == false){
-           throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op Input Tensor is not found in model");
+         fIsConstantOfShape = true;
+         if (model.CheckIfTensorAlreadyExist(fNX) == false) {
+            throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op Input Tensor is not found in model");
          }
          // get output shape from input values:
          // can work only if input is a constant or initialized tensor (or dynamic one)
@@ -58,23 +58,23 @@ public:
             auto dptr = model.GetInitializedTensorData(fNX);
             auto input_tensor = static_cast<int64_t *>(dptr.get());
             auto input_shape = model.GetTensorShape(fNX);
-            if (input_shape.size() > 1 )
+            if (input_shape.size() > 1)
                throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op Input Tensor has invalid shape");
             if (input_tensor != nullptr && !input_shape.empty()) {
-               fShape = std::vector<size_t> (input_shape[0]);
+               fShape = std::vector<size_t>(input_shape[0]);
                for (size_t i = 0; i < fShape.size(); i++)
                   fShape[i] = input_tensor[i];
             } else
-               fShape = {1};  // scalar case
+               fShape = {1}; // scalar case
 
             length = ConvertShapeToLength(fShape);
             if (fValues.size() != 1)
-               throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op value Tensor has invalid size " + std::to_string(fValues.size()));
+               throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op value Tensor has invalid size " +
+                                        std::to_string(fValues.size()));
 
             T value = fValues[0];
             fValues = std::vector<T>(length, value);
-         }
-         else if (model.IsShapeTensor(fNX)) {
+         } else if (model.IsShapeTensor(fNX)) {
             // case tensor values representing output shapes are  known
             fDimOutputShape = model.GetShapeTensorValues(fNX);
          } else {
@@ -82,15 +82,14 @@ public:
             // not sure if we ever encounter this case
             fIsUndefinedInputShape = true;
             fDimShape = model.GetDimTensorShape(fNX);
-            if (fDimShape.size() > 1 )
+            if (fDimShape.size() > 1)
                throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op Input Tensor has invalid shape");
             if (!fDimShape[0].isParam) {
                fDimOutputShape.resize(fDimShape[0].dim);
                for (size_t i = 0; i < fDimShape[0].dim; i++) {
-                  fDimOutputShape[i] = Dim{ std::string("s_") + fNY + "_" + std::to_string(i)};
+                  fDimOutputShape[i] = Dim{std::string("s_") + fNY + "_" + std::to_string(i)};
                }
-            }
-            else {
+            } else {
                throw std::runtime_error("Internal::ONNXToCpp ConstantOfShape Op Input Tensor has not defied shape");
             }
          }
@@ -101,22 +100,23 @@ public:
          fIsOutputConstant = true;
          length = ConvertShapeToLength(fShape);
          if (length != fValues.size())
-            throw std::runtime_error("Internal::ONNXToCpp Constant Op has invalid shape : " + ConvertShapeToString(fShape) +
-                                 " with " + std::to_string(fValues.size()) + " values");
+            throw std::runtime_error(
+               "Internal::ONNXToCpp Constant Op has invalid shape : " + ConvertShapeToString(fShape) + " with " +
+               std::to_string(fValues.size()) + " values");
       }
 
       // we need to create an initialized tensor of type constant to flag to not save it in a weight file
       // but keep its initialization in the generated code. The values might also be needed in initializing the
       // following operators using as input Constant or ConstantOfShape
-       // resize fValues to shape length
+      // resize fValues to shape length
       if (fIsOutputConstant) {
          model.AddConstantTensor(fNY, fShape, fValues);
          if (model.Verbose()) {
             std::cout << "adding constant tensor " << fNY << " with shape " << ConvertShapeToString(fShape)
-            << " and values [";
+                      << " and values [";
             if (!fIsConstantOfShape) {
-               ConvertValuesToString(fValues, 10);   // add maximum printing values
-            } else {  // for constant of shape is enough to print one value
+               ConvertValuesToString(fValues, 10); // add maximum printing values
+            } else {                               // for constant of shape is enough to print one value
                std::cout << "... " << fValues[0] << " ....]" << std::endl;
             }
          }
@@ -126,21 +126,24 @@ public:
       }
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       // no code to generate here. Tensor are defined in Session constructor
       std::stringstream out;
       if (fIsOutputConstant) {
          if (fNX.empty())
-            out <<  "// ---- Constant (no-op) " << opName << " --> " << fNY << " " << ConvertDimShapeToString(fDimOutputShape) << "\n";
+            out << "// ---- Constant (no-op) " << opName << " --> " << fNY << " "
+                << ConvertDimShapeToString(fDimOutputShape) << "\n";
          else
-            out << "// ---- ConstantOfShape (no-op) " << opName << " --> " << fNY << " " << ConvertDimShapeToString(fDimOutputShape) << "\n";
+            out << "// ---- ConstantOfShape (no-op) " << opName << " --> " << fNY << " "
+                << ConvertDimShapeToString(fDimOutputShape) << "\n";
          return out.str();
       }
       // Only ConstantOfShape might require generation code
       // generate constant tensor according to input
 
       out << "\n//--------- ConstantOfShape " << opName << " --> " << ConvertDimShapeToString(fDimOutputShape) << "\n";
-       // set shape values if needed
+      // set shape values if needed
       if (fIsUndefinedInputShape) {
          for (size_t i = 0; i < fDimOutputShape.size(); i++) {
             out << SP << "size_t " << fDimOutputShape[i].param << " = " << "tensor_" << fNX << "[" << i << "];\n";
@@ -153,9 +156,8 @@ public:
    }
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_Constant
+#endif // ONNXTOCPP_ROPERATOR_Constant

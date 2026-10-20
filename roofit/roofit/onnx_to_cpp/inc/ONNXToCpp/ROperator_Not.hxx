@@ -9,7 +9,6 @@ namespace ROOT {
 namespace Internal {
 namespace ONNXToCpp {
 
-
 class ROperator_Not final : public ROperator {
 private:
    std::string fNX;
@@ -24,12 +23,12 @@ public:
    ROperator_Not(std::string nameX, std::string nameY)
       : fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
    {
-         fInputTensorNames =  { fNX };
-         fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          throw std::runtime_error("Internal::ONNXToCpp - Tensor " + fNX + " not found.");
       }
@@ -50,7 +49,6 @@ public:
       out << SP << "}\n";
       return out.str();
    }
-
 };
 
 } // namespace ONNXToCpp

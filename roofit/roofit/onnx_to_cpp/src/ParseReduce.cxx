@@ -38,13 +38,13 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
       throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Reduce  op has input tensor" + input_name +
                                " but its type is not yet registered");
    }
-   //in the latest version of ONNX axis is not an attribute but an input
+   // in the latest version of ONNX axis is not an attribute but an input
    std::string axes_name;
    if (nodeproto.input_size() > 1) {
       axes_name = nodeproto.input(1);
       if (!parser.IsRegisteredTensorType(axes_name)) {
          throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Reduce  op has input tensor" + axes_name +
-                               " but its type is not yet registered");
+                                  " but its type is not yet registered");
       }
    }
 
@@ -57,8 +57,7 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
       if (attribute_name == "keepdims")
          attr_keepdims = nodeproto.attribute(i).i();
       if (attribute_name == "axes") {
-         attr_axes =
-            std::vector<int64_t>({nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end()});
+         attr_axes = std::vector<int64_t>({nodeproto.attribute(i).ints().begin(), nodeproto.attribute(i).ints().end()});
       }
    }
    op.reset(new ROperator_Reduce<Op>(attr_keepdims, attr_axes, input_name, axes_name, output_name));
@@ -67,7 +66,8 @@ std::unique_ptr<ROperator> ParseReduce(RModelParser_ONNX &parser, const onnx::No
    //    op.reset(new ROperator_Reduce<float, Op>(attr_keepdims, attr_axes, input_name, axes_name, output_name));
    //    break;
    // default:
-   //    throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Reduce Operator does not yet support input type " +
+   //    throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Reduce Operator does not yet support input type "
+   //    +
    //                             std::to_string(static_cast<int>(input_type)));
    // }
 

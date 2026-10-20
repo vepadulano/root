@@ -26,7 +26,7 @@ ParserFuncSignature ParseEyeLike = [](RModelParser_ONNX &parser, const onnx::Nod
       std::string attribute_name = nodeproto.attribute(i).name();
       if (attribute_name == "dtype")
          attr_dtype = nodeproto.attribute(i).i();
-      if(attribute_name == "k"){
+      if (attribute_name == "k") {
          attr_k = nodeproto.attribute(i).i();
       }
    }

@@ -29,12 +29,12 @@ ParserFuncSignature ParseMatMul = [](RModelParser_ONNX &parser, const onnx::Node
    switch (input_type) {
    case ETensorType::FLOAT:
       op.reset(new ROperator_Gemm<float>(attr_alpha, attr_beta, attr_transA, attr_transB, matmulnode.input(0),
-                                          matmulnode.input(1), matmulnode.output(0)));
+                                         matmulnode.input(1), matmulnode.output(0)));
       break;
    default:
-      throw std::runtime_error(
-         "Internal::ONNXToCpp - Unsupported - Operator for fusing MatMul and Add to Gemm does not yet support input type " +
-         std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator for fusing MatMul and Add to Gemm does "
+                               "not yet support input type " +
+                               std::to_string(static_cast<int>(input_type)));
    }
 
    std::string output_name = matmulnode.output(0);

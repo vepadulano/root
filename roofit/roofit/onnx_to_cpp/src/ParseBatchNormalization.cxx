@@ -37,13 +37,15 @@ ParserFuncSignature ParseBatchNormalization = [](RModelParser_ONNX &parser, cons
                                                           nodeproto.input(1), nodeproto.input(2), nodeproto.input(3),
                                                           nodeproto.input(4), output_name));
       } else {
-         throw std::runtime_error("Internal::ONNXToCpp ONNX Parser BatchNormalization op requires exactly 5 inputs, got " +
-                                  std::to_string(nodeproto.input_size()));
+         throw std::runtime_error(
+            "Internal::ONNXToCpp ONNX Parser BatchNormalization op requires exactly 5 inputs, got " +
+            std::to_string(nodeproto.input_size()));
       }
       break;
    default:
-      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator BatchNorm does not yet support input type " +
-                               std::to_string(static_cast<int>(input_type)));
+      throw std::runtime_error(
+         "Internal::ONNXToCpp - Unsupported - Operator BatchNorm does not yet support input type " +
+         std::to_string(static_cast<int>(input_type)));
    }
 
    if (!parser.IsRegisteredTensorType(output_name)) {

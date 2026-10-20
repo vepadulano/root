@@ -24,17 +24,22 @@ class RModelParser_ONNX;
 
 using ParserFuncSignature =
    std::function<std::unique_ptr<ROperator>(RModelParser_ONNX & /*parser*/, const onnx::NodeProto & /*nodeproto*/)>;
-using ParserFuseFuncSignature =
-   std::function<std::unique_ptr<ROperator> (RModelParser_ONNX& /*parser*/, const onnx::NodeProto& /*firstnode*/, const onnx::NodeProto& /*secondnode*/)>;
+using ParserFuseFuncSignature = std::function<std::unique_ptr<ROperator>(
+   RModelParser_ONNX & /*parser*/, const onnx::NodeProto & /*firstnode*/, const onnx::NodeProto & /*secondnode*/)>;
 
 class RModelParser_ONNX {
 public:
    struct OperatorsMapImpl;
 
-   enum EFusedOp { kMatMulAdd, kConvAdd, kConvTransAdd, kGemmRelu, kBatchnormRelu};
+   enum EFusedOp {
+      kMatMulAdd,
+      kConvAdd,
+      kConvTransAdd,
+      kGemmRelu,
+      kBatchnormRelu
+   };
 
 private:
-
    bool fVerbose = false;
    // Registered operators
    std::unique_ptr<OperatorsMapImpl> fOperatorsMapImpl;
@@ -55,7 +60,6 @@ private:
    // name of the external data file fDataFile currently has open
    std::string fOpenedDataFileName;
 
-
 public:
    // Register an ONNX operator
    void RegisterOperator(const std::string &name, ParserFuncSignature func);
@@ -73,33 +77,32 @@ public:
    bool IsRegisteredTensorType(const std::string & /*name*/);
 
    // check verbosity
-   bool Verbose() const {
-      return fVerbose;
-   }
+   bool Verbose() const { return fVerbose; }
 
    // Get the type of the tensor
    ETensorType GetTensorType(const std::string &name);
 
    // Parse the index'th node from the ONNX graph
    std::unique_ptr<ROperator> ParseOperator(const size_t /*index*/, const onnx::GraphProto & /*graphproto*/,
-                                            const std::vector<size_t> & /*nodes*/, const std::vector<int> & /* children */);
+                                            const std::vector<size_t> & /*nodes*/,
+                                            const std::vector<int> & /* children */);
 
    // check a graph for missing operators
-   void CheckGraph(const onnx::GraphProto & g, int & level, std::map<std::string, int> & missingOperators);
+   void CheckGraph(const onnx::GraphProto &g, int &level, std::map<std::string, int> &missingOperators);
 
    // parse the ONNX graph
-   void ParseONNXGraph(RModel & model, const onnx::GraphProto & g, std::string  name = "");
+   void ParseONNXGraph(RModel &model, const onnx::GraphProto &g, std::string name = "");
 
    std::unique_ptr<onnx::ModelProto> LoadModel(const std::string &filename);
    std::unique_ptr<onnx::ModelProto> LoadModel(std::istream &input);
 
-   std::shared_ptr<void> GetInitializedTensorData(onnx::TensorProto *tensorproto, size_t tensor_length, ETensorType type );
+   std::shared_ptr<void>
+   GetInitializedTensorData(onnx::TensorProto *tensorproto, size_t tensor_length, ETensorType type);
 
    // reset the external-data reading state after parsing a model
    void ResetExternalDataState();
 
 public:
-
    RModelParser_ONNX() noexcept;
 
    RModel Parse(std::string const &filename, bool verbose = false);
@@ -108,11 +111,9 @@ public:
    // check the model for missing operators - return false in case some operator implementation is missing
    bool CheckModel(std::string filename, bool verbose = false);
 
-   //set external data full path (needed if external data are not stored in the default modelName.onnx.data)
-   // call this function before parsing
-   void SetExternalDataFile(const std::string & dataFileName) {
-      fDataFileName = dataFileName;
-   }
+   // set external data full path (needed if external data are not stored in the default modelName.onnx.data)
+   //  call this function before parsing
+   void SetExternalDataFile(const std::string &dataFileName) { fDataFileName = dataFileName; }
 
    ~RModelParser_ONNX();
 };

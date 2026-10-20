@@ -25,7 +25,7 @@ ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodePro
    std::string pads_name = nodeproto.input(1);
    if (!parser.IsRegisteredTensorType(pads_name)) {
       throw std::runtime_error("Internal::ONNXToCpp ONNX Parser Pad op has input tensor" + pads_name +
-                                  " but its type is not yet registered");
+                               " but its type is not yet registered");
    }
    // in case of optional inputs
    std::string cvalue_name;
@@ -39,7 +39,7 @@ ParserFuncSignature ParsePad = [](RModelParser_ONNX &parser, const onnx::NodePro
 
    // get  attributes
    std::string mode = "constant";
-   if (nodeproto.attribute_size() > 0 ) {
+   if (nodeproto.attribute_size() > 0) {
       std::string attribute_name = nodeproto.attribute(0).name();
       if (attribute_name == "mode") {
          mode = nodeproto.attribute(0).s();

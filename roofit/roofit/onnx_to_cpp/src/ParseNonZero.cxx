@@ -21,26 +21,14 @@ ParserFuncSignature ParseNonZero = [](RModelParser_ONNX &parser, const onnx::Nod
 
    std::unique_ptr<ROperator> op;
    switch (input_type) {
-      case ETensorType::FLOAT:
-         op.reset(new ROperator_NonZero<float>(input_name, output_name));
-         break;
-      case ETensorType::INT64:
-         op.reset(new ROperator_NonZero<int64_t>(input_name, output_name));
-         break;
-      case ETensorType::INT32:
-         op.reset(new ROperator_NonZero<int32_t>(input_name, output_name));
-         break;
-      case ETensorType::INT8:
-         op.reset(new ROperator_NonZero<int8_t>(input_name, output_name));
-         break;
-      case ETensorType::UINT8:
-         op.reset(new ROperator_NonZero<uint8_t>(input_name, output_name));
-         break;
-      case ETensorType::BOOL:
-         op.reset(new ROperator_NonZero<bool>(input_name, output_name));
-         break;
-      default:
-         throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator NonZero does not yet support input type " +
+   case ETensorType::FLOAT: op.reset(new ROperator_NonZero<float>(input_name, output_name)); break;
+   case ETensorType::INT64: op.reset(new ROperator_NonZero<int64_t>(input_name, output_name)); break;
+   case ETensorType::INT32: op.reset(new ROperator_NonZero<int32_t>(input_name, output_name)); break;
+   case ETensorType::INT8: op.reset(new ROperator_NonZero<int8_t>(input_name, output_name)); break;
+   case ETensorType::UINT8: op.reset(new ROperator_NonZero<uint8_t>(input_name, output_name)); break;
+   case ETensorType::BOOL: op.reset(new ROperator_NonZero<bool>(input_name, output_name)); break;
+   default:
+      throw std::runtime_error("Internal::ONNXToCpp - Unsupported - Operator NonZero does not yet support input type " +
                                std::to_string(static_cast<int>(input_type)));
    }
 

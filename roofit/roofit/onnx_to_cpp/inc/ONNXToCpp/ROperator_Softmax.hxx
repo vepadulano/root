@@ -15,7 +15,7 @@ namespace ONNXToCpp {
 class ROperator_Softmax final : public ROperator {
 
 private:
-   bool fLogSoftmax;  // for the logsoftmax case
+   bool fLogSoftmax; // for the logsoftmax case
    bool fUseVDT = false;
    int64_t fAttrAxis;
 
@@ -28,15 +28,15 @@ private:
 public:
    ROperator_Softmax() {}
    ROperator_Softmax(int64_t attr_axis, std::string nameX, std::string nameY, bool logSoftmax = false)
-      : fLogSoftmax(logSoftmax),
-      fAttrAxis(attr_axis), fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
+      : fLogSoftmax(logSoftmax), fAttrAxis(attr_axis), fNX(UTILITY::Clean_name(nameX)), fNY(UTILITY::Clean_name(nameY))
 
    {
-         fInputTensorNames = { fNX };
-         fOutputTensorNames = { fNY };
+      fInputTensorNames = {fNX};
+      fOutputTensorNames = {fNY};
    }
 
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
       if (model.CheckIfTensorAlreadyExist(fNX) ==
           false) { // input must be a graph input, or already initialized intermediate tensor
          throw std::runtime_error("Internal::ONNXToCpp Softmax Op Input Tensor is not found in model");
@@ -55,14 +55,17 @@ public:
       }
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       opName = "op_" + opName;
       if (fShape.empty()) {
-         throw std::runtime_error("Internal::ONNXToCpp Operator Softmax called to Generate without being initialized first");
+         throw std::runtime_error(
+            "Internal::ONNXToCpp Operator Softmax called to Generate without being initialized first");
       }
       std::stringstream out;
-       out << "///------- Softmax " << opName << " ---> "  // << fNY << " "
-           << ConvertDimShapeToString(fShape) << "\n" << std::endl;
+      out << "///------- Softmax " << opName << " ---> " // << fNY << " "
+          << ConvertDimShapeToString(fShape) << "\n"
+          << std::endl;
       size_t size = fShape.size();
       auto length_str = ConvertDimShapeToLength(fShape);
       size_t axis = fAttrAxis < 0 ? size + fAttrAxis : fAttrAxis;
@@ -119,20 +122,25 @@ public:
          std::vector<std::string> l(size);
          for (size_t i = 0; i < size; i++) {
             if (i != axis) {
-               for (size_t j = 0; j < k; j++) out << SP;
+               for (size_t j = 0; j < k; j++)
+                  out << SP;
                l[i] = std::string("i") + std::to_string(i);
                out << SP << "for (int " << l[i] << " = 0; " << l[i] << " < " << fShape[i] << "; " << l[i] << "++) {\n";
                k++;
             }
          }
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << fType << " sum = 0.;\n";
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "size_t index = ";
          bool first = true;
          for (size_t i = 0; i < size; i++) {
-            if (i == axis) continue;
-            if (!first) out << " + ";
+            if (i == axis)
+               continue;
+            if (!first)
+               out << " + ";
             if (stride[i].GetVal() != "1")
                out << stride[i] << "*";
             out << l[i];
@@ -140,30 +148,42 @@ public:
          }
          out << ";\n";
          // find maximum looping along reduced axis
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << fType << " vmax = tensor_" << fNX << "[index];\n";
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "for (int i = 1; i < " << fShape[axis] << "; i++) {\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << fType << " x = tensor_" << fNX << "[index + i";
-         if (stride[axis].GetVal() != "1") out << "*(" << stride[axis] << ")";
+         if (stride[axis].GetVal() != "1")
+            out << "*(" << stride[axis] << ")";
          out << "];\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << "if (x > vmax) vmax = x;\n";
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "}\n";
          // compute softmax
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "for (int i = 0; i < " << fShape[axis] << "; i++) {\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << "size_t id = index + i";
-         if (stride[axis].GetVal() != "1") out << "*(" << stride[axis] << ")";
+         if (stride[axis].GetVal() != "1")
+            out << "*(" << stride[axis] << ")";
          out << ";\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << "tensor_" << fNY << "[id] = " << expFunction << "(tensor_" << fNX << "[id] - vmax);\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << "sum += tensor_" << fNY << "[id];\n";
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "}\n";
          if (fLogSoftmax) {
             // log(softmax(x)) = (x - max) - log(sum), see the last-axis case above
@@ -172,28 +192,34 @@ public:
             out << fType << " log_sum = " << logFunction << "(sum);\n";
          }
          // normalize
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "for (int i = 0; i < " << fShape[axis] << "; i++) {\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          out << "size_t id = index + i";
-         if (stride[axis].GetVal() != "1") out << "*(" << stride[axis] << ")";
+         if (stride[axis].GetVal() != "1")
+            out << "*(" << stride[axis] << ")";
          out << ";\n";
-         for (size_t j = 0; j < size; j++) out << SP;
+         for (size_t j = 0; j < size; j++)
+            out << SP;
          if (fLogSoftmax)
             out << "tensor_" << fNY << "[id] = tensor_" << fNX << "[id] - vmax - log_sum;\n";
          else
             out << "tensor_" << fNY << "[id] /= sum;\n";
-         for (size_t j = 0; j < size-1; j++) out << SP;
+         for (size_t j = 0; j < size - 1; j++)
+            out << SP;
          out << "}\n";
-         //end loops
+         // end loops
          for (int i = static_cast<int>(k) - 1; i >= 0; i--) {
-            for (int j = 0; j < i; j++) out << SP;
+            for (int j = 0; j < i; j++)
+               out << SP;
             out << "}\n";
          }
       }
       return out.str();
    }
-   std::vector<std::string> GetStdLibs() override { return { std::string("cmath") }; }
+   std::vector<std::string> GetStdLibs() override { return {std::string("cmath")}; }
 };
 
 } // namespace ONNXToCpp

@@ -13,9 +13,9 @@
 #include <cassert>
 #include <limits>
 
-namespace ROOT{
-namespace Internal{
-namespace ONNXToCpp{
+namespace ROOT {
+namespace Internal {
+namespace ONNXToCpp {
 
 enum EReduceOpMode {
    ReduceMean,
@@ -28,61 +28,69 @@ enum EReduceOpMode {
 };
 
 template <EReduceOpMode Op>
-class ROperator_Reduce final : public ROperator
-{
+class ROperator_Reduce final : public ROperator {
 private:
-    /* Attributes*/
-    bool fInputDimShape = false;
-    int fkeepdims = 1; //default value
-    std::vector<int64_t> fAttrAxes;
-    EReduceOpMode fReduceOpMode;
-    std::string fNX;
-    std::string fNAxes;
-    std::string fNY;
-    std::vector<Dim> fShapeX;
-    std::vector<Dim> fShapeY;
-    std::vector<Dim> fShapeYNotPruned; // needed for fKeepdims=0
-    std::string fType;                 // type of the tensors (needed by ReduceMax/ReduceMin)
+   /* Attributes*/
+   bool fInputDimShape = false;
+   int fkeepdims = 1; // default value
+   std::vector<int64_t> fAttrAxes;
+   EReduceOpMode fReduceOpMode;
+   std::string fNX;
+   std::string fNAxes;
+   std::string fNY;
+   std::vector<Dim> fShapeX;
+   std::vector<Dim> fShapeY;
+   std::vector<Dim> fShapeYNotPruned; // needed for fKeepdims=0
+   std::string fType;                 // type of the tensors (needed by ReduceMax/ReduceMin)
 
- public:
-    std::string Name()
-    {
-       if (fReduceOpMode == ReduceMean)
-          return "ReduceMean";
-       else if (fReduceOpMode == ReduceSumSquare)
-          return "ReduceSumSquare";
-       else if (fReduceOpMode == ReduceProd)
-          return "ReduceProd";
-       else if (fReduceOpMode == ReduceSum)
-          return "ReduceSum";
-       else if (fReduceOpMode == ReduceMax)
-          return "ReduceMax";
-       else if (fReduceOpMode == ReduceMin)
-          return "ReduceMin";
-       return "Invalid";
-    }
+public:
+   std::string Name()
+   {
+      if (fReduceOpMode == ReduceMean)
+         return "ReduceMean";
+      else if (fReduceOpMode == ReduceSumSquare)
+         return "ReduceSumSquare";
+      else if (fReduceOpMode == ReduceProd)
+         return "ReduceProd";
+      else if (fReduceOpMode == ReduceSum)
+         return "ReduceSum";
+      else if (fReduceOpMode == ReduceMax)
+         return "ReduceMax";
+      else if (fReduceOpMode == ReduceMin)
+         return "ReduceMin";
+      return "Invalid";
+   }
 
-   ROperator_Reduce(){}
-   ROperator_Reduce(int keepdims, std::vector<int64_t> attrAxes, std::string nameX, std::string nameAxes, std::string nameY):
-   fkeepdims(keepdims), fAttrAxes(attrAxes), fNX(UTILITY::Clean_name(nameX)), fNAxes(UTILITY::Clean_name(nameAxes)), fNY(UTILITY::Clean_name(nameY)) {
+   ROperator_Reduce() {}
+   ROperator_Reduce(int keepdims, std::vector<int64_t> attrAxes, std::string nameX, std::string nameAxes,
+                    std::string nameY)
+      : fkeepdims(keepdims),
+        fAttrAxes(attrAxes),
+        fNX(UTILITY::Clean_name(nameX)),
+        fNAxes(UTILITY::Clean_name(nameAxes)),
+        fNY(UTILITY::Clean_name(nameY))
+   {
       fReduceOpMode = Op;
 
-      fInputTensorNames = { fNX };
-      if(!fNAxes.empty()){
+      fInputTensorNames = {fNX};
+      if (!fNAxes.empty()) {
          fInputTensorNames.emplace_back(fNAxes);
       }
 
-      fOutputTensorNames = { fNY };
+      fOutputTensorNames = {fNY};
    }
 
    // shape of output tensors given input tensors
-   std::vector<Dim> DoShapeInference(const std::vector<Dim> &  input)  {
-      auto ret = input; //suggest copy to compiler
-      auto & outputShape = ret;
+   std::vector<Dim> DoShapeInference(const std::vector<Dim> &input)
+   {
+      auto ret = input; // suggest copy to compiler
+      auto &outputShape = ret;
       for (size_t j = 0; j < fAttrAxes.size(); j++) {
-         if (fAttrAxes[j] < 0) fAttrAxes[j] += outputShape.size();
-         if (fAttrAxes[j] < 0 || (size_t) fAttrAxes[j] >= outputShape.size() )
-            throw std::runtime_error("Internal::ONNXToCpp Reduce Op - invalid axes values " + std::to_string(fAttrAxes[j]));
+         if (fAttrAxes[j] < 0)
+            fAttrAxes[j] += outputShape.size();
+         if (fAttrAxes[j] < 0 || (size_t)fAttrAxes[j] >= outputShape.size())
+            throw std::runtime_error("Internal::ONNXToCpp Reduce Op - invalid axes values " +
+                                     std::to_string(fAttrAxes[j]));
          // set to 1 the reduced dims
          outputShape[fAttrAxes[j]] = Dim{1};
       }
@@ -95,14 +103,15 @@ private:
             // erase reduced dimensions, but keep last one
             if (outputShape.size() > 0) {
                outputShape.erase(outputShape.begin() + ax[j]);
-               for (size_t k = j+1; k < ax.size(); k++)
-                  ax[k] -= 1;  // decrease by one since we have removed a value
+               for (size_t k = j + 1; k < ax.size(); k++)
+                  ax[k] -= 1; // decrease by one since we have removed a value
             }
          }
       }
       return ret;
    }
-   void Initialize(RModel& model) override {
+   void Initialize(RModel &model) override
+   {
 
       if (!model.CheckIfTensorAlreadyExist(fNX)) {
          // input must be a graph input, or already initialized intermediate tensor
@@ -117,7 +126,7 @@ private:
          auto ax_ptr = static_cast<int64_t *>(ax_shptr.get());
          auto ax_shape = model.GetTensorShape(fNAxes);
          size_t ax_length = ConvertShapeToLength(ax_shape);
-         fAttrAxes = std::vector<int64_t>(ax_ptr, ax_ptr+ax_length);
+         fAttrAxes = std::vector<int64_t>(ax_ptr, ax_ptr + ax_length);
       } else if (fAttrAxes.empty()) {
          // in case no axes is passed assume full reduction
          fAttrAxes.resize(fShapeX.size());
@@ -127,8 +136,9 @@ private:
       // find shape of Y and add it in the list of intermediate tensors
       fShapeY = DoShapeInference(fShapeX);
       model.AddIntermediateTensor(fNY, model.GetTensorType(fNX), fShapeY);
-      if (model.Verbose()){
-         std::cout << Name() << " : " << fNX << " -> " << fNY << " shape " << ConvertDimShapeToString(fShapeY) << std::endl;
+      if (model.Verbose()) {
+         std::cout << Name() << " : " << fNX << " -> " << fNY << " shape " << ConvertDimShapeToString(fShapeY)
+                   << std::endl;
       }
       fType = ConvertTypeToString(model.GetTensorType(fNX));
       model.AddNeededStdLib("algorithm");
@@ -136,7 +146,8 @@ private:
          model.AddNeededStdLib("limits");
    }
 
-   std::string Generate(std::string opName) override {
+   std::string Generate(std::string opName) override
+   {
       opName = "op_" + opName;
 
       auto inputLength = ROOT::Internal::ONNXToCpp::ConvertDimShapeToLength(fShapeX);
@@ -156,10 +167,14 @@ private:
       std::stringstream out;
       out << "\n//----  operator " << Name() << "  " << opName << "\n";
       // check where is reduced axes are first or last one. In these case we can do a faster implementation
-      enum EReduceDim {kFirst, kLast, kMiddle};
+      enum EReduceDim {
+         kFirst,
+         kLast,
+         kMiddle
+      };
       EReduceDim reduceDims = kLast;
-      int kmin = fShapeX.size()-fAttrAxes.size();
-      for (int k = fShapeX.size()-1; k >= kmin; k--) {
+      int kmin = fShapeX.size() - fAttrAxes.size();
+      for (int k = fShapeX.size() - 1; k >= kmin; k--) {
          // if k is not a reduced axis is not last ones
          if (std::find(fAttrAxes.begin(), fAttrAxes.end(), k) == fAttrAxes.end()) {
             reduceDims = kMiddle;
@@ -189,16 +204,16 @@ private:
       std::string reducedLength;
       if (fInputDimShape) {
          reducedLength = "reducedLength_" + opName;
-         out << SP << "size_t " << reducedLength << " = (" <<  inputLength << ") / (" << outputLength << ");\n";
+         out << SP << "size_t " << reducedLength << " = (" << inputLength << ") / (" << outputLength << ");\n";
       } else {
          int rLength = std::stoi(inputLength) / std::stoi(outputLength);
          reducedLength = std::to_string(rLength);
       }
       if (reduceDims == kLast) {
-         //std::cout << "reduction for operator " << opName << " is last" << std::endl;
-         // new faster implementation using a single loop
-         // faster to loop first on reduced dimension and then output
-         // reset output tensors
+         // std::cout << "reduction for operator " << opName << " is last" << std::endl;
+         //  new faster implementation using a single loop
+         //  faster to loop first on reduced dimension and then output
+         //  reset output tensors
 
          // loop on output dimensions
          out << SP << "for (size_t i = 0; i < " << outputLength << "; i++) {\n";
@@ -213,21 +228,23 @@ private:
             out << SP << SP << SP << "tensor_" << fNY << "[i] = std::min(tensor_" << fNY << "[i], tensor_" << fNX
                 << "[i * " << reducedLength << " + j]);\n";
          else if (fReduceOpMode == ReduceProd)
-            out << SP << SP << SP <<  "tensor_" << fNY << "[i] *= tensor_" << fNX << "[i * " << reducedLength << " + j];\n";
+            out << SP << SP << SP << "tensor_" << fNY << "[i] *= tensor_" << fNX << "[i * " << reducedLength
+                << " + j];\n";
          else if (fReduceOpMode == ReduceSum || fReduceOpMode == ReduceMean)
-            out << SP << SP << SP <<  "tensor_" << fNY << "[i] += tensor_" << fNX << "[i * " << reducedLength << " + j];\n";
-         else if(fReduceOpMode == ReduceSumSquare)
-            out << SP << SP << SP <<  "tensor_" << fNY << "[i] += tensor_" << fNX << "[i * " << reducedLength << " + j] * tensor_"
-                                    << fNX << "[i * " << reducedLength << " + j];\n";
+            out << SP << SP << SP << "tensor_" << fNY << "[i] += tensor_" << fNX << "[i * " << reducedLength
+                << " + j];\n";
+         else if (fReduceOpMode == ReduceSumSquare)
+            out << SP << SP << SP << "tensor_" << fNY << "[i] += tensor_" << fNX << "[i * " << reducedLength
+                << " + j] * tensor_" << fNX << "[i * " << reducedLength << " + j];\n";
          out << SP << SP << "}\n"; // end j loop
-         if(fReduceOpMode == ReduceMean)
+         if (fReduceOpMode == ReduceMean)
             out << SP << SP << "tensor_" << fNY << "[i] /= static_cast<float>(" << reducedLength << ");\n";
 
          out << SP << "}\n"; // end i loop
       } else if (reduceDims == kFirst) {
-         //std::cout << "reduction for operator " << opName << " is first" << std::endl;
-         // case reduction is at beginning
-         // reset output tensors
+         // std::cout << "reduction for operator " << opName << " is first" << std::endl;
+         //  case reduction is at beginning
+         //  reset output tensors
          out << SP << "std::fill(tensor_" << fNY << ", tensor_" << fNY << " + " << outputLength << ", " << initValue
              << ");\n";
 
@@ -241,24 +258,24 @@ private:
             out << SP << SP << SP << "tensor_" << fNY << "[j] = std::min(tensor_" << fNY << "[j], tensor_" << fNX
                 << "[i * " << outputLength << " + j]);\n";
          else if (fReduceOpMode == ReduceProd)
-            out << SP << SP << SP << "tensor_" << fNY << "[j] *= tensor_" << fNX << "[i * " << outputLength << " + j];\n";
+            out << SP << SP << SP << "tensor_" << fNY << "[j] *= tensor_" << fNX << "[i * " << outputLength
+                << " + j];\n";
          else if (fReduceOpMode == ReduceSum || fReduceOpMode == ReduceMean)
-            out << SP << SP << SP << "tensor_" << fNY << "[j] += tensor_" << fNX << "[i * " << outputLength << " + j];\n";
-         else if(fReduceOpMode == ReduceSumSquare)
-            out << SP << SP << SP << "tensor_" << fNY << "[j] += tensor_" << fNX << "[i * " << outputLength << " + j] * tensor_"
-                                    << fNX << "[i * " << outputLength << " + j];\n";
+            out << SP << SP << SP << "tensor_" << fNY << "[j] += tensor_" << fNX << "[i * " << outputLength
+                << " + j];\n";
+         else if (fReduceOpMode == ReduceSumSquare)
+            out << SP << SP << SP << "tensor_" << fNY << "[j] += tensor_" << fNX << "[i * " << outputLength
+                << " + j] * tensor_" << fNX << "[i * " << outputLength << " + j];\n";
          out << SP << SP << "}\n"; // end j loop
-         out << SP  << "}\n"; // end i loop
-         if(fReduceOpMode == ReduceMean) {
+         out << SP << "}\n";       // end i loop
+         if (fReduceOpMode == ReduceMean) {
             out << SP << "for (size_t j = 0; j < " << outputLength << "; j++) {\n";
             out << SP << SP << "tensor_" << fNY << "[j] /= static_cast<float>(" << reducedLength << ");\n";
             out << SP << "}\n"; // end j loop
          }
-      }
-      else
-      { // standard case
-         //std::cout << "reduction for operator " << opName << " is middle" << std::endl;
-         // reset output tensors
+      } else { // standard case
+         // std::cout << "reduction for operator " << opName << " is middle" << std::endl;
+         //  reset output tensors
          out << SP << "std::fill(tensor_" << fNY << ", tensor_" << fNY << " + " << outputLength << ", " << initValue
              << ");\n";
 
@@ -321,13 +338,10 @@ private:
 
       return out.str();
    }
-
 };
 
-}//ONNXToCpp
-}//Internal
-}//ROOT
+} // namespace ONNXToCpp
+} // namespace Internal
+} // namespace ROOT
 
-
-#endif //ONNXTOCPP_ROPERATOR_Reduce
-
+#endif // ONNXTOCPP_ROPERATOR_Reduce
