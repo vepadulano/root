@@ -435,7 +435,6 @@ ROOT_STANDARD_LIBRARY_PACKAGE(TMVAUtils
   TMVA/RReader.hxx
   TMVA/RInferenceUtils.hxx
   TMVA/RBDT.hxx
-  TMVA/RSofieReader.hxx
 
   SOURCES
 

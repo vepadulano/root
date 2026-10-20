@@ -125,8 +125,7 @@ void PyMethodBase::PrintDeprecationWarning()
 {
    Log() << kWARNING
          << "PyMVA is deprecated and will be removed in ROOT 6.44. Please use the underlying Python "
-            "machine-learning packages directly, or export your model to ONNX and evaluate it with SOFIE "
-            "(see the RSofieReader class)."
+            "machine-learning packages directly, or export your model to ONNX."
          << Endl;
 }
 
