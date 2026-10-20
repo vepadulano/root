@@ -12,12 +12,13 @@
 #include <sstream>
 #include <vector>
 
-//#define USE_ONNXSIM
+// #define USE_ONNXSIM
 
 bool verbose = true;
 int sessionId = 0;
 
-void ExecuteONNXToCppParser(std::string modelName) {
+void ExecuteONNXToCppParser(std::string modelName)
+{
    namespace ONNXToCpp = ROOT::Internal::ONNXToCpp;
    ONNXToCpp::RModelParser_ONNX parser;
    std::string inputName = modelName + ".onnx";
@@ -30,7 +31,6 @@ void ExecuteONNXToCppParser(std::string modelName) {
    model.OutputGenerated(); // outputName);
    std::cout << "output written in  " << outputName << std::endl;
 }
-
 
 /// Compile a program that runs the generated model on the given input, and return its output
 std::vector<float> RunInference(std::string const &modelName, std::vector<float> const &input)
@@ -63,7 +63,8 @@ std::vector<float> RunInference(std::string const &modelName, std::vector<float>
 void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayers = 4)
 {
    std::string modelName = "LinearModel";
-   if (useBN) modelName += "_BN";
+   if (useBN)
+      modelName += "_BN";
    modelName += "_B" + std::to_string(nbatches);
 
    // network parameters : nbatches, inputDim, nlayers
@@ -79,7 +80,6 @@ void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayer
    std::system(command.c_str());
 
    ExecuteONNXToCppParser(modelName);
-
 
    // input data
    std::vector<float> xinput(nbatches * inputSize);
@@ -102,22 +102,28 @@ void TestLinear(int nbatches, bool useBN = false, int inputSize = 10, int nlayer
    }
 }
 
-void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups = 2, int nchannels = 2, int nd = 4, int nlayers = 4, int usePool = 0)
+void TestConv(std::string type, int nbatches, bool useBN = false, int ngroups = 2, int nchannels = 2, int nd = 4,
+              int nlayers = 4, int usePool = 0)
 {
    std::string modelName = "Conv" + type + "Model";
-   if (useBN) modelName += "_BN";
-   if (usePool == 1) modelName += "_MAXP";
-   if (usePool == 2) modelName += "_AVGP";
+   if (useBN)
+      modelName += "_BN";
+   if (usePool == 1)
+      modelName += "_MAXP";
+   if (usePool == 2)
+      modelName += "_AVGP";
    modelName += "_B" + std::to_string(nbatches);
 
    // input size is fixed to (nb, nc, nd, nd)
    int inputDim = nd;
-   if (type == "2d") inputDim *= nd;
-   if (type == "3d") inputDim *= nd*nd;
+   if (type == "2d")
+      inputDim *= nd;
+   if (type == "3d")
+      inputDim *= nd * nd;
 
    const int inputSize = nchannels * inputDim;
 
-   //const char *argv[5] = {}
+   // const char *argv[5] = {}
    std::string argv[5];
 
    argv[0] = std::to_string(nbatches);
@@ -131,9 +137,12 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
       command += " ";
       command += argv[i];
    }
-   if (useBN) command += "  --bn";
-   if (usePool == 1) command += " --maxpool";
-   if (usePool == 2) command += " --avgpool";
+   if (useBN)
+      command += "  --bn";
+   if (usePool == 1)
+      command += " --maxpool";
+   if (usePool == 2)
+      command += " --avgpool";
    printf("executing %s\n", command.c_str());
    std::system(command.c_str());
 
@@ -141,22 +150,23 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
 #ifdef USE_ONNXSIM
    if (usePool == 2) {
       printf("simplify onnx model using onnxsim tool \n");
-      std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
+      std::string cmd =
+         std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
       int ret = std::system(cmd.c_str());
       if (ret != 0) {
-         std::cout << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test" << std::endl;
+         std::cout
+            << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test"
+            << std::endl;
          GTEST_SKIP();
          return;
       }
    }
 #endif
 
-
    ExecuteONNXToCppParser(modelName);
 
-
    // input data
-   std::vector<float> xinput(nbatches*inputSize);
+   std::vector<float> xinput(nbatches * inputSize);
    for (int ib = 0; ib < nbatches; ib++) {
       std::vector<float> x1(inputDim, float(ib + 1));
       std::vector<float> x2(inputDim, -float(ib + 1));
@@ -168,22 +178,24 @@ void TestConv( std::string type, int nbatches, bool useBN = false, int ngroups =
 
    auto result = RunInference(modelName, xinput);
 
-
    // read reference value from test file
    std::vector<float> refValue(result.size());
 
    std::ifstream f(std::string(modelName + ".out").c_str());
    for (size_t i = 0; i < refValue.size(); ++i) {
       f >> refValue[i];
-      if (verbose) std::cout << " result " << result.at(i) << " reference " << refValue[i] << std::endl;
+      if (verbose)
+         std::cout << " result " << result.at(i) << " reference " << refValue[i] << std::endl;
       EXPECT_NEAR(result.at(i), refValue[i], 10 * std::numeric_limits<float>::epsilon());
    }
 }
 
-void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSize = 10, int hiddenSize = 3, int nlayers = 1)
+void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSize = 10, int hiddenSize = 3,
+                   int nlayers = 1)
 {
 
-   if (type.empty()) type = "RNN";
+   if (type.empty())
+      type = "RNN";
    std::string modelName = type + "Model";
    modelName += "_B" + std::to_string(nbatches);
 
@@ -206,7 +218,8 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
    std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
    int ret = std::system(cmd.c_str());
    if (ret != 0) {
-      std::cout << "Error when simplifing ONNX Recurrent model using onnx-simplifier (onnxsim) - skip the test" << std::endl;
+      std::cout << "Error when simplifing ONNX Recurrent model using onnx-simplifier (onnxsim) - skip the test"
+                << std::endl;
       GTEST_SKIP();
       return;
    }
@@ -214,13 +227,12 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
 
    ExecuteONNXToCppParser(modelName);
 
-
    // input data
    std::vector<float> xinput(nbatches * seqSize * inputSize);
    for (int ib = 0; ib < nbatches; ib++) {
       for (int it = 0; it < seqSize; it++) {
          std::vector<float> x1(inputSize, std::pow(-1, ib + 2) * float(it + 1));
-         std::copy(x1.begin(), x1.end(), xinput.begin() + ib * inputSize*seqSize + it * inputSize);
+         std::copy(x1.begin(), x1.end(), xinput.begin() + ib * inputSize * seqSize + it * inputSize);
       }
    }
    if (verbose) {
@@ -231,7 +243,7 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
             for (int l = 0; l < inputSize; l++) {
                std::cout << xinput[k++] << ", ";
             }
-             std::cout << "\n";
+            std::cout << "\n";
          }
          std::cout << "\n";
       }
@@ -251,22 +263,28 @@ void TestRecurrent(std::string type, int nbatches, int inputSize = 5, int seqSiz
    }
 }
 
-void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int ngroups = 1, int nchannels = 2, int nd = 4, int nlayers = 4, int usePool = 0)
+void TestConvTranspose(std::string type, int nbatches, bool useBN = false, int ngroups = 1, int nchannels = 2,
+                       int nd = 4, int nlayers = 4, int usePool = 0)
 {
    std::string modelName = "ConvTrans" + type + "Model";
-   if (useBN) modelName += "_BN";
-   if (usePool == 1) modelName += "_MAXP";
-   if (usePool == 2) modelName += "_AVGP";
+   if (useBN)
+      modelName += "_BN";
+   if (usePool == 1)
+      modelName += "_MAXP";
+   if (usePool == 2)
+      modelName += "_AVGP";
    modelName += "_B" + std::to_string(nbatches);
 
    // input size is fixed to (nb, nc, nd, nd)
    int inputDim = nd;
-   if (type == "2d") inputDim *= nd;
-   if (type == "3d") inputDim *= nd*nd;
+   if (type == "2d")
+      inputDim *= nd;
+   if (type == "3d")
+      inputDim *= nd * nd;
 
    const int inputSize = nchannels * inputDim;
 
-   //const char *argv[5] = {}
+   // const char *argv[5] = {}
    std::string argv[5];
 
    argv[0] = std::to_string(nbatches);
@@ -280,35 +298,41 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
       command += " ";
       command += argv[i];
    }
-   if (useBN) command += "  --bn";
-   if (usePool == 1) command += " --maxpool";
-   if (usePool == 2) command += " --avgpool";
+   if (useBN)
+      command += "  --bn";
+   if (usePool == 1)
+      command += " --maxpool";
+   if (usePool == 2)
+      command += " --avgpool";
    printf("executing %s\n", command.c_str());
    std::system(command.c_str());
 
    // some model needs some semplifications
    if (usePool == 2) {
       printf("simplify onnx model using onnxsim tool \n");
-      std::string cmd = std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
+      std::string cmd =
+         std::string(ONNXTOCPP_TEST_PYTHON) + " -m onnxsim " + modelName + ".onnx " + modelName + ".onnx";
       int ret = std::system(cmd.c_str());
       if (ret != 0) {
-         std::cout << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test" << std::endl;
+         std::cout
+            << "Error when simplifing ONNX model with AveragePool layer using onnx-simplifier (onnxsim) - skip the test"
+            << std::endl;
          GTEST_SKIP();
          return;
       }
    }
 
-
    ExecuteONNXToCppParser(modelName);
 
-
    // input data
-   std::vector<float> xinput(nbatches*inputSize);
+   std::vector<float> xinput(nbatches * inputSize);
    for (int ib = 0; ib < nbatches; ib++) {
       std::vector<float> x1(inputDim, float(ib + 1));
       std::vector<float> x2(inputDim, -float(ib + 1));
-      for (int i = 0; i < inputDim; i++) x1[i] = float(i)*float(ib+1);
-      for (int i = 0; i < inputDim; i++) x2[i] = -float(i)*float(ib+1);
+      for (int i = 0; i < inputDim; i++)
+         x1[i] = float(i) * float(ib + 1);
+      for (int i = 0; i < inputDim; i++)
+         x2[i] = -float(i) * float(ib + 1);
       // x1 and x2 are the two channels, if more channels will be with zero
       std::copy(x1.begin(), x1.end(), xinput.begin() + ib * inputSize);
       if (nchannels > 1)
@@ -317,20 +341,20 @@ void TestConvTranspose( std::string type, int nbatches, bool useBN = false, int 
 
    auto result = RunInference(modelName, xinput);
 
-
    // read reference value from test file
    std::vector<float> refValue(result.size());
 
    std::ifstream f(std::string(modelName + ".out").c_str());
    for (size_t i = 0; i < refValue.size(); ++i) {
       f >> refValue[i];
-      if (verbose) std::cout << " result " << result.at(i) << " reference " << refValue[i] << std::endl;
+      if (verbose)
+         std::cout << " result " << result.at(i) << " reference " << refValue[i] << std::endl;
       EXPECT_NEAR(result.at(i), refValue[i], 10 * std::numeric_limits<float>::epsilon());
    }
 }
 
-
-TEST(ONNXToCpp, Linear_B1) {
+TEST(ONNXToCpp, Linear_B1)
+{
    TestLinear(1);
 }
 TEST(ONNXToCpp, Linear_B4)
@@ -338,26 +362,27 @@ TEST(ONNXToCpp, Linear_B4)
    // test batch =4 (equal output size)
    TestLinear(4);
 }
-TEST(ONNXToCpp,Conv2d_B1) {
+TEST(ONNXToCpp, Conv2d_B1)
+{
    TestConv("2d", 1);
 }
 TEST(ONNXToCpp, Conv2d_B4)
 {
-   TestConv("2d",4);
+   TestConv("2d", 4);
 }
 // test with batch normalization
 TEST(ONNXToCpp, Linear_BNORM_B8)
 {
-   TestLinear(8,true,5,4);
+   TestLinear(8, true, 5, 4);
 }
 TEST(ONNXToCpp, Conv2d_BNORM_B5)
 {
-   TestConv("2d",5,true);
+   TestConv("2d", 5, true);
 }
 // test with max pooling
 TEST(ONNXToCpp, Conv2d_MAXPOOL_B2)
 {
-   TestConv("2d",2,false,1,2,3,1,1);
+   TestConv("2d", 2, false, 1, 2, 3, 1, 1);
 }
 // test with avg pooling
 TEST(ONNXToCpp, Conv2d_AVGPOOL_B2)

@@ -19,23 +19,17 @@ def make_parser(params_help, pooling=False, recurrent=False):
 
     The positional "params" are generator specific and described by params_help.
     """
-    parser = argparse.ArgumentParser(description='PyTorch model generator')
-    parser.add_argument('params', type=int, nargs='+', help=params_help)
+    parser = argparse.ArgumentParser(description="PyTorch model generator")
+    parser.add_argument("params", type=int, nargs="+", help=params_help)
     if recurrent:
-        parser.add_argument('--lstm', action='store_true', default=False,
-                            help='For using LSTM layer')
-        parser.add_argument('--gru', action='store_true', default=False,
-                            help='For using GRU layer')
+        parser.add_argument("--lstm", action="store_true", default=False, help="For using LSTM layer")
+        parser.add_argument("--gru", action="store_true", default=False, help="For using GRU layer")
     else:
-        parser.add_argument('--bn', action='store_true', default=False,
-                            help='For using batch norm layer')
+        parser.add_argument("--bn", action="store_true", default=False, help="For using batch norm layer")
     if pooling:
-        parser.add_argument('--maxpool', action='store_true', default=False,
-                            help='For using max pool layer')
-        parser.add_argument('--avgpool', action='store_true', default=False,
-                            help='For using average pool layer')
-    parser.add_argument('--v', action='store_true', default=False,
-                        help='For verbose mode')
+        parser.add_argument("--maxpool", action="store_true", default=False, help="For using max pool layer")
+        parser.add_argument("--avgpool", action="store_true", default=False, help="For using average pool layer")
+    parser.add_argument("--v", action="store_true", default=False, help="For verbose mode")
     return parser
 
 
@@ -65,6 +59,7 @@ def export_onnx(model, xinput, name, use_bn=False, dynamo=None):
             dynamo = False
 
     from packaging.version import Version
+
     if Version(torch.__version__) >= Version("2.5.0"):
         torch.onnx.export(
             model,

@@ -83,8 +83,10 @@ float Linear_16_wrapper_num_diff(ROOT::Internal::ONNXToCpp_Linear_16::Session co
    gInterpreter->ProcessLine("clad::gradient(Linear_16_outer_wrapper, \"input\");");
 
    // Create two session data structures: one for the forward, and one for the backward pass
-   gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::Session session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
-   gInterpreter->ProcessLine("ROOT::Internal::ONNXToCpp_Linear_16::Session _d_session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
+   gInterpreter->ProcessLine(
+      "ROOT::Internal::ONNXToCpp_Linear_16::Session session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
+   gInterpreter->ProcessLine(
+      "ROOT::Internal::ONNXToCpp_Linear_16::Session _d_session_linear_16{\"Linear_16_FromONNX_unoptimized.dat\"};");
 
    gInterpreter->ProcessLine("float grad_output[1600]{};");
    gInterpreter->ProcessLine(

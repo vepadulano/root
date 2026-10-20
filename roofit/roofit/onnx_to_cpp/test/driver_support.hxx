@@ -28,18 +28,14 @@
 namespace onnxtocpp_test {
 
 template <class T>
-struct IsVector : std::false_type {
-};
+struct IsVector : std::false_type {};
 template <class T, class A>
-struct IsVector<std::vector<T, A>> : std::true_type {
-};
+struct IsVector<std::vector<T, A>> : std::true_type {};
 
 template <class T>
-struct IsTuple : std::false_type {
-};
+struct IsTuple : std::false_type {};
 template <class... Ts>
-struct IsTuple<std::tuple<Ts...>> : std::true_type {
-};
+struct IsTuple<std::tuple<Ts...>> : std::true_type {};
 
 template <class T>
 void write(std::ostream &os, T const &value)

@@ -5,7 +5,6 @@
 #include <ONNXToCpp/RModel.hxx>
 #include <ONNXToCpp/RModelParser_ONNX.hxx>
 
-
 #include <gtest/gtest.h>
 
 #include <cstdint>

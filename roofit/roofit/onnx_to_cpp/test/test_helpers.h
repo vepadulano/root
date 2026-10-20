@@ -74,8 +74,8 @@ runModel(std::string outputTypeName, std::string const &modelName, std::string s
       driver << "   ROOT::Internal::ONNXToCpp_" << modelName << "::Session s(" << sessionArgs << ");\n"
              << "   " << outputTypeName << " output = s.infer(" << arguments << ");\n";
    } else {
-      driver << "   " << outputTypeName << " output = ROOT::Internal::ONNXToCpp_" << modelName << "::infer(" << arguments
-             << ");\n";
+      driver << "   " << outputTypeName << " output = ROOT::Internal::ONNXToCpp_" << modelName << "::infer("
+             << arguments << ");\n";
    }
    driver << "   onnxtocpp_test::write(std::cout, output);\n"
           << "   } catch (std::exception const &e) {\n"

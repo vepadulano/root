@@ -133,8 +133,8 @@ void WriteTwoInputMulModelFile(const std::string &fileName, const std::vector<st
    AppendBytesField(node, 4, "Mul"); // op_type
 
    std::string graph;
-   AppendBytesField(graph, 1, node);                     // node
-   AppendBytesField(graph, 2, "test_graph");             // name
+   AppendBytesField(graph, 1, node);                        // node
+   AppendBytesField(graph, 2, "test_graph");                // name
    AppendBytesField(graph, 11, FloatValueInfo("X", shape)); // input
    AppendBytesField(graph, 11, FloatValueInfo("Y", shape)); // input
    AppendBytesField(graph, 12, FloatValueInfo("Z", shape)); // output
@@ -208,12 +208,11 @@ void DeclareModel(const std::string &modelName)
 std::vector<float>
 RunModel(const std::string &modelName, const std::string &dataFileName, const std::vector<float> &input)
 {
-   return RunProgramForResult<std::vector<float>>(modelName,
-                                                  FloatVectorDeclaration("input", input) + "Model::Session session(\"" +
-                                                     dataFileName +
-                                                     "\");\n"
-                                                     "std::vector<float> output = session.infer(input.data());\n"
-                                                     "onnxtocpp_test::write(std::cout, output);");
+   return RunProgramForResult<std::vector<float>>(
+      modelName, FloatVectorDeclaration("input", input) + "Model::Session session(\"" + dataFileName +
+                    "\");\n"
+                    "std::vector<float> output = session.infer(input.data());\n"
+                    "onnxtocpp_test::write(std::cout, output);");
 }
 
 // Evaluate the session constructor, reporting whether it throws
@@ -578,8 +577,7 @@ TEST_F(ONNXToCppSafetensors, WrappingOffsetsThrow)
 {
    ONNXTOCPP_SKIP_ON_BIG_ENDIAN;
    // payload base is 8 + header size; this end offset overflows when added
-   const std::string header =
-      R"({"tensor_W":{"dtype":"F32","shape":[2,3],"data_offsets":[0,18446744073709551600]}})";
+   const std::string header = R"({"tensor_W":{"dtype":"F32","shape":[2,3],"data_offsets":[0,18446744073709551600]}})";
    EXPECT_TRUE(BlobSessionConstructorThrows("safetensors_mul", MakeSafetensorsPayload(header, std::string(24, '\0'))));
 }
 

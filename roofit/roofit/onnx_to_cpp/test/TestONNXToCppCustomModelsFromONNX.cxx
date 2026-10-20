@@ -120,7 +120,7 @@ TEST(ONNX, TopK)
    expectNear(std::get<0>(output), ref.f32("output0"), DEFAULT_TOLERANCE);
    expectEqual(std::get<1>(output), ref.i64("output1"));
 }
-   TEST(ONNX, EyeLike)
+TEST(ONNX, EyeLike)
 {
    ONNXToCppReference ref = readReference("EyeLike");
 
@@ -146,7 +146,6 @@ TEST(ONNX, Linear64)
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
-
 
 TEST(ONNX, LinearWithSelu)
 {
@@ -193,7 +192,6 @@ TEST(ONNX, LinearWithLeakyRelu)
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
 
-
 TEST(ONNX, LinearWithSigmoid)
 {
    ONNXToCppReference ref = readReference("LinearWithSigmoid");
@@ -202,7 +200,6 @@ TEST(ONNX, LinearWithSigmoid)
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
-
 
 TEST(ONNX, ConvWithPadding)
 {
@@ -213,7 +210,6 @@ TEST(ONNX, ConvWithPadding)
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
 
-
 TEST(ONNX, ConvWithoutPadding)
 {
    ONNXToCppReference ref = readReference("ConvWithoutPadding");
@@ -222,7 +218,6 @@ TEST(ONNX, ConvWithoutPadding)
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
-
 
 TEST(ONNX, ConvWithAutopadSameLower)
 {
@@ -251,7 +246,6 @@ TEST(ONNX, ConvWithStridesPadding)
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
 
-
 TEST(ONNX, ConvWithDilation)
 {
    ONNXToCppReference ref = readReference("ConvWithDilation");
@@ -260,7 +254,6 @@ TEST(ONNX, ConvWithDilation)
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
-
 
 TEST(ONNX, ConvWithStridesNoPadding)
 {
@@ -564,7 +557,7 @@ TEST(ONNX, Gemm_ConstantFolding_Shared)
    expectNear(output[1], correct_Y2, DEFAULT_TOLERANCE);
 }
 
-   TEST(ONNX, ReduceMean)
+TEST(ONNX, ReduceMean)
 {
    ONNXToCppReference ref = readReference("ReduceMean");
 
@@ -665,7 +658,7 @@ TEST(ONNX, TopKLargestUnsorted)
    expectEqual(std::get<1>(output), correct_indices);
 }
 
-   TEST(ONNX, ReduceProd)
+TEST(ONNX, ReduceProd)
 {
    ONNXToCppReference ref = readReference("ReduceProd");
 
@@ -674,12 +667,10 @@ TEST(ONNX, TopKLargestUnsorted)
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
 
-TEST(ONNX, ReduceSum){
+TEST(ONNX, ReduceSum)
+{
    // Preparing the standard  input
-   std::vector<float> input({
-      5, 2, 3,
-      5, 5, 4
-   });
+   std::vector<float> input({5, 2, 3, 5, 5, 4});
 
    // test Reduce sum in all axis and  keeping the dimension
    // input tensor is shape [1,2,3]
@@ -691,16 +682,13 @@ TEST(ONNX, ReduceSum){
    expectNear(output, correct, DEFAULT_TOLERANCE);
 }
 
-TEST(ONNX, ReduceSumSquare){
+TEST(ONNX, ReduceSumSquare)
+{
    // Preparing the standard  input
-   std::vector<float> input({
-      5, 2, 3,
-      5, 5, 4
-   });
+   std::vector<float> input({5, 2, 3, 5, 5, 4});
 
    // reduce on last axis and do not keep dimension
    // output should be [1,2] and [25+4+9, 25+25+16]
-
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ReduceSumSquare", input);
    std::vector<float> correct{38, 66};
@@ -745,12 +733,8 @@ TEST(ONNX, MaxMultidirectionalBroadcast)
 {
    ONNXToCppReference ref = readReference("MaxMultidirectionalBroadcast");
 
-   ASSERT_INCLUDE_AND_RUN(
-      std::vector<float>,
-      "MaxMultidirectionalBroadcast",
-      ref.f32("input0"),
-      ref.f32("input1"),
-      ref.f32("input2"));
+   ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MaxMultidirectionalBroadcast", ref.f32("input0"), ref.f32("input1"),
+                          ref.f32("input2"));
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
@@ -759,12 +743,8 @@ TEST(ONNX, MinMultidirectionalBroadcast)
 {
    ONNXToCppReference ref = readReference("MinMultidirectionalBroadcast");
 
-   ASSERT_INCLUDE_AND_RUN(
-      std::vector<float>,
-      "MinMultidirectionalBroadcast",
-      ref.f32("input0"),
-      ref.f32("input1"),
-      ref.f32("input2"));
+   ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MinMultidirectionalBroadcast", ref.f32("input0"), ref.f32("input1"),
+                          ref.f32("input2"));
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
@@ -773,12 +753,8 @@ TEST(ONNX, MeanMultidirectionalBroadcast)
 {
    ONNXToCppReference ref = readReference("MeanMultidirectionalBroadcast");
 
-   ASSERT_INCLUDE_AND_RUN(
-      std::vector<float>,
-      "MeanMultidirectionalBroadcast",
-      ref.f32("input0"),
-      ref.f32("input1"),
-      ref.f32("input2"));
+   ASSERT_INCLUDE_AND_RUN(std::vector<float>, "MeanMultidirectionalBroadcast", ref.f32("input0"), ref.f32("input1"),
+                          ref.f32("input2"));
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
@@ -787,12 +763,8 @@ TEST(ONNX, SumMultidirectionalBroadcast)
 {
    ONNXToCppReference ref = readReference("SumMultidirectionalBroadcast");
 
-   ASSERT_INCLUDE_AND_RUN(
-      std::vector<float>,
-      "SumMultidirectionalBroadcast",
-      ref.f32("input0"),
-      ref.f32("input1"),
-      ref.f32("input2"));
+   ASSERT_INCLUDE_AND_RUN(std::vector<float>, "SumMultidirectionalBroadcast", ref.f32("input0"), ref.f32("input1"),
+                          ref.f32("input2"));
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
@@ -1189,7 +1161,8 @@ TEST(ONNX, AddBroadcast7)
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
 
-TEST(ONNX, Concat0D) {
+TEST(ONNX, Concat0D)
+{
    // input
    std::vector<float> input({1.40519865e+00, -2.87660856e-01});
    std::vector<float> expected_output({1.40519865e+00, -2.87660856e-01, 1.40519865e+00, -2.87660856e-01});
@@ -1411,13 +1384,8 @@ TEST(ONNX, RangeFloat)
 {
    ONNXToCppReference ref = readReference("RangeFloat");
 
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(
-      std::vector<float>,
-      "RangeFloat",
-      "\"RangeFloat_FromONNX.dat\", 5",
-      ref.f32("input0"),
-      ref.f32("input1"),
-      ref.f32("input2"));
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "RangeFloat", "\"RangeFloat_FromONNX.dat\", 5",
+                                       ref.f32("input0"), ref.f32("input1"), ref.f32("input2"));
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
@@ -1426,13 +1394,8 @@ TEST(ONNX, RangeInt)
 {
    ONNXToCppReference ref = readReference("RangeInt");
 
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(
-      std::vector<int64_t>,
-      "RangeInt",
-      "\"RangeInt_FromONNX.dat\", 5",
-      ref.i64("input0"),
-      ref.i64("input1"),
-      ref.i64("input2"));
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<int64_t>, "RangeInt", "\"RangeInt_FromONNX.dat\", 5",
+                                       ref.i64("input0"), ref.i64("input1"), ref.i64("input2"));
 
    expectEqual(output, ref.i64("output0"));
 }
@@ -1491,23 +1454,25 @@ TEST(ONNX, Tile5D)
 
    expectNear(output, ref.f32("output0"), DEFAULT_TOLERANCE);
 }
-TEST(ONNX, Pad) {
+TEST(ONNX, Pad)
+{
    // add constant pad values of zeros
    // input tensor [1,2,2] and pad in (1,0),(0,1),(2,1) -> with shape (2,3,5)
-   std::vector<float> input = {1,2,3,4};
-   std::vector<float> correct = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 3,
-       4, 0, 0, 0, 0, 0, 0, 0};
+   std::vector<float> input = {1, 2, 3, 4};
+   std::vector<float> correct = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 1, 2, 0, 0, 0, 3, 4, 0, 0, 0, 0, 0, 0, 0};
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Pad", input);
 
    expectEqual(output, correct);
 }
-TEST(ONNX, Where) {
+TEST(ONNX, Where)
+{
    // test of Where using [[1,2]] and [[3,4],[5,6],[7,8]] with condition [[true],[false],[true]] -> [[1,2],[5,6],[1,2]]
    // test also the broadcast of boolean tensors
-   std::vector<float> input1 = {1,2};
-   std::vector<float> input2 = {3,4,5,6};
+   std::vector<float> input1 = {1, 2};
+   std::vector<float> input2 = {3, 4, 5, 6};
    std::vector<uint8_t> cond = {true, false, true};
-   std::vector<float> correct = {1,2,5,6,1,2};
+   std::vector<float> correct = {1, 2, 5, 6, 1, 2};
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Where", input1, input2, cond);
 
    expectEqual(output, correct);
@@ -1555,9 +1520,8 @@ TEST(ONNX, WhereBroadcastEqualElementCount)
 TEST(ONNX, Sin)
 {
    // Preparing some random input
-   std::vector<float> input({
-     -0.786738,-0.197796,-0.187787,0.142758,0.876096,-0.653239,0.145444,-1.107658,2.259171,-0.947054,-0.506689,1.801250
-   });
+   std::vector<float> input({-0.786738, -0.197796, -0.187787, 0.142758, 0.876096, -0.653239, 0.145444, -1.107658,
+                             2.259171, -0.947054, -0.506689, 1.801250});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Sin", input);
 
@@ -1570,9 +1534,8 @@ TEST(ONNX, Sin)
 
 TEST(ONNX, Asinh)
 {
-   std::vector<float> input({
-     -0.786738,-0.197796,-0.187787,0.142758,0.876096,-0.653239,0.145444,-1.107658,2.259171,-0.947054,-0.506689,1.801250
-   });
+   std::vector<float> input({-0.786738, -0.197796, -0.187787, 0.142758, 0.876096, -0.653239, 0.145444, -1.107658,
+                             2.259171, -0.947054, -0.506689, 1.801250});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Asinh", input);
 
@@ -1585,9 +1548,7 @@ TEST(ONNX, Asinh)
 TEST(ONNX, Acosh)
 {
    // acosh is only defined for x >= 1
-   std::vector<float> input({
-     1.0, 1.001, 1.5, 2.0, 3.789, 5.234, 10.0, 1.234, 7.891, 2.345, 1.999, 100.0
-   });
+   std::vector<float> input({1.0, 1.001, 1.5, 2.0, 3.789, 5.234, 10.0, 1.234, 7.891, 2.345, 1.999, 100.0});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Acosh", input);
 
@@ -1600,9 +1561,8 @@ TEST(ONNX, Acosh)
 TEST(ONNX, Atanh)
 {
    // atanh is only defined for |x| < 1
-   std::vector<float> input({
-     -0.99,-0.786738,-0.5,-0.197796,0.0,0.142758,0.5,0.876096,-0.653239,0.3,0.99,-0.142758
-   });
+   std::vector<float> input(
+      {-0.99, -0.786738, -0.5, -0.197796, 0.0, 0.142758, 0.5, 0.876096, -0.653239, 0.3, 0.99, -0.142758});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Atanh", input);
 
@@ -1615,9 +1575,8 @@ TEST(ONNX, Atanh)
 TEST(ONNX, Cos)
 {
    // Preparing the random input
-   std::vector<float> input({
-     1.152504,-1.459324,0.691594,0.347690,-1.307323,1.832516,-1.261772,0.014224,1.311477,1.147405,-0.567206,-0.530606
-   });
+   std::vector<float> input({1.152504, -1.459324, 0.691594, 0.347690, -1.307323, 1.832516, -1.261772, 0.014224,
+                             1.311477, 1.147405, -0.567206, -0.530606});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Cos", input);
 
@@ -1631,7 +1590,7 @@ TEST(ONNX, Cos)
 TEST(ONNX, Abs)
 {
    // Preparing the random input
-   std::vector<float> input({1.,-2.,-3,4,-5.,6});
+   std::vector<float> input({1., -2., -3, 4, -5., 6});
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Abs", input);
 
@@ -1679,7 +1638,7 @@ TEST(ONNX, Einsum_dotprod)
 {
    std::vector<float> input1{1, 2, 3};
    std::vector<float> input2{5, 6, 7};
-   std::vector<float> correct_output {5 +  12 + 21};
+   std::vector<float> correct_output{5 + 12 + 21};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Einsum_dotprod", input1, input2);
 
@@ -1689,9 +1648,9 @@ TEST(ONNX, Einsum_dotprod)
 TEST(ONNX, Einsum_3)
 {
    // test abc,abd->ad   [2,2,3] , [2,2,3] -> [2,3]
-   std::vector<float> input1 {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<float> input2 {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<float> correct_output {66. , 87. , 108., 498.,  555., 612. };
+   std::vector<float> input1{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<float> input2{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<float> correct_output{66., 87., 108., 498., 555., 612.};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Einsum_3", input1, input2);
 
@@ -1701,10 +1660,9 @@ TEST(ONNX, Einsum_3)
 TEST(ONNX, Einsum_4)
 {
    // test abcd,abed->abce  [2,1,2,3] , [2,1,3,3] -> [2,1,2,3]
-   std::vector<float> input1 {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<float> input2 {1.,2.,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18};
-   std::vector<float> correct_output { 14., 32.,  50., 32.,  77.,  122.,
-                                      266., 338., 410., 365., 464., 563. };
+   std::vector<float> input1{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<float> input2{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+   std::vector<float> correct_output{14., 32., 50., 32., 77., 122., 266., 338., 410., 365., 464., 563.};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "Einsum_4", input1, input2);
 
@@ -1741,8 +1699,8 @@ TEST(ONNX, RandomNormal)
 TEST(ONNX, Split_0)
 {
    // split in axis 0  in 2 tensor {2,2,3}
-   std::vector<float> input {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<std::vector<float>> correct_output ={ {1,2,3,4,5,6}, {7,8,9,10,11,12} };
+   std::vector<float> input{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<std::vector<float>> correct_output = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "Split_0", input);
 
@@ -1752,8 +1710,8 @@ TEST(ONNX, Split_0)
 TEST(ONNX, Split_1)
 {
    // split in axis 1  in 2 tensor {2,2,3}
-   std::vector<float> input {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<std::vector<float>> correct_output ={ {1,2,3,7,8,9}, {4,5,6,10,11,12} };
+   std::vector<float> input{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<std::vector<float>> correct_output = {{1, 2, 3, 7, 8, 9}, {4, 5, 6, 10, 11, 12}};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "Split_1", input);
 
@@ -1763,8 +1721,8 @@ TEST(ONNX, Split_1)
 TEST(ONNX, Split_2)
 {
    // split in axis 2  in 2 tensor {2,2,3} -> { 2,2,2} and {2,2,1}
-   std::vector<float> input {1.,2.,3,4,5,6,7,8,9,10,11,12};
-   std::vector<std::vector<float>> correct_output ={ {1,2,4,5,7,8,10,11}, {3,6,9,12} };
+   std::vector<float> input{1., 2., 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+   std::vector<std::vector<float>> correct_output = {{1, 2, 4, 5, 7, 8, 10, 11}, {3, 6, 9, 12}};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<std::vector<float>>, "Split_2", input);
 
@@ -1774,10 +1732,10 @@ TEST(ONNX, Split_2)
 TEST(ONNX, ScatterElements)
 {
    // test scatter elements (similar test as in ONNX doc)
-   std::vector<float> input(9, 0.);    // input tensor shape is (3.3)
-   std::vector<int64_t> indices = { 1, 0, 2, 0, 2, 1};
-   std::vector<float> updates = { 1, 1.1, 1.2, 2, 2.1, 2.2};
-   std::vector<float> correct_output = {2, 1.1, 0., 1., 0., 2.2, 0., 2.1, 1.2 };
+   std::vector<float> input(9, 0.); // input tensor shape is (3.3)
+   std::vector<int64_t> indices = {1, 0, 2, 0, 2, 1};
+   std::vector<float> updates = {1, 1.1, 1.2, 2, 2.1, 2.2};
+   std::vector<float> correct_output = {2, 1.1, 0., 1., 0., 2.2, 0., 2.1, 1.2};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ScatterElements", input, indices, updates);
 
@@ -1797,13 +1755,14 @@ TEST(ONNX, MatMul_1D_Constant)
 TEST(ONNX, MatMul_Stacked)
 {
    // test stacked matrix multiplication with same second matrix
-   std::vector<float> input1 = {1,2,3,4,5,6,7,8};    // input tensor shape is (2,2,2)
-   std::vector<float> input2 = {2,3};                // shape is (2,1)
+   std::vector<float> input1 = {1, 2, 3, 4, 5, 6, 7, 8}; // input tensor shape is (2,2,2)
+   std::vector<float> input2 = {2, 3};                   // shape is (2,1)
 
-   std::vector<float> correct_output = {8,18, 28,38};
+   std::vector<float> correct_output = {8, 18, 28, 38};
 
    // model is dynamic , use N = 2
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "MatMul_Stacked", "\"MatMul_Stacked_FromONNX.dat\", 2", 2, input1, input2);
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "MatMul_Stacked", "\"MatMul_Stacked_FromONNX.dat\", 2", 2,
+                                       input1, input2);
 
    expectNear(output, correct_output, DEFAULT_TOLERANCE);
 }
@@ -1811,13 +1770,14 @@ TEST(ONNX, MatMul_Stacked)
 TEST(ONNX, MatMul_Stacked2)
 {
    // test stacked matrix multiplication with different second matrix
-   std::vector<float> input1 = {1,2,3,4,5,6,7,8};    // input tensor shape is (2,2,2)
-   std::vector<float> input2 = {2,3,3,2};                // shape is (2,2,1)
+   std::vector<float> input1 = {1, 2, 3, 4, 5, 6, 7, 8}; // input tensor shape is (2,2,2)
+   std::vector<float> input2 = {2, 3, 3, 2};             // shape is (2,2,1)
 
-   std::vector<float> correct_output = {8,18, 27,37};
+   std::vector<float> correct_output = {8, 18, 27, 37};
 
    // model is dynamic , use N = 2
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "MatMul_Stacked2", "\"MatMul_Stacked2_FromONNX.dat\", 2", 2, input1, input2);
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<float>, "MatMul_Stacked2", "\"MatMul_Stacked2_FromONNX.dat\", 2", 2,
+                                       input1, input2);
 
    expectNear(output, correct_output, DEFAULT_TOLERANCE);
 }
@@ -1825,10 +1785,10 @@ TEST(ONNX, MatMul_Stacked2)
 TEST(ONNX, GatherND_1)
 {
    // test  gatherND elements
-   std::vector<float> input(18, 0.);    // input tensor shape is (2, 3, 3)
+   std::vector<float> input(18, 0.); // input tensor shape is (2, 3, 3)
    std::iota(input.begin(), input.end(), 1.);
    // input : {1,2,3},{4,5,6},{7,8,9}  {10,11,12}{13,14,15}{16,17,18}
-   std::vector<int64_t> indices = { 1, 0, 2,   0, 2, 1};  // get x(1,0,2) and x(0,2,1)
+   std::vector<int64_t> indices = {1, 0, 2, 0, 2, 1}; // get x(1,0,2) and x(0,2,1)
    std::vector<float> correct_output = {12, 8};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherND_1", input, indices);
@@ -1839,11 +1799,11 @@ TEST(ONNX, GatherND_1)
 TEST(ONNX, GatherND_2)
 {
    // test GatherND using slices
-   std::vector<float> input(18, 0.);    // input tensor shape is (2, 3, 3)
+   std::vector<float> input(18, 0.); // input tensor shape is (2, 3, 3)
    // input : {1,2,3},{4,5,6},{7,8,9}......
-   std::iota(input.begin(), input.end(), 1.);  // { 1,...,18}
-   std::vector<int64_t> indices = { 1, 1, 0, 2}; // get x(1,1,:) and x(0,2:)
-   std::vector<float> correct_output = {13,14,15, 7,8,9};
+   std::iota(input.begin(), input.end(), 1.);   // { 1,...,18}
+   std::vector<int64_t> indices = {1, 1, 0, 2}; // get x(1,1,:) and x(0,2:)
+   std::vector<float> correct_output = {13, 14, 15, 7, 8, 9};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherND_2", input, indices);
 
@@ -1853,12 +1813,12 @@ TEST(ONNX, GatherND_2)
 TEST(ONNX, GatherND_3)
 {
    // test GatherND elements using batch size as first dim (bs=2)
-   std::vector<float> input(24, 0.);    // input tensor shape is (2, 3, 2, 2)
-   std::iota(input.begin(), input.end(), 1.);  // { 1,...,24}
-   std::vector<int64_t> indices = { 2, 0, 0, 1}; // shape is (2,2,1)
+   std::vector<float> input(24, 0.);            // input tensor shape is (2, 3, 2, 2)
+   std::iota(input.begin(), input.end(), 1.);   // { 1,...,24}
+   std::vector<int64_t> indices = {2, 0, 0, 1}; // shape is (2,2,1)
    // indices are { [[2],[0]] , [[0],[1]]}  :
    // data[0,2,:] data[0,0:] ,  data[1,0:] data[1,1,:]
-   std::vector<float> correct_output = {9,10,11,12, 1,2,3,4, 13,14,15,16, 17,18,19,20};
+   std::vector<float> correct_output = {9, 10, 11, 12, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 19, 20};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "GatherND_3", input, indices);
 
@@ -1868,9 +1828,9 @@ TEST(ONNX, GatherND_3)
 TEST(ONNX, NonZero)
 {
    // test with input uint8_t   (note int8_t is not supported in the test_helper code)
-   std::vector<uint8_t> input = {0,1,0, 1,1,0, 0,0,1, 0,1,1 }; // shape is (2x2x3)
+   std::vector<uint8_t> input = {0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1}; // shape is (2x2x3)
    // output is tensor shape { 3, number of non zeros}
-   std::vector<int64_t> correct_output = { 0,0,0,1,1,1 ,   0,1,1,0,1,1 ,    1,0,1,2,1,2 };
+   std::vector<int64_t> correct_output = {0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 2, 1, 2};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<int64_t>, "NonZero", input);
 
@@ -1881,7 +1841,7 @@ TEST(ONNX, NonZero_Constant)
 {
    // input is a constant tensor in the model
    // output is tensor shape { 3, number of non zeros}
-   std::vector<int64_t> correct_output = { 0,0,0,1,1,1 ,   0,1,1,0,1,1 ,    1,0,1,2,1,2 };
+   std::vector<int64_t> correct_output = {0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 2, 1, 2};
 
    ASSERT_INCLUDE_AND_RUN_0(std::vector<int64_t>, "NonZero_Constant");
 
@@ -1890,11 +1850,12 @@ TEST(ONNX, NonZero_Constant)
 TEST(ONNX, IsInf)
 {
    // expected input
-   std::vector<float> input = { 1, static_cast<float>(1./0.), 2.};
-   std::vector<uint8_t> correct_output = { 0,1,0 };
+   std::vector<float> input = {1, static_cast<float>(1. / 0.), 2.};
+   std::vector<uint8_t> correct_output = {0, 1, 0};
 
    // not cannot use input.size() in string because input symbol  will not be visible when running inference
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<uint8_t>, "IsInf",std::string("\"\", ") + std::to_string(input.size()), input.size(),input);
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<uint8_t>, "IsInf",
+                                       std::string("\"\", ") + std::to_string(input.size()), input.size(), input);
 
    expectEqual(output, correct_output);
 }
@@ -1902,10 +1863,11 @@ TEST(ONNX, IsInf)
 TEST(ONNX, NotIsNaN)
 {
    // expected input
-   std::vector<float> input = { 1, static_cast<float>(0./0.), 2.};
-   std::vector<uint8_t> correct_output = { 1,0,1 };
+   std::vector<float> input = {1, static_cast<float>(0. / 0.), 2.};
+   std::vector<uint8_t> correct_output = {1, 0, 1};
 
-   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<uint8_t>, "NotIsNaN",std::string("\"\", ") + std::to_string(input.size()), input.size(),input);
+   ASSERT_INCLUDE_AND_RUN_SESSION_ARGS(std::vector<uint8_t>, "NotIsNaN",
+                                       std::string("\"\", ") + std::to_string(input.size()), input.size(), input);
 
    expectEqual(output, correct_output);
 }
@@ -1913,9 +1875,9 @@ TEST(ONNX, NotIsNaN)
 TEST(ONNX, ScatterND_1)
 {
    // test 1-D scatter (k=1, scalar slice)
-   std::vector<float> input = {1.,2.,3.,4.,5.};  // shape {5}
-   std::vector<int64_t> indices = { 0, 2, 4};    // shape {3,1}
-   std::vector<float> updates = { 10.,30.,50.};  // shape {3}
+   std::vector<float> input = {1., 2., 3., 4., 5.}; // shape {5}
+   std::vector<int64_t> indices = {0, 2, 4};        // shape {3,1}
+   std::vector<float> updates = {10., 30., 50.};    // shape {3}
    std::vector<float> correct_output = {10., 2., 30., 4., 50.};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ScatterND_1", input, indices, updates);
@@ -1926,9 +1888,9 @@ TEST(ONNX, ScatterND_1)
 TEST(ONNX, ScatterND_2)
 {
    // test 2-d Scatter - scatter rows - reduction = 'add
-   std::vector<float> input = {1.,1.,2.,2.,3.,3.};  // shape {3,2}
-   std::vector<int64_t> indices = { 0, 1};          // shape {2,1}
-   std::vector<float> updates = { 10.,10.,20.,20.};  // shape { 2,2}
+   std::vector<float> input = {1., 1., 2., 2., 3., 3.}; // shape {3,2}
+   std::vector<int64_t> indices = {0, 1};               // shape {2,1}
+   std::vector<float> updates = {10., 10., 20., 20.};   // shape { 2,2}
    std::vector<float> correct_output = {11., 11., 22., 22., 3., 3.};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ScatterND_2", input, indices, updates);
@@ -1939,9 +1901,9 @@ TEST(ONNX, ScatterND_2)
 TEST(ONNX, ScatterND_3)
 {
    // test element wise scatter (k==rank input)  reduction = 'mul'
-   std::vector<float> input = {1.,2.,3.,4.};  // shape {2,2}
-   std::vector<int64_t> indices = { 0,0, 1,1};          // shape {2,2}
-   std::vector<float> updates = { 11.,22.};  // shape { 2}
+   std::vector<float> input = {1., 2., 3., 4.}; // shape {2,2}
+   std::vector<int64_t> indices = {0, 0, 1, 1}; // shape {2,2}
+   std::vector<float> updates = {11., 22.};     // shape { 2}
    std::vector<float> correct_output = {11., 2., 3., 88.};
 
    ASSERT_INCLUDE_AND_RUN(std::vector<float>, "ScatterND_3", input, indices, updates);
@@ -1952,7 +1914,7 @@ TEST(ONNX, ScatterND_3)
 TEST(ONNX, Clip)
 {
    // test Clip operator : input is [N,2,2] use N= 2 using min/max of -1,1
-   std::vector<float> input = {-2.0,  0.5, 1.5, -0.3, 0.0,  3.0, -1.5,  0.8};
+   std::vector<float> input = {-2.0, 0.5, 1.5, -0.3, 0.0, 3.0, -1.5, 0.8};
    std::vector<float> correct_output1 = {-1, 0.5, 1., -0.3, 0., 1.0, -1, 0.8};
    std::vector<float> correct_output2 = {-1, 0.5, 1.5, -0.3, 0., 3.0, -1, 0.8};
 
