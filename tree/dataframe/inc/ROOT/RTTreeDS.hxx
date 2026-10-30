@@ -133,7 +133,7 @@ public:
 
    std::unique_ptr<ROOT::Detail::RDF::RColumnReaderBase> CreateColumnReader(unsigned int slot, std::string_view col,
                                                                             const std::type_info &tid,
-                                                                            TTreeReader *treeReader) final;
+                                                                            TTreeReader *treeReader, std::size_t maxBulkSize) final;
 
    std::string GetLabel() final { return "TTreeDS"; }
 

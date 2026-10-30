@@ -299,18 +299,34 @@ void *ROOT::Internal::TTreeReaderValueBase::GetAddress()
    return (Byte_t *)fProxy->GetWhere();
 }
 
-std::function<void(void *)> ROOT::Internal::TTreeReaderValueBase::SetAddress(void *addr, void *addrOfAddr)
+std::function<void(void *)> ROOT::Internal::TTreeReaderValueBase::GetDeleter()
 {
+   // assume we are connected to a TTreeReader and in turn it is connected to a TTree and we have information about
+   // the data type of the branch
+   assert(fDict);
+   assert(fActualDict);
+
+   auto *selectedDict = [&] { return (fActualDict && fDict && fActualDict != fDict) ? fActualDict : fDict; }();
+   if (auto dictAsClass = dynamic_cast<TClass *>(selectedDict))
+      return [dictAsClass](void *p) { dictAsClass->Destructor(p, /*dtorOnly=*/true); };
+
+   return [](void *){};
+}
+
+void ROOT::Internal::TTreeReaderValueBase::SetAddress(void *addr, void *addrOfAddr)
+{
+   if (!fProxy) {
+      // Most probably this is a case of a missing branch that has not been found yet, we can just return early
+      return;
+   }
+
    // assume we are connected to a TTreeReader and in turn it is connected to a TTree and we have information about
    // the data type of the branch
    assert(fTreeReader);
    assert(fTreeReader->fTree);
    assert(fDict);
+   assert(fActualDict);
 
-   if (!fProxy) {
-      // Most probably this is a case of a missing branch that has not been found yet, we can just return early
-      return nullptr;
-   }
 
    TClass *cl{nullptr};
    EDataType dt{EDataType::kOther_t};
@@ -322,7 +338,6 @@ std::function<void(void *)> ROOT::Internal::TTreeReaderValueBase::SetAddress(voi
       // prepare_proxy();
       fProxy->fRead = -1;
       fProxy->fWhere = addr;
-      return nullptr;
    } else if (auto dictAsClass = dynamic_cast<TClass *>(selectedDict)) {
       // Case of non-POD top-level branch
       cl = dictAsClass;
@@ -344,7 +359,6 @@ std::function<void(void *)> ROOT::Internal::TTreeReaderValueBase::SetAddress(voi
       // prepare_proxy();
       fProxy->fRead = -1;
       fProxy->fWhere = addr;
-      return [cl](void *p) { cl->Destructor(p, /*dtorOnly=*/true); };
    } else if (auto dictAsDataType = dynamic_cast<TDataType *>(selectedDict)) {
       // Case of POD top-level branch
       dt = static_cast<EDataType>(dictAsDataType->GetType()); // returns Int_t but the data member is an EDataType
@@ -354,11 +368,10 @@ std::function<void(void *)> ROOT::Internal::TTreeReaderValueBase::SetAddress(voi
       // prepare_proxy();
       fProxy->fRead = -1;
       fProxy->fWhere = addr;
-      return nullptr;
+   } else {
+   Error("TTreeReaderValueBase::SetAddress", "Unrecognized TTreeReaderValue branch (or leaf) setup.");
    }
 
-   Error("TTreeReaderValueBase::SetAddress", "Unrecognized TTreeReaderValue branch (or leaf) setup.");
-   return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1104,7 +1104,7 @@ void AddDataSourceColumn(const std::string &colName, const std::type_info &typeI
    // TODO consider changing the interface so we return all of these for all slots in one go
    for (auto slot = 0u; slot < nSlots; ++slot)
       colReaders.emplace_back(
-         ROOT::Internal::RDF::CreateColumnReader(ds, slot, colName, typeID, /*treeReader*/ nullptr));
+         ROOT::Internal::RDF::CreateColumnReader(ds, slot, colName, typeID, /*treeReader*/ nullptr, lm.GetCurrentBulkSize()));
 
    lm.AddDataSourceColumnReaders(colName, std::move(colReaders), typeID);
 }

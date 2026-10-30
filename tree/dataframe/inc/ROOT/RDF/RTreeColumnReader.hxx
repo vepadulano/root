@@ -21,6 +21,8 @@
 #include <memory>
 #include <string>
 #include <cstddef>
+#include <variant>
+#include <functional>
 
 class TTreeReader;
 template <typename T>
@@ -44,8 +46,7 @@ class R__CLING_PTRCHECK(off) RTreeOpaqueColumnReader final : public ROOT::Detail
    void LoadImpl(const ROOT::Internal::RDF::RMaskedEntryRange &) override;
 
 public:
-   /// Construct the RTreeColumnReader. Actual initialization is performed lazily by the Init method.
-   RTreeOpaqueColumnReader(TTreeReader &r, std::string_view colName);
+   RTreeOpaqueColumnReader(TTreeReader &r, std::string_view colName, std::size_t maxBulkSize);
 
    // Rule of five
 
@@ -59,20 +60,21 @@ public:
 /// RTreeColumnReader specialization for TTree values read via TTreeReaderUntypedValue
 class R__CLING_PTRCHECK(off) RTreeUntypedValueColumnReader final : public ROOT::Detail::RDF::RColumnReaderBase {
    std::unique_ptr<ROOT::Internal::TTreeReaderUntypedValue> fTreeValue;
-   ROOT::RVec<std::byte> fCachedResults{};
-   ROOT::RVec<std::size_t> fCachedResultsInvalidIndices{};
-   ROOT::RVec<void *> fCachedBranchAddresses{};
-   ROOT::RVec<void *> fCachedBranchAddressesOfAddresses{};
-   std::function<void(void *)> fObjDeleter;
-   std::size_t fValueSize{0};
-   std::uint64_t fLastEntry = std::numeric_limits<std::uint64_t>::max();
-   void *fAddrOfTypeThatCannotBeReadInBulk{};
+   std::size_t fValueSize;
+   std::uint64_t fLastEntry;
+   ROOT::RVec<std::byte> fCachedValues;
+   ROOT::RVec<void *> fCachedBranchAddresses;
+   ROOT::RVec<void *> fCachedBranchAddressesOfAddresses;
+   ROOT::RVec<bool> fIsCachedValueValidAtIdx;
+   std::function<void(void*)> fObjDeleter;
+   // ROOT::RVec<std::unique_ptr<void, std::function<void(void*)>>> fCachedBranchAddressesRAII;
+   void *fAddrOfTypeThatCannotBeReadInBulk;
 
    void *GetImpl(std::size_t) override;
    void LoadImpl(const ROOT::Internal::RDF::RMaskedEntryRange &) override;
 
 public:
-   RTreeUntypedValueColumnReader(TTreeReader &r, std::string_view colName, std::string_view typeName);
+   RTreeUntypedValueColumnReader(TTreeReader &r, std::string_view colName, std::string_view typeName, std::size_t maxBulkSize);
 
    // Rule of five
 
@@ -94,7 +96,7 @@ public:
    };
 
    RTreeUntypedArrayColumnReader(TTreeReader &r, std::string_view colName, std::string_view valueTypeName,
-                                 ECollectionType collType);
+                                 ECollectionType collType, std::size_t maxBulkSize);
 
    // Rule of five
 
@@ -143,7 +145,7 @@ class R__CLING_PTRCHECK(off) RMaskedColumnReader : public ROOT::Detail::RDF::RCo
 
 public:
    RMaskedColumnReader(TTreeReader &r, std::unique_ptr<ROOT::Detail::RDF::RColumnReaderBase> valueReader,
-                       std::string_view maskName, unsigned int maskIndex);
+                       std::string_view maskName, unsigned int maskIndex, std::size_t maxBulkSize);
    ~RMaskedColumnReader() override;
    void SetColumnReader(std::unique_ptr<ROOT::Detail::RDF::RColumnReaderBase> reader)
    {

@@ -532,7 +532,7 @@ void AddDSColumnsHelper(const std::string &colName, RLoopManager &lm, RDataSourc
       // TODO consider changing the interface so we return all of these for all slots in one go
       for (auto slot = 0u; slot < lm.GetNSlots(); ++slot)
          colReaders.emplace_back(
-            ROOT::Internal::RDF::CreateColumnReader(ds, slot, colName, typeid(T), /*treeReader*/ nullptr));
+            ROOT::Internal::RDF::CreateColumnReader(ds, slot, colName, typeid(T), /*treeReader*/ nullptr, lm.GetCurrentBulkSize()));
    }
 
    lm.AddDataSourceColumnReaders(colName, std::move(colReaders), typeid(T));

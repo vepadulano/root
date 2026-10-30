@@ -45,9 +45,9 @@ public:
       fLoopManager->Register(this);
       auto callUpdate = [this](unsigned int slot, const ROOT::RDF::RSampleInfo &id) { this->Update(slot, id); };
       fLoopManager->AddSampleCallback(this, std::move(callUpdate));
-      // Assume 1-size bulk for now
+
       for (decltype(lm.GetNSlots()) i = 0; i < lm.GetNSlots(); ++i) {
-         fCachedResultsPerSlot[i * RDFInternal::CacheLineStep<ROOT::RVec<RetType_t>>()].resize(1ul);
+         fCachedResultsPerSlot[i * RDFInternal::CacheLineStep<ROOT::RVec<RetType_t>>()].resize(lm.GetCurrentBulkSize());
       }
    }
 
@@ -71,8 +71,10 @@ public:
    /// Update the value at the address returned by GetValuePtr with the content corresponding to the given entry
    void Update(unsigned int slot, const ROOT::RDF::RSampleInfo &id) final
    {
-      // Assume 1-size bulk for now
-      fCachedResultsPerSlot[slot * RDFInternal::CacheLineStep<ROOT::RVec<RetType_t>>()][0] = fExpression(slot, id);
+      auto &&value = fExpression(slot, id);
+      auto &results = fCachedResultsPerSlot[slot * RDFInternal::CacheLineStep<ROOT::RVec<RetType_t>>()];
+      for (std::size_t i = 0u; i < results.size(); ++i)
+         results[i] = value;
    }
 
    const std::type_info &GetTypeId() const final { return typeid(RetType_t); }
