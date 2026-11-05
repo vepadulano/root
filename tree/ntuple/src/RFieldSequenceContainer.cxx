@@ -131,8 +131,14 @@ std::size_t ROOT::RArrayField::ReadBulkImpl(const RBulkSpec &bulkSpec)
    if (!fSubfields[0]->IsSimple())
       return RFieldBase::ReadBulkImpl(bulkSpec);
 
-   GetPrincipalColumnOf(*fSubfields[0])
-      ->ReadV(bulkSpec.fFirstIndex * fArrayLength, bulkSpec.fCount * fArrayLength, bulkSpec.fValues);
+   if (const auto *localIndex = std::get_if<RNTupleLocalIndex>(&bulkSpec.fFirstIndex)) {
+      GetPrincipalColumnOf(*fSubfields[0])
+         ->ReadV(*localIndex * fArrayLength, bulkSpec.fCount * fArrayLength, bulkSpec.fValues);
+   } else if (const auto *globalIndex = std::get_if<ROOT::NTupleSize_t>(&bulkSpec.fFirstIndex)) {
+      GetPrincipalColumnOf(*fSubfields[0])
+         ->ReadV(*globalIndex * fArrayLength, bulkSpec.fCount * fArrayLength, bulkSpec.fValues);
+   }
+
    return RBulkSpec::kAllSet;
 }
 
@@ -379,7 +385,17 @@ std::size_t ROOT::RRVecField::ReadBulkImpl(const RBulkSpec &bulkSpec)
    // Get size of the first RVec of the bulk
    RNTupleLocalIndex firstItemIndex;
    ROOT::NTupleSize_t collectionSize;
-   fPrincipalColumn->GetCollectionInfo(bulkSpec.fFirstIndex, &firstItemIndex, &collectionSize);
+   const auto index = [&, this]() {
+      if (const auto *localIndex = std::get_if<RNTupleLocalIndex>(&bulkSpec.fFirstIndex)) {
+         return *localIndex;
+      } else if (const auto *globalIndex = std::get_if<ROOT::NTupleSize_t>(&bulkSpec.fFirstIndex)) {
+         return fPrincipalColumn->GetClusterIndex(*globalIndex);
+      } else {
+         throw std::runtime_error("Unrecognized index type.");
+      }
+   }();
+   fPrincipalColumn->GetCollectionInfo(index, &firstItemIndex, &collectionSize);
+
    *beginPtr = itemValueArray;
    *sizePtr = collectionSize;
    *capacityPtr = -1;
@@ -388,13 +404,29 @@ std::size_t ROOT::RRVecField::ReadBulkImpl(const RBulkSpec &bulkSpec)
    // We optimistically assume that bulkSpec.fAuxData is already large enough to hold all the item values in the
    // given range. If not, we'll fix up the pointers afterwards.
    auto lastOffset = firstItemIndex.GetIndexInCluster() + collectionSize;
+   auto lastClusterId = firstItemIndex.GetClusterId();
    ROOT::NTupleSize_t nRemainingValues = bulkSpec.fCount - 1;
    std::size_t nValues = 1;
    std::size_t nItems = collectionSize;
    while (nRemainingValues > 0) {
       ROOT::NTupleSize_t nElementsUntilPageEnd;
-      const auto offsets =
-         fPrincipalColumn->MapV<ROOT::Internal::RColumnIndex>(bulkSpec.fFirstIndex + nValues, nElementsUntilPageEnd);
+      const auto nextIndex = [&, this]() {
+         if (const auto *localIndex = std::get_if<RNTupleLocalIndex>(&bulkSpec.fFirstIndex)) {
+            return *localIndex + nValues;
+         } else if (const auto *globalIndex = std::get_if<ROOT::NTupleSize_t>(&bulkSpec.fFirstIndex)) {
+            return fPrincipalColumn->GetClusterIndex(*globalIndex + nValues);
+         } else {
+            throw std::runtime_error("Unrecognized index type.");
+         }
+      }();
+      auto offsets = fPrincipalColumn->MapV<ROOT::Internal::RColumnIndex>(nextIndex, nElementsUntilPageEnd);
+      if (nextIndex.GetClusterId() != lastClusterId) {
+         // We clamp to nElementsUntilPageEnd, so we expect that seeing a new cluster means we're starting from its
+         // beginning
+         assert(nextIndex.GetIndexInCluster() == 0);
+         lastClusterId = nextIndex.GetClusterId();
+         lastOffset = 0;
+      }
       const std::size_t nBatch = std::min(nRemainingValues, nElementsUntilPageEnd);
       for (std::size_t i = 0; i < nBatch; ++i) {
          const auto size = offsets[i] - lastOffset;
@@ -422,8 +454,17 @@ std::size_t ROOT::RRVecField::ReadBulkImpl(const RBulkSpec &bulkSpec)
       }
    }
 
-   GetPrincipalColumnOf(*fBulkSubfield)
-      ->ReadV(firstItemIndex * fBulkNRepetition, nItems * fBulkNRepetition, itemValueArray - delta);
+   if (std::get_if<RNTupleLocalIndex>(&bulkSpec.fFirstIndex)) {
+      GetPrincipalColumnOf(*fBulkSubfield)
+         ->ReadV(firstItemIndex * fBulkNRepetition, nItems * fBulkNRepetition, itemValueArray - delta);
+   } else if (std::get_if<ROOT::NTupleSize_t>(&bulkSpec.fFirstIndex)) {
+      auto column = GetPrincipalColumnOf(*fBulkSubfield);
+      column->ReadV(column->GetGlobalIndex(firstItemIndex) * fBulkNRepetition, nItems * fBulkNRepetition,
+                    itemValueArray - delta);
+   } else {
+      throw std::runtime_error("Unrecognized index type.");
+   }
+
    return RBulkSpec::kAllSet;
 }
 

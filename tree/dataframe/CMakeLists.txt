@@ -46,7 +46,6 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     ROOT/RLazyDS.hxx
     ROOT/RResultHandle.hxx
     ROOT/RResultPtr.hxx
-    ROOT/RRootDS.hxx
     ROOT/RSnapshotOptions.hxx
     ROOT/RTrivialDS.hxx
     ROOT/RTTreeDS.hxx
@@ -145,11 +144,11 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     src/RVariationBase.cxx
     src/RVariationReader.cxx
     src/RVariationsDescription.cxx
-    src/RRootDS.cxx
     src/RTrivialDS.cxx
     src/RDFDescription.cxx
     src/RNTupleDS.cxx
     src/RNTupleProcessorDS.cxx
+    src/RVecDS.cxx
   DICTIONARY_OPTIONS
     -writeEmptyRootPCM
     ${RDATAFRAME_EXTRA_INCLUDES}
