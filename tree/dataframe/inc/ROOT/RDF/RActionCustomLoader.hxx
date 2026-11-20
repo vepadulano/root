@@ -106,16 +106,28 @@ public:
       fHelper.Exec(slot, untypedValues);
    }
 
+   void CallExecBulk(unsigned int slot, const ROOT::Internal::RDF::RMaskedEntryRange &mask)
+   {
+      auto &untypedBulks = fValueAddresses[slot];
+      auto nReaders = fValues[slot].size();
+      untypedBulks.resize(nReaders);
+      for (decltype(nReaders) readerIdx{}; readerIdx < nReaders; readerIdx++)
+         untypedBulks[readerIdx] = fValues[slot][readerIdx]->template TryGet<void>(0);
+
+      fHelper.ExecBulk(slot, untypedBulks, mask);
+   }
+
    void Run(unsigned int slot, Long64_t bulkBeginEntry, std::size_t bulkSize) final
    {
       const auto mask = fPrevNodes.front()->CheckFilters(slot, bulkBeginEntry, bulkSize);
       std::for_each(fValues[slot].begin(), fValues[slot].end(), [&mask](auto *v) { v->Load(mask); });
-      for (decltype(bulkSize) i = 0; i < bulkSize; i++) {
-         if (mask[i])
-            CallExec(slot, i);
-         for (auto &callback : fCallbacksEveryNEntries)
-            callback(slot);
-      }
+      CallExecBulk(slot, mask);
+      // for (decltype(bulkSize) i = 0; i < bulkSize; i++) {
+      //    if (mask[i])
+      //       CallExec(slot, i);
+      //    for (auto &callback : fCallbacksEveryNEntries)
+      //       callback(slot);
+      // }
    }
 
    void TriggerChildrenCount() final

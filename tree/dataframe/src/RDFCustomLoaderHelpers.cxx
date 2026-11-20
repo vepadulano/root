@@ -24,14 +24,33 @@ void AppendVectorAs(ROOT::RVecF &dest, void *value, std::size_t maxSize, float p
    dest.insert(dest.end(), maxSize - size, padding);
 }
 
+template <typename T>
+void AppendAsBulk(ROOT::RVecF &dest, void *valueArray, std::size_t entryInBulk, std::size_t /*maxSize*/,
+                  float /*padding*/)
+{
+   dest.push_back(static_cast<float>(*static_cast<T *>(
+      reinterpret_cast<void *>(reinterpret_cast<std::byte *>(valueArray) + entryInBulk * sizeof(T)))));
+}
+
+template <typename T>
+void AppendVectorAsBulk(ROOT::RVecF &dest, void *valueArray, std::size_t entryInBulk, std::size_t maxSize,
+                        float padding)
+{
+   const auto &vec = *static_cast<ROOT::RVec<T> *>(
+      reinterpret_cast<void *>(reinterpret_cast<std::byte *>(valueArray) + entryInBulk * sizeof(ROOT::RVec<T>)));
+   const auto size = std::min(vec.size(), maxSize);
+   dest.insert(dest.end(), vec.begin(), vec.begin() + size);
+   dest.insert(dest.end(), maxSize - size, padding);
+}
+
 /// Pick the handler for a column of type T or RVec<T>, flagging vector columns
 template <typename T>
 bool MatchColHandler(const std::type_info &colType, CustomLoaderHelper::ColHandler_t &handler, bool &isVector)
 {
    if (colType == typeid(T)) {
-      handler = &AppendAs<T>;
+      handler = &AppendAsBulk<T>;
    } else if (colType == typeid(ROOT::RVec<T>)) {
-      handler = &AppendVectorAs<T>;
+      handler = &AppendVectorAsBulk<T>;
       isVector = true;
    }
    return handler != nullptr;
@@ -74,5 +93,20 @@ void ROOT::Internal::RDF::CustomLoaderHelper::Exec(unsigned int /*slot*/, const 
    // The readers deliver the values in column order, the same order the handlers were resolved in
    auto nValues{values.size()};
    for (decltype(nValues) i{}; i < nValues; i++)
-      fColHandlers[i](*fLocation, values[i], fMaxSizes[i], fVecPadding);
+      fColHandlers[i](*fLocation, values[i], 0, fMaxSizes[i], fVecPadding);
+}
+
+void ROOT::Internal::RDF::CustomLoaderHelper::ExecBulk(unsigned int, const std::vector<void *> &values,
+                                                       const ROOT::Internal::RDF::RMaskedEntryRange &mask)
+{
+   // The readers deliver the values in column order, the same order the handlers were resolved in
+   // WARNING: this method expects the input values to be beginnings of arrays of contiguous values
+   auto nValues{values.size()};
+   for (std::size_t entryInBulk = 0; entryInBulk < mask.GetBulkSize(); entryInBulk++) {
+      if (mask[entryInBulk]) {
+         for (decltype(nValues) colIdx{}; colIdx < nValues; colIdx++)
+            fColHandlers[colIdx](*fLocation, reinterpret_cast<std::byte *>(values[colIdx]), entryInBulk,
+                                 fMaxSizes[colIdx], fVecPadding);
+      }
+   }
 }

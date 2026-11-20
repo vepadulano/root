@@ -6,6 +6,7 @@
 
 #include <ROOT/RDF/RActionImpl.hxx>
 #include <ROOT/RVec.hxx>
+#include <ROOT/RDF/RMaskedEntryRange.hxx>
 
 #include <cstddef>
 #include <memory>
@@ -20,7 +21,7 @@ class R__CLING_PTRCHECK(off) CustomLoaderHelper : public ROOT::Detail::RDF::RAct
 public:
    /// Converts one type-erased column value to float and appends it to the destination vector,
    /// vector columns are truncated or padded to their maximum size
-   using ColHandler_t = void (*)(ROOT::RVecF &, void *, std::size_t maxSize, float padding);
+   using ColHandler_t = void (*)(ROOT::RVecF &, void *, std::size_t entryInBulk, std::size_t maxSize, float padding);
 
 private:
    std::shared_ptr<ROOT::RVecF> fLocation;
@@ -45,6 +46,8 @@ public:
    void InitTask(TTreeReader *, unsigned int) {}
    // TODO(staider) Support multiple slots to also work in IMT mode
    void Exec([[maybe_unused]] unsigned int slot, const std::vector<void *> &values);
+   void ExecBulk([[maybe_unused]] unsigned int slot, const std::vector<void *> &values,
+                 const ROOT::Internal::RDF::RMaskedEntryRange &mask);
    void Initialize() { /* noop */ }
    void Finalize() {}
 
